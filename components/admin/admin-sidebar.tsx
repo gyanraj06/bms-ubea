@@ -18,12 +18,13 @@ import {
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { usePermissions } from "@/contexts/permission-context";
 
 interface MenuItem {
   name: string;
   href: string;
   icon: any;
-  roles: string[];
+  permissionKey: string;
 }
 
 const menuItems: MenuItem[] = [
@@ -31,43 +32,43 @@ const menuItems: MenuItem[] = [
     name: "Dashboard",
     href: "/admin/dashboard",
     icon: SquaresFour,
-    roles: ["Owner", "Manager", "Front Desk", "Accountant"],
+    permissionKey: "dashboard",
   },
   {
     name: "Bookings",
     href: "/admin/dashboard/bookings",
     icon: CalendarCheck,
-    roles: ["Owner", "Manager", "Front Desk"],
+    permissionKey: "bookings",
   },
   {
     name: "Payments & Finance",
     href: "/admin/dashboard/payments",
     icon: CurrencyCircleDollar,
-    roles: ["Owner", "Manager", "Accountant"],
+    permissionKey: "payments",
   },
   {
     name: "Communication",
     href: "/admin/dashboard/communication",
     icon: ChatCircleText,
-    roles: ["Owner", "Manager", "Front Desk", "Accountant"],
+    permissionKey: "communication",
   },
   {
     name: "Property Media",
     href: "/admin/dashboard/media",
     icon: Images,
-    roles: ["Owner", "Manager"],
+    permissionKey: "media",
   },
   {
     name: "Reports & Analytics",
     href: "/admin/dashboard/reports",
     icon: ChartBar,
-    roles: ["Owner", "Manager", "Accountant"],
+    permissionKey: "reports",
   },
   {
     name: "Settings",
     href: "/admin/dashboard/settings",
     icon: GearSix,
-    roles: ["Owner"],
+    permissionKey: "settings",
   },
 ];
 
@@ -79,10 +80,11 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { hasPermission } = usePermissions();
 
-  // Filter menu items based on user role
+  // Filter menu items based on dynamic permissions
   const filteredMenuItems = menuItems.filter((item) =>
-    item.roles.includes(userRole)
+    hasPermission(item.permissionKey, userRole)
   );
 
   const handleLogout = () => {
