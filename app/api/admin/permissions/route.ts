@@ -13,9 +13,9 @@ const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 /**
- * Verify admin token and check if user is Owner (only Owners can manage permissions)
+ * Verify admin token
  */
-function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string; error?: string } {
+function verifyAdminAuth(request: NextRequest, requireOwner: boolean = false): { valid: boolean; role?: string; error?: string } {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { valid: false, error: 'Missing or invalid authorization header' };
@@ -28,8 +28,8 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string;
     return { valid: false, error: 'Invalid or expired token' };
   }
 
-  // Only Owner can manage permissions
-  if (decoded.role !== 'Owner') {
+  // Check if Owner role is required
+  if (requireOwner && decoded.role !== 'Owner') {
     return { valid: false, error: 'Unauthorized. Only Owners can manage permissions.' };
   }
 
@@ -39,11 +39,12 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string;
 /**
  * GET /api/admin/permissions
  * Get all permissions with their role assignments
+ * All authenticated admin users can view permissions
  */
 export async function GET(request: NextRequest) {
   try {
-    // Verify auth
-    const auth = verifyAdminAuth(request);
+    // Verify auth - any admin user can read permissions
+    const auth = verifyAdminAuth(request, false);
     if (!auth.valid) {
       return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
     }
@@ -79,12 +80,13 @@ export async function GET(request: NextRequest) {
 /**
  * PUT /api/admin/permissions
  * Update permissions (bulk update)
+ * Only Owners can update permissions
  * Expects: { permissions: Array<{ key: string, roles: string[] }> }
  */
 export async function PUT(request: NextRequest) {
   try {
-    // Verify auth
-    const auth = verifyAdminAuth(request);
+    // Verify auth - only Owners can update permissions
+    const auth = verifyAdminAuth(request, true);
     if (!auth.valid) {
       return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
     }

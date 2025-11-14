@@ -47,6 +47,34 @@ function BookingContent() {
   const [guestsOpen, setGuestsOpen] = useState(false);
   const [roomsOpen, setRoomsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [availableRooms, setAvailableRooms] = useState<any[]>([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+
+  // Fetch available rooms from database
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setIsLoadingRooms(true);
+        const response = await fetch('/api/rooms');
+        const data = await response.json();
+
+        if (data.success) {
+          setAvailableRooms(data.rooms || []);
+        } else {
+          toast.error('Failed to load rooms');
+          setAvailableRooms([]);
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        toast.error('Failed to load rooms');
+        setAvailableRooms([]);
+      } finally {
+        setIsLoadingRooms(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
 
   // Pre-fill dates from URL parameters
   useEffect(() => {
@@ -89,66 +117,19 @@ function BookingContent() {
     setRooms(prev => Math.max(prev - 1, 1));
   };
 
-  // Room types data
-  const roomTypes = [
-    {
-      id: 1,
-      name: "Deluxe Room",
-      description: "Spacious room with modern amenities and comfortable bedding",
-      price: 2500,
-      maxGuests: 2,
-      size: "250 sq ft",
-      bedType: "1 Queen Bed",
-      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast"],
-      available: 5,
-    },
-    {
-      id: 2,
-      name: "Executive Suite",
-      description: "Luxurious suite with separate living area and premium facilities",
-      price: 4000,
-      maxGuests: 3,
-      size: "400 sq ft",
-      bedType: "1 King Bed + Sofa",
-      image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast", "Mini Bar"],
-      available: 3,
-    },
-    {
-      id: 3,
-      name: "Family Room",
-      description: "Perfect for families with extra space and multiple beds",
-      price: 3500,
-      maxGuests: 4,
-      size: "350 sq ft",
-      bedType: "2 Double Beds",
-      image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast"],
-      available: 4,
-    },
-    {
-      id: 4,
-      name: "Standard Room",
-      description: "Comfortable and affordable room with essential amenities",
-      price: 1800,
-      maxGuests: 2,
-      size: "200 sq ft",
-      bedType: "1 Double Bed",
-      image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water"],
-      available: 8,
-    },
-  ];
-
   const amenityIcons: { [key: string]: any } = {
-    "Free WiFi": WifiHigh,
+    "WiFi": WifiHigh,
     "AC": Fan,
     "TV": TelevisionSimple,
     "Hot Water": Shower,
+    "Shower": Shower,
     "Breakfast": Coffee,
     "Mini Bar": Coffee,
+    "Room Service": Coffee,
     "Parking": Car,
+    "Balcony": Check,
+    "Work Desk": Check,
+    "Safe": Check,
   };
 
   const handleSearch = async () => {
@@ -157,12 +138,12 @@ function BookingContent() {
       return;
     }
     setIsSearching(true);
-    // Simulate search - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // Simulate search - can be enhanced later with availability check
+    await new Promise(resolve => setTimeout(resolve, 1000));
     setIsSearching(false);
   };
 
-  const handleBookRoom = (roomId: number) => {
+  const handleBookRoom = (roomId: string) => {
     if (!checkInDate || !checkOutDate) {
       toast.error("Please select dates first");
       return;
@@ -453,11 +434,13 @@ function BookingContent() {
       {/* Rooms Section */}
       <div className="container mx-auto px-4 pb-16 relative">
         {/* Loading Overlay */}
-        {isSearching && (
+        {(isSearching || isLoadingRooms) && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-30 flex items-center justify-center rounded-2xl">
             <div className="text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brown-dark mx-auto mb-4"></div>
-              <p className="text-lg font-medium text-gray-900">Searching available rooms...</p>
+              <p className="text-lg font-medium text-gray-900">
+                {isLoadingRooms ? "Loading rooms..." : "Searching available rooms..."}
+              </p>
             </div>
           </div>
         )}
@@ -471,116 +454,161 @@ function BookingContent() {
           </p>
         </div>
 
-        <div className="space-y-6">
-          {roomTypes.map((room, index) => (
-            <motion.div
-              key={room.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05, duration: 0.3 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Room Image */}
-                <div className="relative h-64 lg:h-auto min-h-[256px]">
-                  <Image
-                    src={room.image}
-                    alt={room.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1024px) 100vw, 33vw"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    quality={75}
-                  />
-                  {room.available <= 3 && (
-                    <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
-                      Only {room.available} left!
+        {/* No Rooms Available Message */}
+        {!isLoadingRooms && availableRooms.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16 px-4"
+          >
+            <div className="max-w-md mx-auto">
+              <div className="bg-tan-light rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                <Bed size={48} weight="fill" className="text-brown-dark" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                No Rooms Available
+              </h3>
+              <p className="text-gray-600 mb-6">
+                We currently don't have any rooms available in the property. Please check back later or contact us for more information.
+              </p>
+              <a
+                href="/contact"
+                className="inline-block px-6 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors"
+              >
+                Contact Us
+              </a>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Rooms List */}
+        {!isLoadingRooms && availableRooms.length > 0 && (
+          <div className="space-y-6">
+            {availableRooms.map((room, index) => {
+              // Get first image or use placeholder
+              const roomImage = room.images && room.images.length > 0
+                ? room.images[0]
+                : "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75";
+
+              return (
+                <motion.div
+                  key={room.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                >
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    {/* Room Image */}
+                    <div className="relative h-64 lg:h-auto min-h-[256px]">
+                      <Image
+                        src={roomImage}
+                        alt={room.room_type}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                        loading={index === 0 ? "eager" : "lazy"}
+                        quality={75}
+                      />
+                      {!room.is_available && (
+                        <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
+                          Currently Unavailable
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
 
-                {/* Room Details */}
-                <div className="lg:col-span-2 p-6">
-                  <div className="flex flex-col h-full">
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                            {room.name}
-                          </h3>
-                          <p className="text-gray-600 mb-4">{room.description}</p>
-                        </div>
-                      </div>
+                    {/* Room Details */}
+                    <div className="lg:col-span-2 p-6">
+                      <div className="flex flex-col h-full">
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                                {room.room_type}
+                              </h3>
+                              <p className="text-sm text-gray-500 mb-3">
+                                Room #{room.room_number} {room.view_type && `• ${room.view_type}`}
+                              </p>
+                              <p className="text-gray-600 mb-4">{room.description}</p>
+                            </div>
+                          </div>
 
-                      {/* Room Info */}
-                      <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Users size={18} weight="fill" className="text-primary-600" />
-                          <span>Up to {room.maxGuests} guests</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Bed size={18} weight="fill" className="text-primary-600" />
-                          <span>{room.bedType}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-primary-600 font-semibold">
-                            {room.size}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Amenities */}
-                      <div className="mb-6">
-                        <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                          Room Amenities
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {room.amenities.map((amenity) => {
-                            const Icon = amenityIcons[amenity] || Check;
-                            return (
-                              <div
-                                key={amenity}
-                                className="flex items-center gap-2 text-sm text-gray-700"
-                              >
-                                <Icon
-                                  size={18}
-                                  weight="fill"
-                                  className="text-green-600"
-                                />
-                                <span>{amenity}</span>
+                          {/* Room Info */}
+                          <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <Users size={18} weight="fill" className="text-brown-dark" />
+                              <span>Up to {room.max_guests} guests</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Bed size={18} weight="fill" className="text-brown-dark" />
+                              <span>{room.bed_type}</span>
+                            </div>
+                            {room.size_sqft > 0 && (
+                              <div className="flex items-center gap-2">
+                                <span className="text-brown-dark font-semibold">
+                                  {room.size_sqft} sq ft
+                                </span>
                               </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
+                            )}
+                          </div>
 
-                    {/* Price and Book Button */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                      <div>
-                        <div className="text-3xl font-bold text-gray-900">
-                          ₹{room.price.toLocaleString()}
-                          <span className="text-base font-normal text-gray-600">
-                            /night
-                          </span>
+                          {/* Amenities */}
+                          {room.amenities && room.amenities.length > 0 && (
+                            <div className="mb-6">
+                              <h4 className="text-sm font-semibold text-gray-900 mb-3">
+                                Room Amenities
+                              </h4>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {room.amenities.map((amenity: string) => {
+                                  const Icon = amenityIcons[amenity] || Check;
+                                  return (
+                                    <div
+                                      key={amenity}
+                                      className="flex items-center gap-2 text-sm text-gray-700"
+                                    >
+                                      <Icon
+                                        size={18}
+                                        weight="fill"
+                                        className="text-green-600"
+                                      />
+                                      <span>{amenity}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-500 mt-1">
-                          + taxes & fees
-                        </p>
+
+                        {/* Price and Book Button */}
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                          <div>
+                            <div className="text-3xl font-bold text-gray-900">
+                              ₹{room.base_price.toLocaleString()}
+                              <span className="text-base font-normal text-gray-600">
+                                /night
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500 mt-1">
+                              + taxes & fees
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleBookRoom(room.id)}
+                            disabled={!room.is_available}
+                            className="px-8 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brown-dark"
+                          >
+                            {room.is_available ? 'Book Now' : 'Unavailable'}
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        onClick={() => handleBookRoom(room.id)}
-                        className="px-8 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md hover:shadow-lg"
-                      >
-                        Book Now
-                      </button>
                     </div>
                   </div>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Additional Info */}
         <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">

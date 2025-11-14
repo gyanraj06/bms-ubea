@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeSlash, EnvelopeSimple, LockKey, User, Phone, GoogleLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { user, loading, refreshUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,6 +27,13 @@ export default function SignupPage() {
     password: "",
     confirmPassword: "",
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,8 +87,12 @@ export default function SignupPage() {
         localStorage.setItem('userData', JSON.stringify(data.user));
       }
 
+      // Refresh auth context
+      await refreshUser();
+
       toast.success(data.message || 'Account created successfully!');
-      router.push('/login');
+      // User is already logged in, redirect to home
+      router.push('/');
     } catch (error: any) {
       console.error('Registration error:', error);
       toast.error('Registration failed. Please try again.');

@@ -62,15 +62,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create user in Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    // Create user in Supabase Auth using admin client (bypasses email confirmation)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.toLowerCase(),
       password,
-      options: {
-        data: {
-          full_name,
-          phone,
-        },
+      email_confirm: true, // Auto-confirm email
+      user_metadata: {
+        full_name,
+        phone,
       },
     });
 
@@ -109,7 +108,7 @@ export async function POST(request: NextRequest) {
         password_hash,
         full_name,
         phone: phone || null,
-        is_verified: false,
+        is_verified: true, // Auto-verify all users (email verification disabled)
         is_active: true,
       })
       .select()
@@ -131,17 +130,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sign in the user immediately after registration
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password,
+    });
+
     // Return success response
     return NextResponse.json({
       success: true,
-      message: 'Account created successfully. Please check your email to verify your account.',
+      message: 'Account created successfully! You are now logged in.',
       user: {
         id: userData.id,
         email: userData.email,
         full_name: userData.full_name,
         phone: userData.phone,
       },
-      session: authData.session,
+      session: signInData?.session || null,
     });
   } catch (error: any) {
     console.error('Registration error:', error);

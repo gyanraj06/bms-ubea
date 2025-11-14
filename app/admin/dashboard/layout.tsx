@@ -3,8 +3,49 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
-import { PermissionProvider } from "@/contexts/permission-context";
+import { PermissionProvider, usePermissions } from "@/contexts/permission-context";
 import { toast } from "sonner";
+
+// Inner component that has access to PermissionProvider
+function DashboardContent({ children, userRole }: { children: React.ReactNode; userRole: string }) {
+  const { reloadPermissions } = usePermissions();
+
+  useEffect(() => {
+    // Reload permissions from database when dashboard loads
+    reloadPermissions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
+
+  return (
+    <>
+      <div className="flex min-h-screen bg-gray-50">
+        <AdminSidebar userRole={userRole} />
+
+        {/* Main Content Area */}
+        <main className="flex-1 lg:ml-64 min-h-screen">
+          {/* Top Bar */}
+          <div className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8">
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
+                Happy Holidays Admin
+              </h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-600">
+                Role: <span className="font-semibold text-brown-dark">{userRole}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Page Content */}
+          <div className="p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}
 
 export default function AdminDashboardLayout({
   children,
@@ -49,31 +90,9 @@ export default function AdminDashboardLayout({
 
   return (
     <PermissionProvider>
-      <div className="flex min-h-screen bg-gray-50">
-        <AdminSidebar userRole={userRole} />
-
-        {/* Main Content Area */}
-        <main className="flex-1 lg:ml-64 min-h-screen">
-          {/* Top Bar */}
-          <div className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
-                Happy Holidays Admin
-              </h1>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-600">
-                Role: <span className="font-semibold text-brown-dark">{userRole}</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Page Content */}
-          <div className="p-6 lg:p-8">
-            {children}
-          </div>
-        </main>
-      </div>
+      <DashboardContent userRole={userRole}>
+        {children}
+      </DashboardContent>
     </PermissionProvider>
   );
 }

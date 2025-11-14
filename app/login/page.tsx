@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeSlash, EnvelopeSimple, LockKey, GoogleLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, loading, refreshUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -20,6 +22,13 @@ export default function LoginPage() {
     email: "",
     password: "",
   });
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      router.push("/");
+    }
+  }, [user, loading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +67,9 @@ export default function LoginPage() {
         localStorage.setItem('userSession', JSON.stringify(data.session));
       }
       localStorage.setItem('userData', JSON.stringify(data.user));
+
+      // Refresh auth context
+      await refreshUser();
 
       toast.success('Login successful!');
       router.push('/');

@@ -51,6 +51,9 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Clear old permissions from localStorage to force fresh fetch
+      localStorage.removeItem('adminPermissions');
+
       // Store token and user data
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('adminUser', JSON.stringify({

@@ -16,6 +16,7 @@ interface PermissionContextType {
   updatePermission: (permissionKey: string, role: string, hasAccess: boolean) => void;
   hasPermission: (permissionKey: string, role: string) => boolean;
   getAccessibleRoutes: (role: string) => string[];
+  reloadPermissions: () => Promise<void>;
 }
 
 const PermissionContext = createContext<PermissionContextType | undefined>(undefined);
@@ -84,54 +85,57 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<Permission[]>(DEFAULT_PERMISSIONS);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load permissions from database on mount
-  useEffect(() => {
-    async function loadPermissions() {
-      try {
-        // Try to get admin token
-        const token = localStorage.getItem("adminToken");
-        if (!token) {
-          // No token, use default permissions
-          return;
-        }
+  // Load permissions from database
+  const loadPermissions = async () => {
+    try {
+      // Try to get admin token
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        // No token, use default permissions
+        setPermissions(DEFAULT_PERMISSIONS);
+        return;
+      }
 
-        // Fetch from database
-        const response = await fetch('/api/admin/permissions', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+      // Fetch from database
+      const response = await fetch('/api/admin/permissions', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.permissions) {
-            setPermissions(data.permissions);
-            // Also save to localStorage as backup
-            localStorage.setItem("adminPermissions", JSON.stringify(data.permissions));
-          }
-        } else {
-          // Fallback to localStorage
-          const savedPermissions = localStorage.getItem("adminPermissions");
-          if (savedPermissions) {
-            setPermissions(JSON.parse(savedPermissions));
-          }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.permissions) {
+          setPermissions(data.permissions);
+          // Also save to localStorage as backup
+          localStorage.setItem("adminPermissions", JSON.stringify(data.permissions));
         }
-      } catch (error) {
-        console.error("Failed to load permissions:", error);
+      } else {
         // Fallback to localStorage
         const savedPermissions = localStorage.getItem("adminPermissions");
         if (savedPermissions) {
-          try {
-            setPermissions(JSON.parse(savedPermissions));
-          } catch {
-            setPermissions(DEFAULT_PERMISSIONS);
-          }
+          setPermissions(JSON.parse(savedPermissions));
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load permissions:", error);
+      // Fallback to localStorage
+      const savedPermissions = localStorage.getItem("adminPermissions");
+      if (savedPermissions) {
+        try {
+          setPermissions(JSON.parse(savedPermissions));
+        } catch {
+          setPermissions(DEFAULT_PERMISSIONS);
         }
       }
     }
+  };
 
+  // Load permissions on mount
+  useEffect(() => {
     loadPermissions();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   // Sync permissions to database
   async function syncToDatabase(updatedPermissions: Permission[]) {
@@ -209,6 +213,7 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         updatePermission,
         hasPermission,
         getAccessibleRoutes,
+        reloadPermissions: loadPermissions,
       }}
     >
       {children}

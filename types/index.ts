@@ -1,14 +1,39 @@
 export interface Room {
   id: string
-  name: string
-  category: 'deluxe' | 'suite' | 'premium' | 'standard'
+  room_number: string
+  room_type: string
+  floor: number
+  max_guests: number
+  base_price: number
   description: string
-  pricePerNight: number
-  capacity: number
-  size: number // in sq ft
   amenities: string[]
+  size_sqft: number
+  bed_type: string
+  view_type: string
+  is_available: boolean
+  is_active: boolean
   images: string[]
-  available: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+export interface Media {
+  id: string
+  file_name: string
+  file_path: string
+  file_url: string
+  file_size: number
+  file_type: string
+  category: 'Rooms' | 'Facilities' | 'Exterior' | 'Events' | 'Other'
+  room_id?: string
+  title?: string
+  description?: string
+  alt_text?: string
+  is_featured: boolean
+  display_order: number
+  uploaded_by: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Hall {
