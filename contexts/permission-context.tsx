@@ -82,20 +82,89 @@ const DEFAULT_PERMISSIONS: Permission[] = [
 
 export function PermissionProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<Permission[]>(DEFAULT_PERMISSIONS);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-  // Load permissions from localStorage on mount
+  // Load permissions from database on mount
   useEffect(() => {
-    const savedPermissions = localStorage.getItem("adminPermissions");
-    if (savedPermissions) {
+    async function loadPermissions() {
       try {
-        const parsed = JSON.parse(savedPermissions);
-        setPermissions(parsed);
+        // Try to get admin token
+        const token = localStorage.getItem("adminToken");
+        if (!token) {
+          // No token, use default permissions
+          return;
+        }
+
+        // Fetch from database
+        const response = await fetch('/api/admin/permissions', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.permissions) {
+            setPermissions(data.permissions);
+            // Also save to localStorage as backup
+            localStorage.setItem("adminPermissions", JSON.stringify(data.permissions));
+          }
+        } else {
+          // Fallback to localStorage
+          const savedPermissions = localStorage.getItem("adminPermissions");
+          if (savedPermissions) {
+            setPermissions(JSON.parse(savedPermissions));
+          }
+        }
       } catch (error) {
-        console.error("Failed to parse saved permissions:", error);
-        setPermissions(DEFAULT_PERMISSIONS);
+        console.error("Failed to load permissions:", error);
+        // Fallback to localStorage
+        const savedPermissions = localStorage.getItem("adminPermissions");
+        if (savedPermissions) {
+          try {
+            setPermissions(JSON.parse(savedPermissions));
+          } catch {
+            setPermissions(DEFAULT_PERMISSIONS);
+          }
+        }
       }
     }
+
+    loadPermissions();
   }, []);
+
+  // Sync permissions to database
+  async function syncToDatabase(updatedPermissions: Permission[]) {
+    if (isSyncing) return; // Prevent multiple syncs
+
+    setIsSyncing(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return;
+
+      const response = await fetch('/api/admin/permissions', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          permissions: updatedPermissions.map(p => ({
+            key: p.key,
+            roles: p.roles,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to sync permissions to database');
+      }
+    } catch (error) {
+      console.error('Error syncing permissions:', error);
+    } finally {
+      setIsSyncing(false);
+    }
+  }
 
   // Update permission for a specific role
   const updatePermission = (permissionKey: string, role: string, hasAccess: boolean) => {
@@ -110,8 +179,12 @@ export function PermissionProvider({ children }: { children: ReactNode }) {
         return perm;
       });
 
-      // Save to localStorage
+      // Save to localStorage immediately
       localStorage.setItem("adminPermissions", JSON.stringify(updated));
+
+      // Sync to database in background
+      syncToDatabase(updated);
+
       return updated;
     });
   };

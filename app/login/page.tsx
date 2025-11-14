@@ -31,27 +31,76 @@ export default function LoginPage() {
 
     setIsLoading(true);
 
-    // Simulate API call - replace with actual backend call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Call user login API
+      const response = await fetch('/api/auth/user-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          type: 'email',
+        }),
+      });
 
-    // Mock successful login
-    toast.success("Login successful!");
-    router.push("/");
+      const data = await response.json();
 
-    setIsLoading(false);
+      if (!response.ok || !data.success) {
+        toast.error(data.error || 'Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
+
+      // Store session data
+      if (data.session) {
+        localStorage.setItem('userSession', JSON.stringify(data.session));
+      }
+      localStorage.setItem('userData', JSON.stringify(data.user));
+
+      toast.success('Login successful!');
+      router.push('/');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
 
-    // Simulate Google OAuth - replace with actual Google OAuth implementation
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // For now, show a message that Google SSO is coming soon
+      // Full implementation requires Google OAuth configuration in Supabase
+      toast.info('Google Sign-In will be available soon!');
 
-    // Mock successful Google login
-    toast.success("Google login successful!");
-    router.push("/");
+      // Uncomment below when Google OAuth is configured in Supabase:
+      /*
+      const response = await fetch('/api/auth/user-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'google',
+        }),
+      });
 
-    setIsGoogleLoading(false);
+      const data = await response.json();
+
+      if (data.authUrl) {
+        window.location.href = data.authUrl;
+      }
+      */
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast.error('Google login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   return (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   GearSix,
@@ -23,12 +23,13 @@ import { usePermissions } from "@/contexts/permission-context";
 
 interface User {
   id: string;
-  name: string;
   email: string;
+  full_name: string;
   role: "Owner" | "Manager" | "Front Desk" | "Accountant";
-  status: "active" | "inactive";
-  lastLogin: string;
-  createdAt: string;
+  phone?: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
 }
 
 const AVAILABLE_ROLES = ["Owner", "Manager", "Front Desk", "Accountant"];
@@ -38,72 +39,118 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"users" | "permissions" | "property" | "integrations">("users");
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [users, setUsers] = useState<User[]>([]);
   const [newUser, setNewUser] = useState({
-    name: "",
+    full_name: "",
     email: "",
     role: "Front Desk",
     password: "",
+    phone: "",
   });
 
-  // Mock users data
-  const users: User[] = [
-    {
-      id: "U001",
-      name: "Admin Owner",
-      email: "owner@happyholidays.com",
-      role: "Owner",
-      status: "active",
-      lastLogin: "2025-11-14T10:30:00",
-      createdAt: "2025-01-01",
-    },
-    {
-      id: "U002",
-      name: "Sarah Manager",
-      email: "manager@happyholidays.com",
-      role: "Manager",
-      status: "active",
-      lastLogin: "2025-11-14T09:15:00",
-      createdAt: "2025-02-15",
-    },
-    {
-      id: "U003",
-      name: "John Receptionist",
-      email: "frontdesk@happyholidays.com",
-      role: "Front Desk",
-      status: "active",
-      lastLogin: "2025-11-14T08:00:00",
-      createdAt: "2025-03-10",
-    },
-    {
-      id: "U004",
-      name: "Priya Finance",
-      email: "accountant@happyholidays.com",
-      role: "Accountant",
-      status: "active",
-      lastLogin: "2025-11-13T16:45:00",
-      createdAt: "2025-04-05",
-    },
-  ];
+  // Load users on mount
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("adminToken");
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  };
+
+  const loadUsers = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/users', {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUsers(data.users);
+        }
+      } else {
+        toast.error('Failed to load users');
+      }
+    } catch (error) {
+      console.error('Error loading users:', error);
+      toast.error('Error loading users');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!newUser.name || !newUser.email || !newUser.password) {
-      toast.error("Please fill in all fields");
+    if (!newUser.full_name || !newUser.email || !newUser.password) {
+      toast.error("Please fill in all required fields");
       return;
     }
 
-    // Simulate user creation
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    toast.success(`User ${newUser.name} added successfully!`);
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          full_name: newUser.full_name,
+          email: newUser.email,
+          password: newUser.password,
+          role: newUser.role,
+          phone: newUser.phone || null,
+        }),
+      });
 
-    // Reset form
-    setNewUser({ name: "", email: "", role: "Front Desk", password: "" });
-    setIsAddingUser(false);
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`User ${newUser.full_name} added successfully!`);
+        setNewUser({ full_name: "", email: "", role: "Front Desk", password: "", phone: "" });
+        setIsAddingUser(false);
+        loadUsers(); // Refresh users list
+      } else {
+        toast.error(data.error || 'Failed to create user');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast.error('Error creating user');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteUser = (userId: string, userName: string) => {
-    toast.success(`User ${userName} deleted successfully`);
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Are you sure you want to delete ${userName}?`)) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/users?id=${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`User ${userName} deleted successfully`);
+        loadUsers(); // Refresh users list
+      } else {
+        toast.error(data.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      toast.error('Error deleting user');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handlePermissionToggle = (permissionKey: string, role: string) => {
@@ -219,8 +266,19 @@ export default function SettingsPage() {
                       id="name"
                       type="text"
                       placeholder="Enter full name"
-                      value={newUser.name}
-                      onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
+                      value={newUser.full_name}
+                      onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="phone">Phone (Optional)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="+91..."
+                      value={newUser.phone}
+                      onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
                       className="mt-1"
                     />
                   </div>
@@ -310,52 +368,70 @@ export default function SettingsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span
-                          className={cn(
-                            "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
-                            getRoleBadgeColor(user.role)
-                          )}
-                        >
-                          {user.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-700">
-                          {user.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(new Date(user.lastLogin))}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(new Date(user.createdAt))}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-2">
-                          <button className="text-blue-600 hover:text-blue-900">
-                            <PencilSimple size={18} weight="bold" />
-                          </button>
-                          {user.role !== "Owner" && (
-                            <button
-                              onClick={() => handleDeleteUser(user.id, user.name)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash size={18} weight="bold" />
-                            </button>
-                          )}
-                        </div>
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                        Loading users...
                       </td>
                     </tr>
-                  ))}
+                  ) : users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                        No users found
+                      </td>
+                    </tr>
+                  ) : (
+                    users.map((user) => (
+                      <tr key={user.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{user.full_name}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span
+                            className={cn(
+                              "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                              getRoleBadgeColor(user.role)
+                            )}
+                          >
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={cn(
+                            "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full",
+                            user.is_active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                          )}>
+                            {user.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {user.last_login ? formatDate(new Date(user.last_login)) : 'Never'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {formatDate(new Date(user.created_at))}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex justify-end gap-2">
+                            <button className="text-blue-600 hover:text-blue-900" title="Edit user (coming soon)">
+                              <PencilSimple size={18} weight="bold" />
+                            </button>
+                            {user.role !== "Owner" && (
+                              <button
+                                onClick={() => handleDeleteUser(user.id, user.full_name)}
+                                className="text-red-600 hover:text-red-900"
+                                disabled={isLoading}
+                              >
+                                <Trash size={18} weight="bold" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

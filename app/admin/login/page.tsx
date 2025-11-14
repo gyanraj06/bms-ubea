@@ -30,36 +30,45 @@ export default function AdminLoginPage() {
 
     setIsLoading(true);
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      // Call admin login API
+      const response = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
-    // Test credentials validation
-    const testCredentials = [
-      { email: "owner@happyholidays.com", password: "Owner@123", role: "Owner" },
-      { email: "manager@happyholidays.com", password: "Manager@123", role: "Manager" },
-      { email: "frontdesk@happyholidays.com", password: "FrontDesk@123", role: "Front Desk" },
-      { email: "accountant@happyholidays.com", password: "Accountant@123", role: "Accountant" },
-    ];
+      const data = await response.json();
 
-    const validUser = testCredentials.find(
-      cred => cred.email === formData.email && cred.password === formData.password
-    );
+      if (!response.ok || !data.success) {
+        toast.error(data.error || 'Invalid email or password');
+        setIsLoading(false);
+        return;
+      }
 
-    if (validUser) {
-      // Store user role in localStorage (temporary - will use JWT in production)
-      localStorage.setItem("adminUser", JSON.stringify({
-        email: validUser.email,
-        role: validUser.role,
-        loginTime: new Date().toISOString()
+      // Store token and user data
+      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem('adminUser', JSON.stringify({
+        id: data.user.id,
+        email: data.user.email,
+        full_name: data.user.full_name,
+        role: data.user.role,
+        loginTime: new Date().toISOString(),
       }));
 
-      toast.success(`Welcome back, ${validUser.role}!`);
-      router.push("/admin/dashboard");
-    } else {
-      toast.error("Invalid email or password");
+      toast.success(`Welcome back, ${data.user.role}!`);
+      router.push('/admin/dashboard');
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast.error('Login failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

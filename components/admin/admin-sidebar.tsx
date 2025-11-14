@@ -80,12 +80,22 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { hasPermission } = usePermissions();
+  const { hasPermission, permissions } = usePermissions();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('=== SIDEBAR DEBUG ===');
+    console.log('User Role:', userRole);
+    console.log('Permissions loaded:', permissions);
+    console.log('Menu items:', menuItems);
+  }, [permissions, userRole]);
 
   // Filter menu items based on dynamic permissions
-  const filteredMenuItems = menuItems.filter((item) =>
-    hasPermission(item.permissionKey, userRole)
-  );
+  const filteredMenuItems = menuItems.filter((item) => {
+    const hasAccess = hasPermission(item.permissionKey, userRole);
+    console.log(`Permission check for ${item.name}:`, hasAccess);
+    return hasAccess;
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
