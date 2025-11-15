@@ -298,7 +298,7 @@ function BookingDetailContent() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Amenities</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {room.amenities.map((amenity) => {
+                  {room.amenities.map((amenity: string) => {
                     const Icon = amenityIcons[amenity] || Check;
                     return (
                       <div key={amenity} className="flex items-center gap-2 text-gray-700">
