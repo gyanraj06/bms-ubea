@@ -1,5 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { verifyToken } from '@/lib/auth';
+
+/**
+ * Verify admin token for protected operations
+ */
+function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string; userId?: string; error?: string } {
+  const authHeader = request.headers.get('authorization');
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return { valid: false, error: 'Missing or invalid authorization header' };
+  }
+
+  const token = authHeader.substring(7);
+  const decoded = verifyToken(token);
+
+  if (!decoded || decoded.type !== 'admin') {
+    return { valid: false, error: 'Invalid or expired token' };
+  }
+
+  return { valid: true, role: decoded.role, userId: decoded.id };
+}
 
 // GET - Fetch all rooms
 export async function GET(request: NextRequest) {
@@ -43,6 +63,12 @@ export async function GET(request: NextRequest) {
 // POST - Create a new room
 export async function POST(request: NextRequest) {
   try {
+    // Verify auth
+    const auth = verifyAdminAuth(request);
+    if (!auth.valid) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       room_number,
@@ -117,6 +143,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create audit log
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: auth.userId,
+      action: 'CREATE',
+      table_name: 'rooms',
+      record_id: newRoom.id,
+      new_data: { room_number: newRoom.room_number, room_type: newRoom.room_type, base_price: newRoom.base_price },
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Room created successfully',
@@ -134,6 +169,12 @@ export async function POST(request: NextRequest) {
 // PUT - Update an existing room
 export async function PUT(request: NextRequest) {
   try {
+    // Verify auth
+    const auth = verifyAdminAuth(request);
+    if (!auth.valid) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, ...updates } = body;
 
@@ -177,6 +218,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Create audit log
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: auth.userId,
+      action: 'UPDATE',
+      table_name: 'rooms',
+      record_id: updatedRoom.id,
+      new_data: updates,
+    });
+
     return NextResponse.json({
       success: true,
       message: 'Room updated successfully',
@@ -194,6 +244,12 @@ export async function PUT(request: NextRequest) {
 // DELETE - Delete a room
 export async function DELETE(request: NextRequest) {
   try {
+    // Verify auth
+    const auth = verifyAdminAuth(request);
+    if (!auth.valid) {
+      return NextResponse.json({ success: false, error: auth.error }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -207,7 +263,7 @@ export async function DELETE(request: NextRequest) {
     // Check if room exists
     const { data: existingRoom } = await supabaseAdmin
       .from('rooms')
-      .select('id, images')
+      .select('id, room_number, room_type, images')
       .eq('id', id)
       .single();
 
@@ -217,6 +273,15 @@ export async function DELETE(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    // Create audit log before deletion
+    await supabaseAdmin.from('audit_logs').insert({
+      user_id: auth.userId,
+      action: 'DELETE',
+      table_name: 'rooms',
+      record_id: id,
+      old_data: { room_number: existingRoom.room_number, room_type: existingRoom.room_type },
+    });
 
     // Delete room (cascade will handle related media)
     const { error } = await supabaseAdmin

@@ -6,111 +6,85 @@ import { Header } from "@/components/shared/header"
 import { Footer } from "@/components/shared/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Users, Resize, Sparkle, ArrowRight, X, Sliders } from "@phosphor-icons/react"
+import { Users, Resize, Sparkle, Bed, X, Sliders } from "@phosphor-icons/react"
 import Link from "next/link"
-import { formatCurrency } from "@/lib/utils"
+import { toast } from "sonner"
+import Image from "next/image"
 
-// Mock data
-const allRooms = [
-  {
-    id: "1",
-    name: "Presidential Suite",
-    category: "premium",
-    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=400",
-    price: 25000,
-    capacity: 4,
-    size: 850,
-    amenities: ["Ocean View", "Private Balcony", "Jacuzzi", "King Bed"],
-    available: true,
-  },
-  {
-    id: "2",
-    name: "Deluxe Ocean View",
-    category: "deluxe",
-    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=400",
-    price: 15000,
-    capacity: 2,
-    size: 450,
-    amenities: ["Ocean View", "King Bed", "Mini Bar", "WiFi"],
-    available: true,
-  },
-  {
-    id: "3",
-    name: "Garden Villa",
-    category: "suite",
-    image: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?q=80&w=400",
-    price: 18000,
-    capacity: 3,
-    size: 600,
-    amenities: ["Garden View", "Private Pool", "Kitchen", "Living Area"],
-    available: true,
-  },
-  {
-    id: "4",
-    name: "Executive Suite",
-    category: "suite",
-    image: "https://images.unsplash.com/photo-1591088398332-8a7791972843?q=80&w=400",
-    price: 12000,
-    capacity: 2,
-    size: 400,
-    amenities: ["City View", "Work Desk", "Living Area", "Mini Bar"],
-    available: true,
-  },
-  {
-    id: "5",
-    name: "Standard Double",
-    category: "standard",
-    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=400",
-    price: 8000,
-    capacity: 2,
-    size: 300,
-    amenities: ["City View", "Queen Bed", "WiFi", "TV"],
-    available: true,
-  },
-  {
-    id: "6",
-    name: "Premium Suite",
-    category: "premium",
-    image: "https://images.unsplash.com/photo-1540518614846-7eded433c457?q=80&w=400",
-    price: 22000,
-    capacity: 3,
-    size: 700,
-    amenities: ["Panoramic View", "Balcony", "Bath Tub", "King Bed"],
-    available: true,
-  },
-]
+interface Room {
+  id: string
+  room_number: string
+  room_type: string
+  bed_type: string
+  max_guests: number
+  base_price: number
+  size_sqft: number
+  view_type: string | null
+  is_available: boolean
+  amenities: string[]
+  images: string[]
+  description: string
+}
 
 export default function RoomsPage() {
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false)
+  const [allRooms, setAllRooms] = useState<Room[]>([])
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [filters, setFilters] = useState({
-    priceRange: [0, 30000],
+    priceRange: [0, 50000],
     capacity: 0,
-    category: "all",
     amenities: [] as string[],
   })
-  const [filteredRooms, setFilteredRooms] = useState(allRooms)
 
+  // Fetch rooms from API
   useEffect(() => {
-    // Apply filters
+    const fetchRooms = async () => {
+      try {
+        setIsLoading(true)
+        const response = await fetch('/api/rooms')
+        const data = await response.json()
+
+        if (data.success) {
+          setAllRooms(data.rooms || [])
+          setFilteredRooms(data.rooms || [])
+        } else {
+          toast.error('Failed to load rooms')
+          setAllRooms([])
+          setFilteredRooms([])
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error)
+        toast.error('Failed to load rooms')
+        setAllRooms([])
+        setFilteredRooms([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchRooms()
+  }, [])
+
+  // Apply filters
+  useEffect(() => {
     let result = allRooms.filter((room) => {
-      const matchPrice = room.price >= filters.priceRange[0] && room.price <= filters.priceRange[1]
-      const matchCapacity = filters.capacity === 0 || room.capacity >= filters.capacity
-      const matchCategory = filters.category === "all" || room.category === filters.category
+      const matchPrice = room.base_price >= filters.priceRange[0] && room.base_price <= filters.priceRange[1]
+      const matchCapacity = filters.capacity === 0 || room.max_guests >= filters.capacity
       const matchAmenities =
         filters.amenities.length === 0 ||
         filters.amenities.every((amenity) => room.amenities.includes(amenity))
 
-      return matchPrice && matchCapacity && matchCategory && matchAmenities
+      return matchPrice && matchCapacity && matchAmenities
     })
 
     setFilteredRooms(result)
-  }, [filters])
+  }, [filters, allRooms])
 
   const clearFilters = () => {
     setFilters({
-      priceRange: [0, 30000],
+      priceRange: [0, 50000],
       capacity: 0,
-      category: "all",
       amenities: [],
     })
   }
@@ -137,7 +111,7 @@ export default function RoomsPage() {
             <input
               type="range"
               min="0"
-              max="30000"
+              max="50000"
               step="1000"
               value={filters.priceRange[1]}
               onChange={(e) =>
@@ -149,8 +123,8 @@ export default function RoomsPage() {
               className="w-full"
             />
             <div className="flex justify-between text-sm text-gray-600">
-              <span>{formatCurrency(filters.priceRange[0])}</span>
-              <span>{formatCurrency(filters.priceRange[1])}</span>
+              <span>₹{filters.priceRange[0].toLocaleString()}</span>
+              <span>₹{filters.priceRange[1].toLocaleString()}</span>
             </div>
           </div>
         </div>
@@ -173,30 +147,6 @@ export default function RoomsPage() {
             <option value="3">3+ Guests</option>
             <option value="4">4+ Guests</option>
           </select>
-        </div>
-
-        {/* Category */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-900 mb-3">
-            Room Category
-          </label>
-          <div className="space-y-2">
-            {["all", "standard", "deluxe", "suite", "premium"].map((cat) => (
-              <label key={cat} className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="radio"
-                  name="category"
-                  value={cat}
-                  checked={filters.category === cat}
-                  onChange={(e) =>
-                    setFilters({ ...filters, category: e.target.value })
-                  }
-                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
-                />
-                <span className="text-sm text-gray-700 capitalize">{cat}</span>
-              </label>
-            ))}
-          </div>
         </div>
 
         {/* Amenities */}
@@ -278,102 +228,137 @@ export default function RoomsPage() {
 
             {/* Room Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredRooms.map((room, index) => (
-                <motion.div
-                  key={room.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                >
-                  <Link href={`/rooms/${room.id}`}>
-                    <Card className="group cursor-pointer overflow-hidden hover:shadow-xl transition-all duration-300">
+              {filteredRooms.map((room, index) => {
+                const hasImage = room.images && room.images.length > 0
+                const roomImage = hasImage ? room.images[0] : 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=400'
+
+                return (
+                  <motion.div
+                    key={room.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                  >
+                    <Card className="group overflow-hidden hover:shadow-xl transition-all duration-300">
                       {/* Image */}
                       <div className="relative h-56 overflow-hidden">
-                        <div
-                          className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                          style={{ backgroundImage: `url('${room.image}')` }}
+                        <Image
+                          src={roomImage}
+                          alt={room.room_type}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-110"
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
                         {/* Price Badge */}
-                        <div className="absolute top-4 right-4 bg-accent-500 text-white px-3 py-1.5 rounded-full shadow-lg">
+                        <div className="absolute top-4 right-4 bg-accent-500 text-white px-3 py-1.5 rounded-full shadow-lg z-10">
                           <span className="text-sm font-semibold">
-                            {formatCurrency(room.price)}
+                            ₹{room.base_price.toLocaleString()}
                           </span>
                           <span className="text-xs">/night</span>
                         </div>
 
-                        {/* Category Badge */}
-                        <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                          <span className="text-xs font-semibold text-primary-700 uppercase">
-                            {room.category}
-                          </span>
-                        </div>
+                        {/* Availability Badge */}
+                        {!room.is_available && (
+                          <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full z-10">
+                            <span className="text-xs font-semibold uppercase">
+                              Unavailable
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       <CardContent className="p-6">
-                        <h3 className="font-serif text-xl font-bold text-gray-900 mb-3">
-                          {room.name}
+                        <h3 className="font-serif text-xl font-bold text-gray-900 mb-2">
+                          {room.room_type}
                         </h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                          Room #{room.room_number} {room.view_type && `• ${room.view_type}`}
+                        </p>
 
                         {/* Quick Stats */}
                         <div className="flex items-center space-x-4 mb-4 text-sm text-gray-600">
                           <div className="flex items-center space-x-1">
                             <Users size={16} weight="fill" className="text-primary-600" />
-                            <span>{room.capacity} Guests</span>
+                            <span>{room.max_guests} Guests</span>
                           </div>
                           <div className="flex items-center space-x-1">
-                            <Resize size={16} weight="fill" className="text-primary-600" />
-                            <span>{room.size} sq ft</span>
+                            <Bed size={16} weight="fill" className="text-primary-600" />
+                            <span>{room.bed_type}</span>
                           </div>
-                        </div>
-
-                        {/* Amenities */}
-                        <div className="flex flex-wrap gap-2 mb-4">
-                          {room.amenities.slice(0, 3).map((amenity) => (
-                            <span
-                              key={amenity}
-                              className="inline-flex items-center space-x-1 text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full"
-                            >
-                              <Sparkle size={12} weight="fill" />
-                              <span>{amenity}</span>
-                            </span>
-                          ))}
-                          {room.amenities.length > 3 && (
-                            <span className="text-xs text-gray-500">
-                              +{room.amenities.length - 3} more
-                            </span>
+                          {room.size_sqft > 0 && (
+                            <div className="flex items-center space-x-1">
+                              <Resize size={16} weight="fill" className="text-primary-600" />
+                              <span>{room.size_sqft} sq ft</span>
+                            </div>
                           )}
                         </div>
 
+                        {/* Amenities */}
+                        {room.amenities && room.amenities.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {room.amenities.slice(0, 3).map((amenity) => (
+                              <span
+                                key={amenity}
+                                className="inline-flex items-center space-x-1 text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full"
+                              >
+                                <Sparkle size={12} weight="fill" />
+                                <span>{amenity}</span>
+                              </span>
+                            ))}
+                            {room.amenities.length > 3 && (
+                              <span className="text-xs text-gray-500">
+                                +{room.amenities.length - 3} more
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         {/* CTA */}
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                          <span className="text-sm text-gray-600 group-hover:text-primary-600 transition-colors">
-                            View Details
-                          </span>
-                          <ArrowRight
-                            size={20}
-                            weight="bold"
-                            className="text-primary-600 group-hover:translate-x-1 transition-transform"
-                          />
+                        <div className="pt-4 border-t border-gray-200">
+                          <Link href="/booking" className="block">
+                            <Button
+                              className="w-full bg-primary-600 hover:bg-primary-700"
+                              disabled={!room.is_available}
+                            >
+                              {room.is_available ? 'Book Now' : 'Unavailable'}
+                            </Button>
+                          </Link>
                         </div>
                       </CardContent>
                     </Card>
-                  </Link>
-                </motion.div>
-              ))}
+                  </motion.div>
+                )
+              })}
             </div>
 
-            {filteredRooms.length === 0 && (
+            {/* Loading State */}
+            {isLoading && (
               <div className="text-center py-16">
-                <p className="text-gray-500 text-lg">No rooms match your filters</p>
-                <Button
-                  onClick={clearFilters}
-                  variant="default"
-                  className="mt-4"
-                >
-                  Clear Filters
-                </Button>
+                <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto mb-4"></div>
+                <p className="text-lg font-medium text-gray-900">Loading rooms...</p>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && filteredRooms.length === 0 && (
+              <div className="text-center py-16">
+                <div className="bg-gray-100 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
+                  <Bed size={48} weight="fill" className="text-gray-400" />
+                </div>
+                <p className="text-gray-500 text-lg mb-4">
+                  {allRooms.length === 0 ? 'No rooms available' : 'No rooms match your filters'}
+                </p>
+                {allRooms.length > 0 && (
+                  <Button
+                    onClick={clearFilters}
+                    variant="default"
+                    className="mt-4"
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             )}
           </div>

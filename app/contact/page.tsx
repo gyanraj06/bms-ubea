@@ -1,17 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MapPin, Phone, EnvelopeSimple, Clock } from "@phosphor-icons/react";
+import { MapPin, Phone, EnvelopeSimple, Clock, IdentificationCard } from "@phosphor-icons/react";
 import { toast } from "sonner";
+
+interface PropertySettings {
+  property_name: string;
+  address: string;
+  phone: string;
+  email: string;
+  check_in_time: string;
+  check_out_time: string;
+  gst_number: string;
+  google_maps_embed_url: string;
+}
 
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [settings, setSettings] = useState<PropertySettings>({
+    property_name: "Happy Holidays Guest House",
+    address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
+    phone: "+91 9926770259",
+    email: "info@happyholidays.com",
+    check_in_time: "14:00",
+    check_out_time: "11:00",
+    gst_number: "",
+    google_maps_embed_url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3665.4598739812!2d77.42277477535677!3d23.23629397906128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x397c431e5f426f07%3A0x9c6ea93cdbb8c26c!2sHappy%20Holidays%20Guest%20House!5e0!3m2!1sen!2sin!4v1735718000000!5m2!1sen!2sin"
+  });
+
+  useEffect(() => {
+    const loadPropertySettings = async () => {
+      try {
+        const response = await fetch('/api/admin/property-settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.settings) {
+            setSettings(data.settings);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading property settings:', error);
+      }
+    };
+
+    loadPropertySettings();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -168,12 +207,8 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-1">Address</h3>
-                  <p className="text-white/70">
-                    94, Hanuman Nagar, Narmadapuram Road,
-                    <br />
-                    near Shani Mandir and SMH Hospital,
-                    <br />
-                    behind UcoBank, Bhopal
+                  <p className="text-white/70 whitespace-pre-line">
+                    {settings.address}
                   </p>
                 </div>
               </div>
@@ -186,10 +221,10 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-white mb-1">Phone</h3>
                   <a
-                    href="tel:+919926770259"
+                    href={`tel:${settings.phone.replace(/\s/g, '')}`}
                     className="text-white/80 hover:text-white"
                   >
-                    +91 9926770259
+                    {settings.phone}
                   </a>
                 </div>
               </div>
@@ -206,32 +241,49 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-semibold text-white mb-1">Email</h3>
                   <a
-                    href="mailto:info@happyholidays.com"
+                    href={`mailto:${settings.email}`}
                     className="text-white/80 hover:text-white"
                   >
-                    info@happyholidays.com
+                    {settings.email}
                   </a>
                 </div>
               </div>
 
-              {/* Check-in Time */}
+              {/* Check-in/Check-out Time */}
               <div className="flex items-start space-x-4">
                 <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Clock size={24} weight="fill" className="text-white" />
                 </div>
                 <div>
                   <h3 className="font-semibold text-white mb-1">
-                    Check-in Time
+                    Check-in / Check-out
                   </h3>
-                  <p className="text-white/70">11:00 AM</p>
+                  <p className="text-white/70">
+                    {new Date(`2000-01-01T${settings.check_in_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                    {' / '}
+                    {new Date(`2000-01-01T${settings.check_out_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                  </p>
                 </div>
               </div>
+
+              {/* GST Number */}
+              {settings.gst_number && (
+                <div className="flex items-start space-x-4">
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <IdentificationCard size={24} weight="fill" className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-white mb-1">GST Number</h3>
+                    <p className="text-white/70">{settings.gst_number}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Map */}
             <div className="bg-gray-200 rounded-2xl overflow-hidden h-64">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3665.4598739812!2d77.42277477535677!3d23.23629397906128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x397c431e5f426f07%3A0x9c6ea93cdbb8c26c!2sHappy%20Holidays%20Guest%20House!5e0!3m2!1sen!2sin!4v1735718000000!5m2!1sen!2sin"
+                src={settings.google_maps_embed_url}
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

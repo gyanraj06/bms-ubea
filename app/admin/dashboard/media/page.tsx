@@ -116,6 +116,14 @@ export default function PropertyMediaPage() {
     fetchMedia();
   }, []);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("adminToken");
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  };
+
   // Handle room creation/update
   const handleSaveRoom = async () => {
     if (!roomForm.room_number || !roomForm.room_type) {
@@ -131,7 +139,7 @@ export default function PropertyMediaPage() {
     try {
       const response = await fetch("/api/admin/rooms", {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
         body: JSON.stringify(body),
       });
 
@@ -156,6 +164,7 @@ export default function PropertyMediaPage() {
     try {
       const response = await fetch(`/api/admin/rooms?id=${id}`, {
         method: "DELETE",
+        headers: getAuthHeaders(),
       });
 
       const data = await response.json();

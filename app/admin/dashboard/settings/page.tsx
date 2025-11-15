@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Key,
   Clock,
+  SignOut,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,22 @@ interface User {
   created_at: string;
 }
 
+interface AuditLog {
+  id: string;
+  user_id: string;
+  action: string;
+  table_name: string;
+  record_id?: string;
+  old_data?: any;
+  new_data?: any;
+  created_at: string;
+  admin_users?: {
+    full_name: string;
+    email: string;
+    role: string;
+  };
+}
+
 const AVAILABLE_ROLES = ["Owner", "Manager", "Front Desk", "Accountant"];
 
 export default function SettingsPage() {
@@ -41,6 +58,8 @@ export default function SettingsPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [users, setUsers] = useState<User[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [newUser, setNewUser] = useState({
     full_name: "",
     email: "",
@@ -48,10 +67,25 @@ export default function SettingsPage() {
     password: "",
     phone: "",
   });
+  const [propertySettings, setPropertySettings] = useState({
+    property_name: "",
+    address: "",
+    phone: "",
+    email: "",
+    gst_number: "",
+    check_in_time: "14:00",
+    check_out_time: "11:00",
+    google_maps_embed_url: "",
+    description: "",
+  });
+  const [isLoadingSettings, setIsLoadingSettings] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
-  // Load users on mount
+  // Load users, audit logs, and property settings on mount
   useEffect(() => {
     loadUsers();
+    loadAuditLogs();
+    loadPropertySettings();
   }, []);
 
   const getAuthHeaders = () => {
@@ -82,6 +116,88 @@ export default function SettingsPage() {
       toast.error('Error loading users');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadAuditLogs = async () => {
+    try {
+      setIsLoadingLogs(true);
+      const response = await fetch('/api/admin/audit-logs?limit=10', {
+        headers: getAuthHeaders(),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setAuditLogs(data.logs || []);
+        }
+      } else {
+        console.error('Failed to load audit logs');
+      }
+    } catch (error) {
+      console.error('Error loading audit logs:', error);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  };
+
+  const loadPropertySettings = async () => {
+    try {
+      setIsLoadingSettings(true);
+      const response = await fetch('/api/admin/property-settings');
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.settings) {
+          setPropertySettings({
+            property_name: data.settings.property_name || "",
+            address: data.settings.address || "",
+            phone: data.settings.phone || "",
+            email: data.settings.email || "",
+            gst_number: data.settings.gst_number || "",
+            check_in_time: data.settings.check_in_time || "14:00",
+            check_out_time: data.settings.check_out_time || "11:00",
+            google_maps_embed_url: data.settings.google_maps_embed_url || "",
+            description: data.settings.description || "",
+          });
+        }
+      } else {
+        console.error('Failed to load property settings');
+      }
+    } catch (error) {
+      console.error('Error loading property settings:', error);
+    } finally {
+      setIsLoadingSettings(false);
+    }
+  };
+
+  const handleSavePropertySettings = async () => {
+    if (!propertySettings.property_name || !propertySettings.address || !propertySettings.phone || !propertySettings.email) {
+      toast.error("Property name, address, phone, and email are required");
+      return;
+    }
+
+    try {
+      setIsSavingSettings(true);
+      const response = await fetch('/api/admin/property-settings', {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(propertySettings),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Property settings saved successfully');
+        loadAuditLogs(); // Refresh audit logs
+      } else {
+        toast.error(data.error || 'Failed to save property settings');
+      }
+    } catch (error) {
+      console.error('Error saving property settings:', error);
+      toast.error('Error saving property settings');
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -174,6 +290,66 @@ export default function SettingsPage() {
       default:
         return "bg-gray-100 text-gray-700";
     }
+  };
+
+  const getActivityIcon = (action: string, tableName: string) => {
+    if (action === 'LOGIN') return { icon: Key, bgColor: 'bg-purple-100', iconColor: 'text-purple-600' };
+    if (action === 'LOGOUT') return { icon: SignOut, bgColor: 'bg-gray-100', iconColor: 'text-gray-600' };
+    if (action === 'CREATE' && tableName === 'admin_users') return { icon: UserPlus, bgColor: 'bg-green-100', iconColor: 'text-green-600' };
+    if (action === 'DELETE' && tableName === 'admin_users') return { icon: Trash, bgColor: 'bg-red-100', iconColor: 'text-red-600' };
+    if (action === 'UPDATE' && tableName === 'permissions') return { icon: ShieldCheck, bgColor: 'bg-blue-100', iconColor: 'text-blue-600' };
+    if (action === 'CREATE' && tableName === 'rooms') return { icon: PencilSimple, bgColor: 'bg-indigo-100', iconColor: 'text-indigo-600' };
+    if (action === 'DELETE' && tableName === 'rooms') return { icon: Trash, bgColor: 'bg-red-100', iconColor: 'text-red-600' };
+    return { icon: Clock, bgColor: 'bg-gray-100', iconColor: 'text-gray-600' };
+  };
+
+  const getActivityDescription = (log: AuditLog) => {
+    const userName = log.admin_users?.full_name || 'Unknown User';
+    const tableName = log.table_name;
+    const action = log.action;
+
+    if (action === 'LOGIN') return `${userName} logged in`;
+    if (action === 'LOGOUT') return `${userName} logged out`;
+    if (action === 'CREATE' && tableName === 'admin_users') {
+      const newUserName = log.new_data?.full_name || 'a new user';
+      return `${userName} added ${newUserName}`;
+    }
+    if (action === 'DELETE' && tableName === 'admin_users') {
+      const deletedUserName = log.old_data?.full_name || 'a user';
+      return `${userName} deleted ${deletedUserName}`;
+    }
+    if (action === 'UPDATE' && tableName === 'permissions') {
+      return `${userName} updated permission settings`;
+    }
+    if (action === 'CREATE' && tableName === 'rooms') {
+      const roomNumber = log.new_data?.room_number || 'a room';
+      return `${userName} created room ${roomNumber}`;
+    }
+    if (action === 'DELETE' && tableName === 'rooms') {
+      const roomNumber = log.old_data?.room_number || 'a room';
+      return `${userName} deleted room ${roomNumber}`;
+    }
+    if (action === 'UPDATE' && tableName === 'rooms') {
+      const roomNumber = log.new_data?.room_number || log.old_data?.room_number || 'a room';
+      return `${userName} updated room ${roomNumber}`;
+    }
+    return `${userName} performed ${action.toLowerCase()} on ${tableName}`;
+  };
+
+  const getRelativeTime = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    if (diffInDays === 1) return '1 day ago';
+    if (diffInDays < 7) return `${diffInDays} days ago`;
+    return formatDate(date);
   };
 
   return (
@@ -537,76 +713,125 @@ export default function SettingsPage() {
         {activeTab === "property" && (
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Property Information</h2>
-            <div className="max-w-2xl space-y-4">
-              <div>
-                <Label htmlFor="propertyName">Property Name</Label>
-                <Input
-                  id="propertyName"
-                  type="text"
-                  defaultValue="Happy Holidays Guest House"
-                  className="mt-1"
-                />
+            {isLoadingSettings ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark mx-auto mb-4"></div>
+                <p className="text-gray-500">Loading property settings...</p>
               </div>
-              <div>
-                <Label htmlFor="address">Address</Label>
-                <Input
-                  id="address"
-                  type="text"
-                  defaultValue="123 Main Street, Bhopal, Madhya Pradesh"
-                  className="mt-1"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+            ) : (
+              <div className="max-w-2xl space-y-4">
                 <div>
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="propertyName">Property Name *</Label>
                   <Input
-                    id="phone"
-                    type="tel"
-                    defaultValue="+91 9876543210"
+                    id="propertyName"
+                    type="text"
+                    value={propertySettings.property_name}
+                    onChange={(e) => setPropertySettings({ ...propertySettings, property_name: e.target.value })}
                     className="mt-1"
+                    required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="propertyEmail">Email</Label>
+                  <Label htmlFor="address">Address *</Label>
+                  <textarea
+                    id="address"
+                    value={propertySettings.address}
+                    onChange={(e) => setPropertySettings({ ...propertySettings, address: e.target.value })}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brown-dark focus:border-transparent"
+                    rows={3}
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="phone">Phone Number *</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={propertySettings.phone}
+                      onChange={(e) => setPropertySettings({ ...propertySettings, phone: e.target.value })}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="propertyEmail">Email *</Label>
+                    <Input
+                      id="propertyEmail"
+                      type="email"
+                      value={propertySettings.email}
+                      onChange={(e) => setPropertySettings({ ...propertySettings, email: e.target.value })}
+                      className="mt-1"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="gst">GST Number</Label>
                   <Input
-                    id="propertyEmail"
-                    type="email"
-                    defaultValue="info@happyholidays.com"
+                    id="gst"
+                    type="text"
+                    value={propertySettings.gst_number}
+                    onChange={(e) => setPropertySettings({ ...propertySettings, gst_number: e.target.value })}
                     className="mt-1"
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="checkIn">Check-in Time</Label>
+                    <Input
+                      id="checkIn"
+                      type="time"
+                      value={propertySettings.check_in_time}
+                      onChange={(e) => setPropertySettings({ ...propertySettings, check_in_time: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="checkOut">Check-out Time</Label>
+                    <Input
+                      id="checkOut"
+                      type="time"
+                      value={propertySettings.check_out_time}
+                      onChange={(e) => setPropertySettings({ ...propertySettings, check_out_time: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="googleMaps">Google Maps Embed URL</Label>
+                  <Input
+                    id="googleMaps"
+                    type="url"
+                    value={propertySettings.google_maps_embed_url}
+                    onChange={(e) => setPropertySettings({ ...propertySettings, google_maps_embed_url: e.target.value })}
+                    placeholder="https://www.google.com/maps/embed?..."
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Get embed URL from Google Maps → Share → Embed a map
+                  </p>
+                </div>
+                <div>
+                  <Label htmlFor="description">Description</Label>
+                  <textarea
+                    id="description"
+                    value={propertySettings.description}
+                    onChange={(e) => setPropertySettings({ ...propertySettings, description: e.target.value })}
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brown-dark focus:border-transparent"
+                    rows={3}
+                    placeholder="Brief description of your property"
+                  />
+                </div>
+                <Button
+                  onClick={handleSavePropertySettings}
+                  disabled={isSavingSettings}
+                  className="bg-brown-dark text-white hover:bg-brown-medium"
+                >
+                  {isSavingSettings ? 'Saving...' : 'Save Changes'}
+                </Button>
               </div>
-              <div>
-                <Label htmlFor="gst">GST Number</Label>
-                <Input
-                  id="gst"
-                  type="text"
-                  defaultValue="22AAAAA0000A1Z5"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkIn">Check-in Time</Label>
-                <Input
-                  id="checkIn"
-                  type="time"
-                  defaultValue="14:00"
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label htmlFor="checkOut">Check-out Time</Label>
-                <Input
-                  id="checkOut"
-                  type="time"
-                  defaultValue="11:00"
-                  className="mt-1"
-                />
-              </div>
-              <Button className="bg-brown-dark text-white hover:bg-brown-medium">
-                Save Changes
-              </Button>
-            </div>
+            )}
           </div>
         )}
 
@@ -662,41 +887,37 @@ export default function SettingsPage() {
           <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
         </div>
         <div className="p-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Clock size={20} className="text-blue-600" weight="fill" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">
-                  <span className="font-semibold">Admin Owner</span> updated permission settings
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Just now</p>
-              </div>
+          {isLoadingLogs ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brown-dark mx-auto mb-3"></div>
+              <p className="text-sm text-gray-500">Loading activities...</p>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <UserPlus size={20} className="text-green-600" weight="fill" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">
-                  <span className="font-semibold">Admin Owner</span> added new user John Receptionist
-                </p>
-                <p className="text-xs text-gray-500 mt-1">1 day ago</p>
-              </div>
+          ) : auditLogs.length === 0 ? (
+            <div className="text-center py-8">
+              <Clock size={48} className="text-gray-400 mx-auto mb-3" weight="light" />
+              <p className="text-sm text-gray-500">No recent activity</p>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Key size={20} className="text-purple-600" weight="fill" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-900">
-                  <span className="font-semibold">Admin Owner</span> modified role permissions
-                </p>
-                <p className="text-xs text-gray-500 mt-1">3 days ago</p>
-              </div>
+          ) : (
+            <div className="space-y-4">
+              {auditLogs.map((log) => {
+                const { icon: Icon, bgColor, iconColor } = getActivityIcon(log.action, log.table_name);
+                const description = getActivityDescription(log);
+                const relativeTime = getRelativeTime(log.created_at);
+
+                return (
+                  <div key={log.id} className="flex items-start gap-3">
+                    <div className={cn("p-2 rounded-lg", bgColor)}>
+                      <Icon size={20} className={iconColor} weight="fill" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-900">{description}</p>
+                      <p className="text-xs text-gray-500 mt-1">{relativeTime}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

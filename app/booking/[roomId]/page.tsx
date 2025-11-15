@@ -39,21 +39,18 @@ function BookingDetailContent() {
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [formData, setFormData] = useState({
-    // Guest Details
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
-    // ID Proof (required in India)
-    idType: "aadhaar",
+    idType: "",
     idNumber: "",
-    // Address
     address: "",
     city: "",
     state: "",
     pincode: "",
-    // Special Requests
     specialRequests: "",
   });
 
@@ -65,6 +62,39 @@ function BookingDetailContent() {
 
   const checkInDate = checkIn ? new Date(checkIn) : undefined;
   const checkOutDate = checkOut ? new Date(checkOut) : undefined;
+
+  // Check if user is logged in (don't redirect, just check)
+  useEffect(() => {
+    const checkUser = () => {
+      const userDataStr = localStorage.getItem('userData');
+      const sessionStr = localStorage.getItem('userSession');
+
+      console.log('Checking user:', { userDataStr, sessionStr });
+
+      if (userDataStr && sessionStr && userDataStr !== 'null' && sessionStr !== 'null') {
+        try {
+          const userData = JSON.parse(userDataStr);
+          const session = JSON.parse(sessionStr);
+          setUser({ ...userData, token: session.access_token });
+          console.log('User set:', userData);
+        } catch (error) {
+          console.error('Error parsing user:', error);
+          setUser(null);
+        }
+      } else {
+        console.log('No user or session found');
+        setUser(null);
+      }
+    };
+
+    // Check immediately
+    checkUser();
+
+    // Also check on storage events (when user logs in in another tab)
+    window.addEventListener('storage', checkUser);
+
+    return () => window.removeEventListener('storage', checkUser);
+  }, []);
 
   // Fetch room details from API
   useEffect(() => {
@@ -138,29 +168,81 @@ function BookingDetailContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
-      toast.error("Please fill all required fields");
+    if (!user) {
+      toast.error("Please login to book a room");
+      router.push('/login');
       return;
     }
 
-    if (!formData.idNumber) {
-      toast.error("Please provide ID proof details");
+    if (!checkInDate || !checkOutDate) {
+      toast.error("Please select check-in and check-out dates");
+      return;
+    }
+
+    if (!room) {
+      toast.error("Room details not loaded");
       return;
     }
 
     setIsProcessing(true);
 
-    // Simulate booking - replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      // Get user token from session
+      const sessionStr = localStorage.getItem('userSession');
+      if (!sessionStr) {
+        toast.error("Please login to book a room");
+        router.push('/login');
+        setIsProcessing(false);
+        return;
+      }
 
-    toast.success("Booking confirmed! Redirecting to payment...");
+      const session = JSON.parse(sessionStr);
+      const token = session.access_token;
 
-    // Redirect to payment or confirmation page
-    setTimeout(() => {
+      if (!token) {
+        toast.error("Please login to book a room");
+        router.push('/login');
+        setIsProcessing(false);
+        return;
+      }
+
+      // Create booking via API
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          room_id: room.id,
+          check_in: checkInDate.toISOString().split('T')[0],
+          check_out: checkOutDate.toISOString().split('T')[0],
+          num_guests: parseInt(guests),
+          num_adults: parseInt(guests),
+          num_children: 0,
+          special_requests: formData.specialRequests,
+          advance_percentage: 100, // Full payment for now
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success("Booking confirmed successfully!");
+
+        // Redirect to success page
+        setTimeout(() => {
+          router.push(`/booking/success?bookingId=${data.booking.id}&bookingNumber=${data.booking_number}`);
+        }, 1000);
+      } else {
+        toast.error(data.error || "Failed to create booking");
+        setIsProcessing(false);
+      }
+    } catch (error: any) {
+      console.error('Booking error:', error);
+      toast.error("An error occurred while creating your booking");
       setIsProcessing(false);
-      // router.push('/booking/confirmation');
-    }, 1000);
+    }
   };
 
   return (
@@ -538,9 +620,23 @@ function BookingDetailContent() {
                 </div>
               </div>
 
+              {!user && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-sm text-yellow-800 font-medium">
+                    Please login to complete your booking
+                  </p>
+                  <button
+                    onClick={() => router.push(`/login?redirect=${encodeURIComponent(`/booking/${roomId}?${searchParams.toString()}`)}`)}
+                    className="mt-2 text-sm text-yellow-900 underline font-semibold"
+                  >
+                    Login or Sign up
+                  </button>
+                </div>
+              )}
+
               <button
                 onClick={handleSubmit}
-                disabled={isProcessing}
+                disabled={isProcessing || !user}
                 className="w-full h-12 px-6 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isProcessing ? (
@@ -551,7 +647,7 @@ function BookingDetailContent() {
                 ) : (
                   <>
                     <CreditCard size={20} weight="bold" />
-                    <span>Proceed to Payment</span>
+                    <span>{user ? 'Proceed to Payment' : 'Login Required'}</span>
                   </>
                 )}
               </button>

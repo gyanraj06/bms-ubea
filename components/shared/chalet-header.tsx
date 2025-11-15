@@ -259,7 +259,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                           <span>My Profile</span>
                         </Link>
                         <Link
-                          href="/bookings"
+                          href="/my-bookings"
                           className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                           onClick={() => setShowUserMenu(false)}
                         >
@@ -420,7 +420,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                         <span>My Profile</span>
                       </Link>
                       <Link
-                        href="/bookings"
+                        href="/my-bookings"
                         className="flex items-center gap-3 text-base font-medium py-2 text-gray-600 hover:text-brown-dark transition-colors"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >

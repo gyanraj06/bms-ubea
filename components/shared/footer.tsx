@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   FacebookLogo,
@@ -6,12 +9,67 @@ import {
   EnvelopeSimple,
   Phone,
   MapPin,
-} from "@phosphor-icons/react/dist/ssr";
+  Clock,
+  IdentificationCard,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+interface PropertySettings {
+  property_name: string;
+  address: string;
+  phone: string;
+  email: string;
+  gst_number: string;
+  check_in_time: string;
+  check_out_time: string;
+  google_maps_embed_url: string;
+  description: string;
+}
+
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const [settings, setSettings] = useState<PropertySettings>({
+    property_name: "Happy Holidays Guest House",
+    address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
+    phone: "+91 9926770259",
+    email: "info@happyholidays.com",
+    gst_number: "",
+    check_in_time: "14:00",
+    check_out_time: "11:00",
+    google_maps_embed_url: "",
+    description: "",
+  });
+
+  useEffect(() => {
+    const loadPropertySettings = async () => {
+      try {
+        const response = await fetch('/api/admin/property-settings');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.settings) {
+            setSettings(data.settings);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading property settings:', error);
+      }
+    };
+
+    loadPropertySettings();
+  }, []);
+
+  const formatTime = (time: string) => {
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return time;
+    }
+  };
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -87,12 +145,8 @@ export function Footer() {
                   className="text-primary-400 mt-0.5 flex-shrink-0"
                   weight="fill"
                 />
-                <span className="text-gray-400">
-                  94, Hanuman Nagar, Narmadapuram Road,
-                  <br />
-                  near Shani Mandir and SMH Hospital,
-                  <br />
-                  behind UcoBank, Bhopal
+                <span className="text-gray-400 whitespace-pre-line">
+                  {settings.address}
                 </span>
               </li>
               <li className="flex items-center space-x-3 text-sm">
@@ -102,10 +156,10 @@ export function Footer() {
                   weight="fill"
                 />
                 <a
-                  href="tel:+919926770259"
+                  href={`tel:${settings.phone.replace(/\s/g, '')}`}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
-                  +91 9926770259
+                  {settings.phone}
                 </a>
               </li>
               <li className="flex items-center space-x-3 text-sm">
@@ -115,10 +169,10 @@ export function Footer() {
                   weight="fill"
                 />
                 <a
-                  href="mailto:info@happyholidays.com"
+                  href={`mailto:${settings.email}`}
                   className="text-gray-400 hover:text-white transition-colors"
                 >
-                  info@happyholidays.com
+                  {settings.email}
                 </a>
               </li>
             </ul>
@@ -127,10 +181,36 @@ export function Footer() {
           {/* Column 4: Quick Info */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Quick Info</h3>
-            <p className="text-gray-400 text-sm mb-4">
-              Your perfect stay awaits at Happy Holidays Guest House. Experience
-              comfort and hospitality in the heart of Bhopal.
-            </p>
+            <ul className="space-y-3">
+              <li className="flex items-start space-x-3 text-sm">
+                <Clock
+                  size={20}
+                  className="text-primary-400 mt-0.5 flex-shrink-0"
+                  weight="fill"
+                />
+                <div>
+                  <div className="text-gray-400">
+                    <span className="font-semibold text-white">Check-in:</span> {formatTime(settings.check_in_time)}
+                  </div>
+                  <div className="text-gray-400">
+                    <span className="font-semibold text-white">Check-out:</span> {formatTime(settings.check_out_time)}
+                  </div>
+                </div>
+              </li>
+              {settings.gst_number && (
+                <li className="flex items-start space-x-3 text-sm">
+                  <IdentificationCard
+                    size={20}
+                    className="text-primary-400 mt-0.5 flex-shrink-0"
+                    weight="fill"
+                  />
+                  <div>
+                    <div className="font-semibold text-white">GST No.</div>
+                    <div className="text-gray-400">{settings.gst_number}</div>
+                  </div>
+                </li>
+              )}
+            </ul>
           </div>
         </div>
 

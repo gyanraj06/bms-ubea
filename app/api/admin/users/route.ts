@@ -15,7 +15,7 @@ const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
 /**
  * Verify admin token and check if user is Owner (only Owners can manage users)
  */
-function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string; error?: string } {
+function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string; userId?: string; error?: string } {
   const authHeader = request.headers.get('authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return { valid: false, error: 'Missing or invalid authorization header' };
@@ -33,7 +33,7 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string;
     return { valid: false, error: 'Unauthorized. Only Owners can manage users.' };
   }
 
-  return { valid: true, role: decoded.role };
+  return { valid: true, role: decoded.role, userId: decoded.id };
 }
 
 /**
@@ -129,11 +129,11 @@ export async function POST(request: NextRequest) {
 
     // Create audit log
     await supabaseAdmin.from('audit_logs').insert({
-      user_id: newUser.id,
+      user_id: auth.userId,
       action: 'CREATE',
       table_name: 'admin_users',
       record_id: newUser.id,
-      new_data: { email: newUser.email, role: newUser.role },
+      new_data: { email: newUser.email, full_name: newUser.full_name, role: newUser.role },
     });
 
     return NextResponse.json({ success: true, user: newUser }, { status: 201 });
@@ -195,7 +195,7 @@ export async function PUT(request: NextRequest) {
 
     // Create audit log
     await supabaseAdmin.from('audit_logs').insert({
-      user_id: updatedUser.id,
+      user_id: auth.userId,
       action: 'UPDATE',
       table_name: 'admin_users',
       record_id: updatedUser.id,
@@ -238,7 +238,7 @@ export async function DELETE(request: NextRequest) {
 
     const { data: userToDelete } = await supabaseAdmin
       .from('admin_users')
-      .select('role')
+      .select('role, email, full_name')
       .eq('id', id)
       .single();
 
@@ -251,10 +251,11 @@ export async function DELETE(request: NextRequest) {
 
     // Create audit log before deletion
     await supabaseAdmin.from('audit_logs').insert({
-      user_id: id,
+      user_id: auth.userId,
       action: 'DELETE',
       table_name: 'admin_users',
       record_id: id,
+      old_data: { email: userToDelete?.email, full_name: userToDelete?.full_name, role: userToDelete?.role },
     });
 
     // Delete from database
