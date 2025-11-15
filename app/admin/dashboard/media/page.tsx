@@ -44,7 +44,7 @@ export default function PropertyMediaPage() {
     floor: 1,
     max_guests: 2,
     base_price: 2500,
-    gst_percentage: 12,
+    gst_percentage: 0,
     description: "",
     amenities: [] as string[],
     size_sqft: 250,
@@ -271,7 +271,7 @@ export default function PropertyMediaPage() {
         floor: 1,
         max_guests: 2,
         base_price: 2500,
-        gst_percentage: 12,
+        gst_percentage: 0,
         description: "",
         amenities: [],
         size_sqft: 250,
@@ -410,11 +410,22 @@ export default function PropertyMediaPage() {
                 >
                   {/* Room Image */}
                   <div className="relative h-48 bg-gray-200">
-                    {room.images && room.images.length > 0 ? (
+                    {room.images && room.images.length > 0 && room.images[0] ? (
                       <img
                         src={room.images[0]}
                         alt={room.room_type}
                         className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          // Show placeholder instead
+                          if (target.parentElement) {
+                            const placeholder = document.createElement('div');
+                            placeholder.className = 'w-full h-full flex items-center justify-center absolute inset-0';
+                            placeholder.innerHTML = '<svg width="48" height="48" viewBox="0 0 256 256" fill="currentColor" class="text-gray-400"><path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,152a12,12,0,1,1,12-12A12,12,0,0,1,72,152Zm136,56H48V48H208V208Z"/></svg>';
+                            target.parentElement.appendChild(placeholder);
+                          }
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -705,7 +716,6 @@ export default function PropertyMediaPage() {
                       min="0"
                       max="100"
                       step="0.01"
-                      placeholder="Enter GST % (0 for no GST)"
                     />
                   </div>
 

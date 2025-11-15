@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -15,10 +15,48 @@ export default function AdminLoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  // Check for existing admin session on mount
+  useEffect(() => {
+    const checkAdminSession = () => {
+      try {
+        const adminUser = localStorage.getItem("adminUser");
+        const adminToken = localStorage.getItem("adminToken");
+
+        if (adminUser && adminToken) {
+          const user = JSON.parse(adminUser);
+
+          // Check if session is still valid (optional: check expiry if you have it)
+          if (user.loginTime) {
+            const loginDate = new Date(user.loginTime);
+            const now = new Date();
+            const hoursSinceLogin = (now.getTime() - loginDate.getTime()) / (1000 * 60 * 60);
+
+            // If logged in within last 24 hours, redirect to dashboard
+            if (hoursSinceLogin < 24) {
+              router.push("/admin/dashboard");
+              return;
+            }
+          } else {
+            // No loginTime, but has token - redirect anyway
+            router.push("/admin/dashboard");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error checking admin session:", error);
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkAdminSession();
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,6 +111,18 @@ export default function AdminLoginPage() {
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking auth
+  if (isCheckingAuth) {
+    return (
+      <main className="min-h-screen bg-gradient-to-br from-brown-dark via-brown-medium to-brown-light flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+          <p className="text-white font-medium">Checking authentication...</p>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-brown-dark via-brown-medium to-brown-light">

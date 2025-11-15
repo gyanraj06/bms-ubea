@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, X, UserCircle, SignOut, User } from "@phosphor-icons/react";
+import { List, X, UserCircle, SignOut, User, ShieldCheck, House } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -17,10 +17,38 @@ const navigation = [
 
 export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [adminUser, setAdminUser] = useState<{ full_name: string; role: string; email: string } | null>(null);
   const { user, loading, signOut } = useAuth();
+
+  // Check for admin session
+  useEffect(() => {
+    const checkAdminSession = () => {
+      const adminData = localStorage.getItem("adminUser");
+      const adminToken = localStorage.getItem("adminToken");
+
+      if (adminData && adminToken) {
+        try {
+          const admin = JSON.parse(adminData);
+          setAdminUser(admin);
+        } catch (error) {
+          console.error("Error parsing admin data:", error);
+          setAdminUser(null);
+        }
+      } else {
+        setAdminUser(null);
+      }
+    };
+
+    checkAdminSession();
+
+    // Re-check on storage changes
+    window.addEventListener('storage', checkAdminSession);
+    return () => window.removeEventListener('storage', checkAdminSession);
+  }, []);
 
   const handleSignOut = async () => {
     try {
@@ -31,6 +59,16 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
     } catch (error) {
       toast.error("Failed to sign out");
     }
+  };
+
+  const handleAdminLogout = () => {
+    setShowUserMenu(false);
+    localStorage.removeItem("adminUser");
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminPermissions");
+    setAdminUser(null);
+    toast.success("Admin logged out successfully");
+    router.push("/");
   };
 
   useEffect(() => {
@@ -108,8 +146,74 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
               </Link>
             ))}
 
+            {/* Admin Menu */}
+            {adminUser && (
+              <div className="relative" data-user-menu>
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-full transition-all",
+                    shouldShowLight
+                      ? "bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200"
+                      : "bg-amber-900/20 text-amber-200 hover:bg-amber-900/30 border border-amber-700/50"
+                  )}
+                  aria-label="Admin menu"
+                >
+                  <ShieldCheck size={24} weight="fill" />
+                  <span className="text-sm font-semibold hidden lg:block">
+                    {adminUser.role}
+                  </span>
+                </button>
+
+                {/* Admin Dropdown */}
+                <AnimatePresence mode="wait">
+                  {showUserMenu && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-amber-200 overflow-hidden z-50"
+                    >
+                      <div className="px-4 py-3 bg-amber-50 border-b border-amber-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ShieldCheck size={16} weight="fill" className="text-amber-600" />
+                          <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
+                            Admin View
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {adminUser.full_name}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate">
+                          {adminUser.email}
+                        </p>
+                      </div>
+                      <div className="py-2">
+                        <Link
+                          href="/admin/dashboard"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          onClick={() => setShowUserMenu(false)}
+                        >
+                          <House size={18} />
+                          <span>Go to Dashboard</span>
+                        </Link>
+                        <button
+                          onClick={handleAdminLogout}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <SignOut size={18} />
+                          <span>Logout</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             {/* User Menu */}
-            {!loading && user && (
+            {!loading && !adminUser && user && (
               <div className="relative" data-user-menu>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
@@ -177,7 +281,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
             )}
 
             {/* Login Button (when logged out) */}
-            {!loading && !user && (
+            {!loading && !adminUser && !user && (
               <Link
                 href="/login"
                 className={cn(
@@ -262,7 +366,42 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                   transition={{ delay: navigation.length * 0.1 }}
                   className="border-t border-gray-200 pt-4 mt-2"
                 >
-                  {user ? (
+                  {adminUser ? (
+                    <>
+                      <div className="px-4 py-3 bg-amber-50 border border-amber-200 rounded-lg mb-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <ShieldCheck size={16} weight="fill" className="text-amber-600" />
+                          <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
+                            Admin View
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {adminUser.full_name}
+                        </p>
+                        <p className="text-xs text-gray-600 truncate">
+                          {adminUser.email}
+                        </p>
+                      </div>
+                      <Link
+                        href="/admin/dashboard"
+                        className="flex items-center gap-3 text-base font-medium py-2 text-gray-600 hover:text-brown-dark transition-colors"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <House size={24} />
+                        <span>Go to Dashboard</span>
+                      </Link>
+                      <button
+                        onClick={() => {
+                          handleAdminLogout();
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 text-base font-medium py-2 text-red-600 hover:text-red-700 transition-colors"
+                      >
+                        <SignOut size={24} />
+                        <span>Logout</span>
+                      </button>
+                    </>
+                  ) : user ? (
                     <>
                       <div className="px-4 py-3 bg-gray-50 rounded-lg mb-3">
                         <p className="text-sm font-semibold text-gray-900">
