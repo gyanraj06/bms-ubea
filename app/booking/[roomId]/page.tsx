@@ -21,6 +21,9 @@ import {
   Car,
   ArrowLeft,
   CreditCard,
+  X,
+  CaretLeft,
+  CaretRight,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -32,6 +35,10 @@ function BookingDetailContent() {
   const roomId = params.roomId as string;
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [room, setRoom] = useState<any>(null);
+  const [isLoadingRoom, setIsLoadingRoom] = useState(true);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showImageModal, setShowImageModal] = useState(false);
   const [formData, setFormData] = useState({
     // Guest Details
     firstName: "",
@@ -59,100 +66,70 @@ function BookingDetailContent() {
   const checkInDate = checkIn ? new Date(checkIn) : undefined;
   const checkOutDate = checkOut ? new Date(checkOut) : undefined;
 
-  // Mock room data - will be fetched from backend
-  const roomTypes = [
-    {
-      id: "1",
-      name: "Deluxe Room",
-      description: "Spacious room with modern amenities and comfortable bedding",
-      price: 2500,
-      maxGuests: 2,
-      size: "250 sq ft",
-      bedType: "1 Queen Bed",
-      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast"],
-      images: [
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-        "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=75",
-      ],
-    },
-    {
-      id: "2",
-      name: "Executive Suite",
-      description: "Luxurious suite with separate living area and premium facilities",
-      price: 4000,
-      maxGuests: 3,
-      size: "400 sq ft",
-      bedType: "1 King Bed + Sofa",
-      image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast", "Mini Bar"],
-      images: [
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=75",
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-        "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-      ],
-    },
-    {
-      id: "3",
-      name: "Family Room",
-      description: "Perfect for families with extra space and multiple beds",
-      price: 3500,
-      maxGuests: 4,
-      size: "350 sq ft",
-      bedType: "2 Double Beds",
-      image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water", "Breakfast"],
-      images: [
-        "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&q=75",
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-      ],
-    },
-    {
-      id: "4",
-      name: "Standard Room",
-      description: "Comfortable and affordable room with essential amenities",
-      price: 1800,
-      maxGuests: 2,
-      size: "200 sq ft",
-      bedType: "1 Double Bed",
-      image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=75",
-      amenities: ["Free WiFi", "AC", "TV", "Hot Water"],
-      images: [
-        "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=800&q=75",
-        "https://images.unsplash.com/photo-1566665797739-1674de7a421a?w=800&q=75",
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75",
-      ],
-    },
-  ];
+  // Fetch room details from API
+  useEffect(() => {
+    const fetchRoom = async () => {
+      try {
+        setIsLoadingRoom(true);
+        const response = await fetch('/api/rooms');
+        const data = await response.json();
 
-  const room = roomTypes.find((r) => r.id === roomId);
+        if (data.success) {
+          const foundRoom = data.rooms.find((r: any) => r.id === roomId);
+          if (foundRoom) {
+            setRoom(foundRoom);
+          } else {
+            toast.error('Room not found');
+            router.push('/booking');
+          }
+        } else {
+          toast.error('Failed to load room details');
+          router.push('/booking');
+        }
+      } catch (error) {
+        console.error('Error fetching room:', error);
+        toast.error('Failed to load room details');
+        router.push('/booking');
+      } finally {
+        setIsLoadingRoom(false);
+      }
+    };
+
+    if (roomId) {
+      fetchRoom();
+    }
+  }, [roomId, router]);
 
   const amenityIcons: { [key: string]: any } = {
-    "Free WiFi": WifiHigh,
-    AC: Fan,
-    TV: TelevisionSimple,
+    "WiFi": WifiHigh,
+    "AC": Fan,
+    "TV": TelevisionSimple,
     "Hot Water": Shower,
-    Breakfast: Coffee,
+    "Shower": Shower,
+    "Breakfast": Coffee,
     "Mini Bar": Coffee,
-    Parking: Car,
+    "Room Service": Coffee,
+    "Parking": Car,
+    "Balcony": Check,
+    "Work Desk": Check,
+    "Safe": Check,
   };
 
   // Calculate total nights and price
   const calculateTotal = () => {
-    if (!checkInDate || !checkOutDate || !room) return { nights: 0, total: 0, tax: 0, grandTotal: 0 };
+    if (!checkInDate || !checkOutDate || !room) return { nights: 0, total: 0, tax: 0, grandTotal: 0, gstPercentage: 0 };
 
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
     const roomsCount = parseInt(rooms);
-    const subtotal = room.price * nights * roomsCount;
-    const tax = subtotal * 0.12; // 12% GST
+    const subtotal = room.base_price * nights * roomsCount;
+    const gstPercentage = room.gst_percentage || 0; // Use room's GST or 0 if not set
+    const tax = subtotal * (gstPercentage / 100);
     const grandTotal = subtotal + tax;
 
-    return { nights, subtotal, tax, grandTotal };
+    return { nights, subtotal, tax, grandTotal, gstPercentage };
   };
 
-  const { nights, subtotal, tax, grandTotal } = calculateTotal();
+  const { nights, subtotal, tax, grandTotal, gstPercentage } = calculateTotal();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -186,17 +163,6 @@ function BookingDetailContent() {
     }, 1000);
   };
 
-  if (!room) {
-    return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Room not found</h1>
-          <Button onClick={() => router.push("/booking")}>Back to Rooms</Button>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Header with white background and dark text */}
@@ -217,33 +183,89 @@ function BookingDetailContent() {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Room Details */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Room Images */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl shadow-lg overflow-hidden"
+        {isLoadingRoom ? (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brown-dark mx-auto mb-4"></div>
+              <p className="text-lg font-medium text-gray-900">Loading room details...</p>
+            </div>
+          </div>
+        ) : !room ? (
+          <div className="text-center py-16">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Room not found</h2>
+            <button
+              onClick={() => router.push('/booking')}
+              className="px-6 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors"
             >
-              <div className="relative h-96">
-                <Image
-                  src={room.image}
-                  alt={room.name}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 66vw"
-                  priority
-                  quality={75}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-2 p-4">
-                {room.images.slice(0, 3).map((img, idx) => (
-                  <div key={idx} className="relative h-24 rounded-lg overflow-hidden">
-                    <Image src={img} alt={`${room.name} ${idx + 1}`} fill className="object-cover" sizes="200px" />
+              Back to Rooms
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Room Details */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Room Images */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden"
+              >
+              {room.images && room.images.length > 0 && (
+                <>
+                  <div
+                    className="relative h-96 cursor-pointer group bg-gray-100"
+                    onClick={() => {
+                      setSelectedImageIndex(0);
+                      setShowImageModal(true);
+                    }}
+                  >
+                    <Image
+                      src={room.images[0]}
+                      alt={room.room_type}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                      priority
+                      quality={75}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity font-semibold">
+                        Click to view
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  {room.images.length > 1 && (
+                    <div className="grid grid-cols-3 gap-2 p-4">
+                      {room.images.slice(1, 4).map((img: string, idx: number) => (
+                        <div
+                          key={idx}
+                          className="relative h-24 rounded-lg overflow-hidden cursor-pointer hover:opacity-80 transition-opacity bg-gray-100"
+                          onClick={() => {
+                            setSelectedImageIndex(idx + 1);
+                            setShowImageModal(true);
+                          }}
+                        >
+                          <Image
+                            src={img}
+                            alt={`${room.room_type} ${idx + 1}`}
+                            fill
+                            className="object-cover"
+                            sizes="200px"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
             </motion.div>
 
             {/* Room Info */}
@@ -253,21 +275,24 @@ function BookingDetailContent() {
               transition={{ delay: 0.1 }}
               className="bg-white rounded-2xl shadow-lg p-6"
             >
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{room.name}</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{room.room_type}</h1>
+              <p className="text-sm text-gray-500 mb-2">Room #{room.room_number}</p>
               <p className="text-gray-600 mb-6">{room.description}</p>
 
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                 <div className="flex items-center gap-2 text-gray-700">
                   <Users size={20} weight="fill" className="text-primary-600" />
-                  <span>Up to {room.maxGuests} guests</span>
+                  <span>Up to {room.max_guests} guests</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700">
                   <Bed size={20} weight="fill" className="text-primary-600" />
-                  <span>{room.bedType}</span>
+                  <span>{room.bed_type}</span>
                 </div>
-                <div className="flex items-center gap-2 text-gray-700">
-                  <span className="text-primary-600 font-semibold">{room.size}</span>
-                </div>
+                {room.size_sqft > 0 && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <span className="text-primary-600 font-semibold">{room.size_sqft} sq ft</span>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -498,10 +523,12 @@ function BookingDetailContent() {
                   <span className="text-gray-600">Room × {nights} night(s) × {rooms}</span>
                   <span className="font-medium text-gray-900">₹{subtotal?.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">GST (12%)</span>
-                  <span className="font-medium text-gray-900">₹{tax?.toLocaleString()}</span>
-                </div>
+                {gstPercentage > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">GST ({gstPercentage}%)</span>
+                    <span className="font-medium text-gray-900">₹{tax?.toLocaleString()}</span>
+                  </div>
+                )}
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-6">
@@ -546,7 +573,107 @@ function BookingDetailContent() {
             </motion.div>
           </div>
         </div>
+        )}
       </div>
+
+      {/* Image Gallery Modal */}
+      {showImageModal && room && room.images && room.images.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4"
+          onClick={() => setShowImageModal(false)}
+        >
+          <button
+            onClick={() => setShowImageModal(false)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors z-10"
+            aria-label="Close gallery"
+          >
+            <X size={32} weight="bold" />
+          </button>
+
+          {/* Navigation Buttons */}
+          {room.images.length > 1 && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex((prev) => (prev > 0 ? prev - 1 : room.images.length - 1));
+                }}
+                className="absolute left-4 text-white hover:text-gray-300 transition-colors z-10"
+                aria-label="Previous image"
+              >
+                <CaretLeft size={48} weight="bold" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedImageIndex((prev) => (prev < room.images.length - 1 ? prev + 1 : 0));
+                }}
+                className="absolute right-4 text-white hover:text-gray-300 transition-colors z-10"
+                aria-label="Next image"
+              >
+                <CaretRight size={48} weight="bold" />
+              </button>
+            </>
+          )}
+
+          {/* Main Image */}
+          <div
+            className="relative w-full max-w-6xl h-[80vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={room.images[selectedImageIndex]}
+              alt={`${room.room_type} - Image ${selectedImageIndex + 1}`}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              quality={90}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
+          </div>
+
+          {/* Image Counter */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white bg-black/50 px-4 py-2 rounded-full text-sm">
+            {selectedImageIndex + 1} / {room.images.length}
+          </div>
+
+          {/* Thumbnail Strip */}
+          {room.images.length > 1 && (
+            <div className="absolute bottom-16 left-1/2 -translate-x-1/2 flex gap-2 overflow-x-auto max-w-full px-4">
+              {room.images.map((img: string, idx: number) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedImageIndex(idx);
+                  }}
+                  className={cn(
+                    "relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all bg-gray-800",
+                    selectedImageIndex === idx
+                      ? "border-white scale-110"
+                      : "border-transparent opacity-50 hover:opacity-100"
+                  )}
+                >
+                  <Image
+                    src={img}
+                    alt={`Thumbnail ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <Footer />
     </main>

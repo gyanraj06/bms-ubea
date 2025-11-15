@@ -25,6 +25,7 @@ import type { Room, Media } from "@/types";
 type TabType = "rooms" | "media";
 
 export default function PropertyMediaPage() {
+  const [adminUserId, setAdminUserId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<TabType>("rooms");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [media, setMedia] = useState<Media[]>([]);
@@ -43,6 +44,7 @@ export default function PropertyMediaPage() {
     floor: 1,
     max_guests: 2,
     base_price: 2500,
+    gst_percentage: 12,
     description: "",
     amenities: [] as string[],
     size_sqft: 250,
@@ -99,6 +101,17 @@ export default function PropertyMediaPage() {
   };
 
   useEffect(() => {
+    // Load admin user ID from localStorage
+    const adminUser = localStorage.getItem("adminUser");
+    if (adminUser) {
+      try {
+        const user = JSON.parse(adminUser);
+        setAdminUserId(user.id || "");
+      } catch (error) {
+        console.error("Error parsing admin user:", error);
+      }
+    }
+
     fetchRooms();
     fetchMedia();
   }, []);
@@ -170,11 +183,16 @@ export default function PropertyMediaPage() {
       return;
     }
 
+    if (!adminUserId) {
+      toast.error("Admin user not found. Please login again.");
+      return;
+    }
+
     const uploadPromises = uploadingFiles.map(async (file) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("category", uploadCategory);
-      formData.append("uploaded_by", "admin-user-id"); // TODO: Get from auth context
+      formData.append("uploaded_by", adminUserId);
       if (selectedRoomForUpload) {
         formData.append("room_id", selectedRoomForUpload);
       }
@@ -236,6 +254,7 @@ export default function PropertyMediaPage() {
         floor: room.floor,
         max_guests: room.max_guests,
         base_price: room.base_price,
+        gst_percentage: room.gst_percentage || 0,
         description: room.description,
         amenities: room.amenities,
         size_sqft: room.size_sqft,
@@ -252,6 +271,7 @@ export default function PropertyMediaPage() {
         floor: 1,
         max_guests: 2,
         base_price: 2500,
+        gst_percentage: 12,
         description: "",
         amenities: [],
         size_sqft: 250,
@@ -664,6 +684,28 @@ export default function PropertyMediaPage() {
                         })
                       }
                       min="0"
+                    />
+                  </div>
+
+                  {/* GST Percentage */}
+                  <div>
+                    <Label htmlFor="gst_percentage">
+                      GST Percentage (%)
+                    </Label>
+                    <Input
+                      id="gst_percentage"
+                      type="number"
+                      value={roomForm.gst_percentage}
+                      onChange={(e) =>
+                        setRoomForm({
+                          ...roomForm,
+                          gst_percentage: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="Enter GST % (0 for no GST)"
                     />
                   </div>
 

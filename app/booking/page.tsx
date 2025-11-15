@@ -485,10 +485,9 @@ function BookingContent() {
         {!isLoadingRooms && availableRooms.length > 0 && (
           <div className="space-y-6">
             {availableRooms.map((room, index) => {
-              // Get first image or use placeholder
-              const roomImage = room.images && room.images.length > 0
-                ? room.images[0]
-                : "https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&q=75";
+              // Get first image if available
+              const hasImage = room.images && room.images.length > 0;
+              const roomImage = hasImage ? room.images[0] : null;
 
               return (
                 <motion.div
@@ -498,27 +497,36 @@ function BookingContent() {
                   transition={{ delay: index * 0.05, duration: 0.3 }}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
                 >
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* Room Image */}
-                    <div className="relative h-64 lg:h-auto min-h-[256px]">
-                      <Image
-                        src={roomImage}
-                        alt={room.room_type}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 1024px) 100vw, 33vw"
-                        loading={index === 0 ? "eager" : "lazy"}
-                        quality={75}
-                      />
-                      {!room.is_available && (
-                        <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
-                          Currently Unavailable
-                        </div>
-                      )}
-                    </div>
+                  <div className={cn(
+                    "grid gap-6",
+                    hasImage ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+                  )}>
+                    {/* Room Image - Only show if image exists */}
+                    {hasImage && (
+                      <div className="relative h-64 lg:h-auto min-h-[256px] bg-gray-100">
+                        <Image
+                          src={roomImage!}
+                          alt={room.room_type}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 1024px) 100vw, 33vw"
+                          loading={index === 0 ? "eager" : "lazy"}
+                          quality={75}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                          }}
+                        />
+                        {!room.is_available && (
+                          <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
+                            Currently Unavailable
+                          </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* Room Details */}
-                    <div className="lg:col-span-2 p-6">
+                    <div className={cn("p-6", hasImage && "lg:col-span-2")}>
                       <div className="flex flex-col h-full">
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-4">

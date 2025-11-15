@@ -5,6 +5,7 @@ export interface Room {
   floor: number
   max_guests: number
   base_price: number
+  gst_percentage: number
   description: string
   amenities: string[]
   size_sqft: number
