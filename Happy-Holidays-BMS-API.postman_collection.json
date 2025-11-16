@@ -1,0 +1,918 @@
+{
+	"info": {
+		"_postman_id": "happy-holidays-bms-api",
+		"name": "Happy Holidays BMS API",
+		"description": "Complete API collection for Happy Holidays Booking Management System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "admin_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "User Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"+919876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new user account"
+					}
+				},
+				{
+					"name": "User Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.session && response.session.access_token) {",
+									"        pm.collectionVariables.set('user_token', response.session.access_token);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/user-login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "user-login"]
+						},
+						"description": "Login with email and password. Returns user data and session token."
+					}
+				},
+				{
+					"name": "User Login (Google SSO)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"google\",\n  \"email\": \"user@gmail.com\",\n  \"google_id\": \"google_user_id_here\",\n  \"full_name\": \"John Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/user-login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "user-login"]
+						},
+						"description": "Login using Google SSO"
+					}
+				},
+				{
+					"name": "Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.token) {",
+									"        pm.collectionVariables.set('admin_token', response.token);",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"owner@happyholidays.com\",\n  \"password\": \"Owner@123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/admin-login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "admin-login"]
+						},
+						"description": "Admin login. Returns JWT token.\n\nDefault credentials:\n- Owner: owner@happyholidays.com / Owner@123\n- Manager: manager@happyholidays.com / Manager@123\n- Front Desk: frontdesk@happyholidays.com / FrontDesk@123\n- Accountant: accountant@happyholidays.com / Accountant@123"
+					}
+				},
+				{
+					"name": "Seed Admin Users",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/seed-admins",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "seed-admins"]
+						},
+						"description": "Seed default admin users (Owner, Manager, Front Desk, Accountant). Use this once during initial setup."
+					}
+				}
+			],
+			"description": "Authentication endpoints for users and admins"
+		},
+		{
+			"name": "Rooms (Public)",
+			"item": [
+				{
+					"name": "Get All Rooms",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rooms",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rooms"]
+						},
+						"description": "Get all active and available rooms (public endpoint)"
+					}
+				},
+				{
+					"name": "Get Rooms by Type",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/rooms?room_type=Deluxe",
+							"host": ["{{base_url}}"],
+							"path": ["api", "rooms"],
+							"query": [
+								{
+									"key": "room_type",
+									"value": "Deluxe"
+								}
+							]
+						},
+						"description": "Filter rooms by type"
+					}
+				}
+			],
+			"description": "Public room endpoints"
+		},
+		{
+			"name": "Bookings (User)",
+			"item": [
+				{
+					"name": "Create Booking",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"room_id\": \"room-uuid-here\",\n  \"check_in\": \"2025-01-20\",\n  \"check_out\": \"2025-01-22\",\n  \"num_guests\": 2,\n  \"num_adults\": 2,\n  \"num_children\": 0,\n  \"special_requests\": \"Late check-in\",\n  \"advance_percentage\": 25\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "bookings"]
+						},
+						"description": "Create a new booking. Requires user authentication.\n\nadvance_percentage can be: 25, 50, or 100"
+					}
+				},
+				{
+					"name": "Get My Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/user/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "user", "bookings"]
+						},
+						"description": "Get all bookings for the logged-in user"
+					}
+				}
+			],
+			"description": "User booking endpoints"
+		},
+		{
+			"name": "Admin - Users",
+			"item": [
+				{
+					"name": "Get All Admin Users",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						},
+						"description": "Get all admin users. Only Owners can access."
+					}
+				},
+				{
+					"name": "Create Admin User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"newadmin@happyholidays.com\",\n  \"password\": \"Admin@123\",\n  \"full_name\": \"New Admin\",\n  \"role\": \"Manager\",\n  \"phone\": \"+919876543214\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						},
+						"description": "Create a new admin user. Only Owners can create users.\n\nValid roles: Owner, Manager, Front Desk, Accountant"
+					}
+				},
+				{
+					"name": "Update Admin User",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"user-uuid-here\",\n  \"full_name\": \"Updated Name\",\n  \"role\": \"Manager\",\n  \"phone\": \"+919876543215\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						},
+						"description": "Update an admin user. Only Owners can update users."
+					}
+				},
+				{
+					"name": "Delete Admin User",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users?id=user-uuid-here",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"],
+							"query": [
+								{
+									"key": "id",
+									"value": "user-uuid-here"
+								}
+							]
+						},
+						"description": "Delete an admin user. Only Owners can delete users. Cannot delete the last Owner."
+					}
+				}
+			],
+			"description": "Admin user management endpoints (Owner only)"
+		},
+		{
+			"name": "Admin - Rooms",
+			"item": [
+				{
+					"name": "Get All Rooms (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"]
+						},
+						"description": "Get all rooms including inactive ones"
+					}
+				},
+				{
+					"name": "Get Active Rooms Only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms?is_active=true",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"],
+							"query": [
+								{
+									"key": "is_active",
+									"value": "true"
+								}
+							]
+						},
+						"description": "Filter rooms by active status"
+					}
+				},
+				{
+					"name": "Create Room",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"room_number\": \"101\",\n  \"room_type\": \"Deluxe\",\n  \"floor\": 1,\n  \"max_guests\": 2,\n  \"base_price\": 2500,\n  \"description\": \"Spacious deluxe room with city view\",\n  \"amenities\": [\"WiFi\", \"TV\", \"AC\", \"Mini Bar\"],\n  \"size_sqft\": 300,\n  \"bed_type\": \"King\",\n  \"view_type\": \"City View\",\n  \"is_available\": true,\n  \"is_active\": true,\n  \"images\": []\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"]
+						},
+						"description": "Create a new room. Requires admin authentication."
+					}
+				},
+				{
+					"name": "Update Room",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"room-uuid-here\",\n  \"base_price\": 3000,\n  \"is_available\": false,\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"]
+						},
+						"description": "Update an existing room"
+					}
+				},
+				{
+					"name": "Delete Room",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/rooms?id=room-uuid-here",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "rooms"],
+							"query": [
+								{
+									"key": "id",
+									"value": "room-uuid-here"
+								}
+							]
+						},
+						"description": "Delete a room and its associated media"
+					}
+				}
+			],
+			"description": "Admin room management endpoints"
+		},
+		{
+			"name": "Admin - Bookings",
+			"item": [
+				{
+					"name": "Get All Bookings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "bookings"]
+						},
+						"description": "Get all bookings with room and user details"
+					}
+				},
+				{
+					"name": "Get Bookings by Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/bookings?status=Confirmed",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "bookings"],
+							"query": [
+								{
+									"key": "status",
+									"value": "Confirmed"
+								}
+							]
+						},
+						"description": "Filter bookings by status (Confirmed, Pending, Cancelled, Completed)"
+					}
+				},
+				{
+					"name": "Update Booking",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"booking-uuid-here\",\n  \"booking_status\": \"Confirmed\",\n  \"payment_status\": \"Paid\",\n  \"payment_method\": \"Cash\",\n  \"notes\": \"Guest requested early check-in\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/bookings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "bookings"]
+						},
+						"description": "Update booking status and payment information"
+					}
+				}
+			],
+			"description": "Admin booking management endpoints"
+		},
+		{
+			"name": "Admin - Media",
+			"item": [
+				{
+					"name": "Get All Media",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/media",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "media"]
+						},
+						"description": "Get all media files"
+					}
+				},
+				{
+					"name": "Get Media by Category",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/media?category=Room",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "media"],
+							"query": [
+								{
+									"key": "category",
+									"value": "Room"
+								}
+							]
+						},
+						"description": "Filter media by category (Room, Gallery, Amenity, Other)"
+					}
+				},
+				{
+					"name": "Get Media by Room",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/media?room_id=room-uuid-here",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "media"],
+							"query": [
+								{
+									"key": "room_id",
+									"value": "room-uuid-here"
+								}
+							]
+						},
+						"description": "Get all media for a specific room"
+					}
+				},
+				{
+					"name": "Upload Media",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								},
+								{
+									"key": "category",
+									"value": "Room",
+									"type": "text"
+								},
+								{
+									"key": "room_id",
+									"value": "room-uuid-here",
+									"type": "text"
+								},
+								{
+									"key": "title",
+									"value": "Room Image",
+									"type": "text"
+								},
+								{
+									"key": "description",
+									"value": "Beautiful room view",
+									"type": "text"
+								},
+								{
+									"key": "alt_text",
+									"value": "Room interior",
+									"type": "text"
+								},
+								{
+									"key": "is_featured",
+									"value": "true",
+									"type": "text"
+								},
+								{
+									"key": "uploaded_by",
+									"value": "admin-uuid-here",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/media",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "media"]
+						},
+						"description": "Upload a media file (image). Max size: 5MB. Allowed types: JPEG, PNG, WebP"
+					}
+				},
+				{
+					"name": "Delete Media",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/media?id=media-uuid-here",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "media"],
+							"query": [
+								{
+									"key": "id",
+									"value": "media-uuid-here"
+								}
+							]
+						},
+						"description": "Delete a media file from storage and database"
+					}
+				}
+			],
+			"description": "Admin media management endpoints"
+		},
+		{
+			"name": "Admin - Permissions",
+			"item": [
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/permissions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "permissions"]
+						},
+						"description": "Get all permissions with role assignments. Any admin can view."
+					}
+				},
+				{
+					"name": "Update Permissions",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permissions\": [\n    {\n      \"key\": \"view_bookings\",\n      \"roles\": [\"Owner\", \"Manager\", \"Front Desk\"]\n    },\n    {\n      \"key\": \"edit_bookings\",\n      \"roles\": [\"Owner\", \"Manager\"]\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/permissions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "permissions"]
+						},
+						"description": "Update permissions (bulk update). Only Owners can update."
+					}
+				}
+			],
+			"description": "Admin permission management endpoints (Owner only for updates)"
+		},
+		{
+			"name": "Admin - Audit Logs",
+			"item": [
+				{
+					"name": "Get Recent Audit Logs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/audit-logs?limit=50",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "audit-logs"],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50"
+								}
+							]
+						},
+						"description": "Get recent audit logs. Default limit: 10"
+					}
+				},
+				{
+					"name": "Get Audit Logs by User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/admin/audit-logs?user_id=admin-uuid-here&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "audit-logs"],
+							"query": [
+								{
+									"key": "user_id",
+									"value": "admin-uuid-here"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get audit logs for a specific admin user"
+					}
+				},
+				{
+					"name": "Create Audit Log",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user_id\": \"admin-uuid-here\",\n  \"action\": \"CREATE\",\n  \"table_name\": \"bookings\",\n  \"record_id\": \"booking-uuid-here\",\n  \"new_data\": {\n    \"booking_number\": \"BK-001\",\n    \"status\": \"Confirmed\"\n  },\n  \"ip_address\": \"192.168.1.1\",\n  \"user_agent\": \"Mozilla/5.0\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/audit-logs",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "audit-logs"]
+						},
+						"description": "Create a manual audit log entry. Actions: CREATE, UPDATE, DELETE, LOGIN"
+					}
+				}
+			],
+			"description": "Admin audit log endpoints"
+		},
+		{
+			"name": "Admin - Property Settings",
+			"item": [
+				{
+					"name": "Get Property Settings",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/property-settings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "property-settings"]
+						},
+						"description": "Get property settings (public endpoint - no auth required)"
+					}
+				},
+				{
+					"name": "Update Property Settings",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{admin_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"property_name\": \"Happy Holidays Guest House\",\n  \"address\": \"94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal\",\n  \"phone\": \"+91 9926770259\",\n  \"email\": \"info@happyholidays.com\",\n  \"gst_number\": \"GST123456789\",\n  \"check_in_time\": \"14:00\",\n  \"check_out_time\": \"11:00\",\n  \"google_maps_embed_url\": \"https://maps.google.com/...\",\n  \"description\": \"Premium guest house in Bhopal\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/admin/property-settings",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "property-settings"]
+						},
+						"description": "Update property settings. Only Owners can update."
+					}
+				}
+			],
+			"description": "Property settings endpoints"
+		},
+		{
+			"name": "Invoices",
+			"item": [
+				{
+					"name": "Get Invoice",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{user_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/invoices/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "invoices", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "invoice-uuid-here"
+								}
+							]
+						},
+						"description": "Get invoice with booking details. Users can only access their own invoices. Admins can access all."
+					}
+				}
+			],
+			"description": "Invoice endpoints"
+		}
+	]
+}

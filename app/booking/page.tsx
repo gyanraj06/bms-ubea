@@ -49,19 +49,30 @@ function BookingContent() {
   const [isSearching, setIsSearching] = useState(false);
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // Fetch available rooms from database
+  // Fetch available rooms from database with date filtering
   useEffect(() => {
     const fetchRooms = async () => {
       try {
         setIsLoadingRooms(true);
-        const response = await fetch('/api/rooms');
+
+        // If dates are selected, filter by availability
+        let url = '/api/rooms';
+        if (checkInDate && checkOutDate) {
+          const checkIn = checkInDate.toISOString().split('T')[0];
+          const checkOut = checkOutDate.toISOString().split('T')[0];
+          url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}`;
+        }
+
+        const response = await fetch(url);
         const data = await response.json();
 
         if (data.success) {
           setAvailableRooms(data.rooms || []);
+          // Don't show toast, we'll show prominent message on page
         } else {
-          toast.error('Failed to load rooms');
           setAvailableRooms([]);
         }
       } catch (error) {
@@ -74,7 +85,7 @@ function BookingContent() {
     };
 
     fetchRooms();
-  }, []);
+  }, [checkInDate, checkOutDate]); // Re-fetch when dates change
 
   // Pre-fill dates from URL parameters
   useEffect(() => {
@@ -134,13 +145,53 @@ function BookingContent() {
 
   const handleSearch = async () => {
     if (!checkInDate || !checkOutDate) {
-      toast.error("Please select check-in and check-out dates");
+      setAvailabilityMessage("Please select check-in and check-out dates");
+      setHasSearched(true);
       return;
     }
     setIsSearching(true);
-    // Simulate search - can be enhanced later with availability check
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSearching(false);
+    setHasSearched(true);
+
+    try {
+      // Call availability check API
+      const response = await fetch('/api/rooms/check-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          check_in: checkInDate.toISOString().split('T')[0],
+          check_out: checkOutDate.toISOString().split('T')[0],
+          num_guests: guests,
+          num_rooms: rooms,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setAvailableRooms(data.available_rooms || []);
+
+        // Show warning if capacity issues
+        const message = data.warning
+          ? `${data.message}\n\n⚠️ ${data.warning}`
+          : data.message || 'Search completed';
+
+        setAvailabilityMessage(message);
+      } else {
+        setAvailableRooms([]);
+
+        // Show detailed error with warning
+        const errorMsg = data.warning
+          ? `${data.message || 'No rooms available'}\n\n⚠️ ${data.warning}`
+          : data.error || data.message || 'No rooms available for selected dates';
+
+        setAvailabilityMessage(errorMsg);
+      }
+    } catch (error) {
+      console.error('Error searching rooms:', error);
+      setAvailabilityMessage('Failed to search rooms. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleBookRoom = (roomId: string) => {
@@ -454,8 +505,46 @@ function BookingContent() {
           </p>
         </div>
 
+        {/* Availability Message - Prominent Display */}
+        {hasSearched && availabilityMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className={cn(
+              "max-w-3xl mx-auto px-6 py-4 rounded-lg border-2 text-center",
+              availableRooms.length > 0
+                ? "bg-green-50 border-green-500 text-green-800"
+                : "bg-amber-50 border-amber-500 text-amber-800"
+            )}>
+              <div className="font-semibold text-lg whitespace-pre-line">
+                {availabilityMessage}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Date-Based Availability Message */}
+        {checkInDate && checkOutDate && !hasSearched && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8"
+          >
+            <div className="max-w-3xl mx-auto px-6 py-4 rounded-lg bg-blue-50 border-2 border-blue-500 text-center">
+              <p className="text-blue-800 font-semibold text-lg">
+                {availableRooms.length} room{availableRooms.length === 1 ? '' : 's'} available for {format(checkInDate, 'MMM dd')} - {format(checkOutDate, 'MMM dd, yyyy')}
+              </p>
+              <p className="text-blue-600 text-sm mt-1">
+                {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} night{Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) === 1 ? '' : 's'}
+              </p>
+            </div>
+          </motion.div>
+        )}
+
         {/* No Rooms Available Message */}
-        {!isLoadingRooms && availableRooms.length === 0 && (
+        {!isLoadingRooms && availableRooms.length === 0 && !hasSearched && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

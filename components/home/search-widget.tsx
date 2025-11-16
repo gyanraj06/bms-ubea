@@ -7,10 +7,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 export function SearchWidget() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
+  const [availableCount, setAvailableCount] = useState<number | null>(null)
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [formData, setFormData] = useState({
     checkIn: "",
     checkOut: "",
@@ -20,19 +23,71 @@ export function SearchWidget() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
+    setStatusMessage(null)
+
+    if (!formData.checkIn || !formData.checkOut) {
+      setStatusMessage({ type: 'error', text: 'Please select check-in and check-out dates' })
+      return
+    }
+
     setIsLoading(true)
 
-    // Simulate search delay
-    setTimeout(() => {
-      const params = new URLSearchParams({
-        checkIn: formData.checkIn,
-        checkOut: formData.checkOut,
-        guests: formData.guests,
-        roomType: formData.roomType,
+    try {
+      // Check availability first
+      const response = await fetch('/api/rooms/check-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          check_in: formData.checkIn,
+          check_out: formData.checkOut,
+          room_type: formData.roomType !== 'all' ? formData.roomType : undefined,
+          num_guests: parseInt(formData.guests),
+          num_rooms: 1, // Default to 1 room for now (can add rooms selector later)
+        }),
       })
-      router.push(`/rooms?${params.toString()}`)
+
+      const data = await response.json()
+
+      if (data.success) {
+        setAvailableCount(data.total_available)
+
+        // Show warning if there's capacity issue
+        const displayMessage = data.warning
+          ? `${data.message}\n\n${data.warning}`
+          : data.message
+
+        setStatusMessage({ type: 'success', text: displayMessage })
+
+        // Navigate to booking page after a brief delay to show message
+        setTimeout(() => {
+          const params = new URLSearchParams({
+            checkIn: formData.checkIn,
+            checkOut: formData.checkOut,
+            guests: formData.guests,
+          })
+
+          if (formData.roomType !== 'all') {
+            params.append('roomType', formData.roomType)
+          }
+
+          router.push(`/booking?${params.toString()}`)
+        }, data.warning ? 3000 : 1500) // Longer delay if there's a warning
+      } else {
+        setAvailableCount(0)
+
+        // Show detailed error with warning if available
+        const errorMessage = data.warning
+          ? `${data.message || 'No rooms available'}\n\n${data.warning}`
+          : data.error || data.message || 'No rooms available for selected dates'
+
+        setStatusMessage({ type: 'error', text: errorMessage })
+      }
+    } catch (error) {
+      console.error('Search error:', error)
+      setStatusMessage({ type: 'error', text: 'Failed to search for rooms. Please try again.' })
+    } finally {
       setIsLoading(false)
-    }, 800)
+    }
   }
 
   return (
@@ -114,6 +169,23 @@ export function SearchWidget() {
               </select>
             </div>
           </div>
+
+          {/* Status Message - Prominent */}
+          {statusMessage && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className={`px-6 py-4 rounded-lg border-2 text-center ${
+                statusMessage.type === 'success'
+                  ? 'bg-green-50 border-green-500 text-green-800'
+                  : 'bg-red-50 border-red-500 text-red-800'
+              }`}
+            >
+              <div className="font-semibold whitespace-pre-line">
+                {statusMessage.text}
+              </div>
+            </motion.div>
+          )}
 
           {/* Search Button */}
           <div className="flex justify-center">

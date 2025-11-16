@@ -97,6 +97,39 @@ export async function POST(request: NextRequest) {
     const checkOutDate = new Date(check_out);
     const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
+    // ✅ NEW: Check for overlapping bookings before creating the booking
+    const { data: overlappingBookings, error: overlapError } = await supabaseAdmin
+      .from('bookings')
+      .select('id, booking_number, check_in, check_out')
+      .eq('room_id', room_id)
+      .lt('check_in', check_out)
+      .gt('check_out', check_in)
+      .in('status', ['Confirmed', 'Pending']);
+
+    if (overlapError) {
+      console.error('Error checking overlapping bookings:', overlapError);
+      return NextResponse.json(
+        { success: false, error: 'Failed to verify room availability' },
+        { status: 500 }
+      );
+    }
+
+    if (overlappingBookings && overlappingBookings.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This room is already booked for the selected dates',
+          code: 'ROOM_UNAVAILABLE',
+          conflicting_bookings: overlappingBookings.map(b => ({
+            booking_number: b.booking_number,
+            check_in: b.check_in,
+            check_out: b.check_out,
+          })),
+        },
+        { status: 409 }
+      );
+    }
+
     if (totalNights <= 0) {
       return NextResponse.json(
         { success: false, error: 'Invalid date range' },
