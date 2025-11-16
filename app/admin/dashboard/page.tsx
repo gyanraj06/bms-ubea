@@ -14,7 +14,7 @@ import {
   XCircle,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatDate } from "@/lib/utils";
 
 interface StatCard {
   title: string;
@@ -24,8 +24,59 @@ interface StatCard {
   color: string;
 }
 
+interface Booking {
+  id: string;
+  booking_number: string;
+  guest_name: string;
+  check_in: string;
+  check_out: string;
+  status: string;
+  total_amount: number;
+  rooms?: {
+    room_number: string;
+    room_type: string;
+  };
+}
+
 export default function AdminDashboardPage() {
   const [userRole, setUserRole] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<StatCard[]>([
+    {
+      title: "Total Bookings",
+      value: 0,
+      change: 0,
+      icon: CalendarCheck,
+      color: "blue",
+    },
+    {
+      title: "Active Guests",
+      value: 0,
+      change: 0,
+      icon: Users,
+      color: "green",
+    },
+    {
+      title: "Monthly Revenue",
+      value: formatCurrency(0),
+      change: 0,
+      icon: CurrencyCircleDollar,
+      color: "purple",
+    },
+    {
+      title: "Available Rooms",
+      value: "0/0",
+      change: 0,
+      icon: Bed,
+      color: "orange",
+    },
+  ]);
+  const [recentBookings, setRecentBookings] = useState<Booking[]>([]);
+  const [todaysActivity, setTodaysActivity] = useState({
+    checkIns: 0,
+    checkOuts: 0,
+    pending: 0,
+  });
 
   useEffect(() => {
     const adminUser = localStorage.getItem("adminUser");
@@ -33,89 +84,144 @@ export default function AdminDashboardPage() {
       const user = JSON.parse(adminUser);
       setUserRole(user.role);
     }
+    fetchDashboardData();
   }, []);
 
-  // Mock statistics data
-  const stats: StatCard[] = [
-    {
-      title: "Total Bookings",
-      value: 156,
-      change: 12.5,
-      icon: CalendarCheck,
-      color: "blue",
-    },
-    {
-      title: "Active Guests",
-      value: 42,
-      change: 8.2,
-      icon: Users,
-      color: "green",
-    },
-    {
-      title: "Monthly Revenue",
-      value: formatCurrency(456000),
-      change: 15.3,
-      icon: CurrencyCircleDollar,
-      color: "purple",
-    },
-    {
-      title: "Available Rooms",
-      value: "18/32",
-      change: -5.1,
-      icon: Bed,
-      color: "orange",
-    },
-  ];
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("adminToken");
 
-  // Mock recent bookings
-  const recentBookings = [
-    {
-      id: "BK001",
-      guestName: "Rajesh Kumar",
-      roomType: "Deluxe Room",
-      checkIn: "2025-11-15",
-      status: "confirmed",
-    },
-    {
-      id: "BK002",
-      guestName: "Priya Sharma",
-      roomType: "Suite",
-      checkIn: "2025-11-16",
-      status: "pending",
-    },
-    {
-      id: "BK003",
-      guestName: "Amit Patel",
-      roomType: "Standard Room",
-      checkIn: "2025-11-14",
-      status: "checked-in",
-    },
-    {
-      id: "BK004",
-      guestName: "Sneha Reddy",
-      roomType: "Deluxe Room",
-      checkIn: "2025-11-18",
-      status: "confirmed",
-    },
-  ];
+      if (!token) {
+        console.error("No admin token found");
+        setIsLoading(false);
+        return;
+      }
 
-  // Mock today's check-ins/check-outs
-  const todaysActivity = {
-    checkIns: 5,
-    checkOuts: 3,
-    pending: 2,
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+
+      // Fetch all bookings
+      const bookingsResponse = await fetch('/api/admin/bookings', { headers });
+      const bookingsData = await bookingsResponse.json();
+
+      // Fetch all rooms
+      const roomsResponse = await fetch('/api/admin/rooms', { headers });
+      const roomsData = await roomsResponse.json();
+
+      if (bookingsData.success && roomsData.success) {
+        const allBookings = bookingsData.bookings || [];
+        const allRooms = roomsData.rooms || [];
+
+        // Calculate stats
+        const totalBookings = allBookings.length;
+
+        // Active guests = bookings with status 'Confirmed' (checked-in)
+        const activeGuests = allBookings.filter(
+          (b: Booking) => b.status === 'Confirmed'
+        ).length;
+
+        // Calculate monthly revenue (current month)
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        const monthlyRevenue = allBookings
+          .filter((b: Booking) => {
+            const checkIn = new Date(b.check_in);
+            return checkIn.getMonth() === currentMonth &&
+                   checkIn.getFullYear() === currentYear;
+          })
+          .reduce((sum: number, b: Booking) => sum + (b.total_amount || 0), 0);
+
+        // Available rooms calculation
+        const today = new Date().toISOString().split('T')[0];
+        const bookedRoomIds = allBookings
+          .filter((b: Booking) =>
+            b.status === 'Confirmed' &&
+            b.check_in <= today &&
+            b.check_out > today
+          )
+          .map((b: Booking) => b.rooms?.room_number);
+
+        const totalRooms = allRooms.filter((r: any) => r.is_active).length;
+        const availableRooms = totalRooms - bookedRoomIds.length;
+
+        // Today's activity
+        const todayCheckIns = allBookings.filter(
+          (b: Booking) => b.check_in === today && b.status !== 'Cancelled'
+        ).length;
+
+        const todayCheckOuts = allBookings.filter(
+          (b: Booking) => b.check_out === today && b.status === 'Confirmed'
+        ).length;
+
+        const pendingBookings = allBookings.filter(
+          (b: Booking) => b.status === 'Pending'
+        ).length;
+
+        // Update stats
+        setStats([
+          {
+            title: "Total Bookings",
+            value: totalBookings,
+            change: 0,
+            icon: CalendarCheck,
+            color: "blue",
+          },
+          {
+            title: "Active Guests",
+            value: activeGuests,
+            change: 0,
+            icon: Users,
+            color: "green",
+          },
+          {
+            title: "Monthly Revenue",
+            value: formatCurrency(monthlyRevenue),
+            change: 0,
+            icon: CurrencyCircleDollar,
+            color: "purple",
+          },
+          {
+            title: "Available Rooms",
+            value: `${availableRooms}/${totalRooms}`,
+            change: 0,
+            icon: Bed,
+            color: "orange",
+          },
+        ]);
+
+        setTodaysActivity({
+          checkIns: todayCheckIns,
+          checkOuts: todayCheckOuts,
+          pending: pendingBookings,
+        });
+
+        // Set recent bookings (last 5)
+        setRecentBookings(allBookings.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    if (!status) return "bg-gray-100 text-gray-700";
+
+    switch (status.toLowerCase()) {
       case "confirmed":
-        return "bg-blue-100 text-blue-700";
+        return "bg-green-100 text-green-700";
       case "pending":
         return "bg-yellow-100 text-yellow-700";
-      case "checked-in":
-        return "bg-green-100 text-green-700";
       case "cancelled":
         return "bg-red-100 text-red-700";
+      case "completed":
+        return "bg-blue-100 text-blue-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
@@ -135,6 +241,17 @@ export default function AdminDashboardPage() {
         return "bg-gray-100 text-gray-600";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark"></div>
+          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -220,7 +337,7 @@ export default function AdminDashboardPage() {
               <p className="text-2xl font-bold text-green-900">
                 {todaysActivity.checkIns}
               </p>
-              <p className="text-sm text-green-700 font-medium">Check-ins</p>
+              <p className="text-sm text-green-700 font-medium">Check-ins Today</p>
             </div>
           </div>
 
@@ -232,7 +349,7 @@ export default function AdminDashboardPage() {
               <p className="text-2xl font-bold text-blue-900">
                 {todaysActivity.checkOuts}
               </p>
-              <p className="text-sm text-blue-700 font-medium">Check-outs</p>
+              <p className="text-sm text-blue-700 font-medium">Check-outs Today</p>
             </div>
           </div>
 
@@ -244,7 +361,7 @@ export default function AdminDashboardPage() {
               <p className="text-2xl font-bold text-yellow-900">
                 {todaysActivity.pending}
               </p>
-              <p className="text-sm text-yellow-700 font-medium">Pending</p>
+              <p className="text-sm text-yellow-700 font-medium">Pending Bookings</p>
             </div>
           </div>
         </div>
@@ -260,57 +377,69 @@ export default function AdminDashboardPage() {
         <div className="p-6 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Recent Bookings</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Booking ID
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Guest Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Room Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Check-in
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {recentBookings.map((booking) => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {booking.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {booking.guestName}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {booking.roomType}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                    {booking.checkIn}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={cn(
-                        "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize",
-                        getStatusColor(booking.status)
-                      )}
-                    >
-                      {booking.status}
-                    </span>
-                  </td>
+        {recentBookings.length === 0 ? (
+          <div className="p-8 text-center text-gray-500">
+            No bookings found
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Booking ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Guest Name
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Room
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Check-in
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {recentBookings.map((booking) => (
+                  <tr key={booking.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {booking.booking_number}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {booking.guest_name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {booking.rooms?.room_type || 'N/A'} - {booking.rooms?.room_number || 'N/A'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {formatDate(new Date(booking.check_in))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                      {formatCurrency(booking.total_amount)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={cn(
+                          "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize",
+                          getStatusColor(booking.status)
+                        )}
+                      >
+                        {booking.status || 'Unknown'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </motion.div>
 
       {/* Quick Actions */}
@@ -322,19 +451,31 @@ export default function AdminDashboardPage() {
       >
         <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors">
+          <button
+            onClick={() => window.location.href = '/admin/dashboard/bookings'}
+            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
+          >
             <CalendarCheck size={32} className="text-brown-dark" weight="fill" />
+            <span className="text-sm font-medium text-gray-700">View Bookings</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/booking'}
+            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
+          >
+            <Users size={32} className="text-brown-dark" weight="fill" />
             <span className="text-sm font-medium text-gray-700">New Booking</span>
           </button>
-          <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors">
-            <Users size={32} className="text-brown-dark" weight="fill" />
-            <span className="text-sm font-medium text-gray-700">Add Guest</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors">
+          <button
+            onClick={() => window.location.href = '/admin/dashboard/bookings'}
+            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
+          >
             <CheckCircle size={32} className="text-brown-dark" weight="fill" />
             <span className="text-sm font-medium text-gray-700">Check-in</span>
           </button>
-          <button className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors">
+          <button
+            onClick={() => window.location.href = '/admin/dashboard/bookings'}
+            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
+          >
             <XCircle size={32} className="text-brown-dark" weight="fill" />
             <span className="text-sm font-medium text-gray-700">Check-out</span>
           </button>

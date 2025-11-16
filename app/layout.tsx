@@ -26,6 +26,9 @@ export const metadata: Metadata = {
     "hotel booking",
     "event halls",
   ],
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

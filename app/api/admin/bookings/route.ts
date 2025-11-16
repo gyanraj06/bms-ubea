@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Filter by status if provided
     if (status) {
-      query = query.eq('booking_status', status);
+      query = query.eq('status', status);
     }
 
     const { data: bookings, error } = await query;
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, booking_status, payment_status, payment_method, notes } = body;
+    const { id, booking_status, status, payment_status, payment_method, notes, special_requests } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -117,10 +117,14 @@ export async function PUT(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
-    if (booking_status) updateData.booking_status = booking_status;
+    // Support both 'status' and 'booking_status' for backward compatibility
+    if (booking_status) updateData.status = booking_status;
+    if (status) updateData.status = status;
     if (payment_status) updateData.payment_status = payment_status;
     if (payment_method) updateData.payment_method = payment_method;
-    if (notes !== undefined) updateData.notes = notes;
+    // Support both 'notes' and 'special_requests' (notes is mapped to special_requests)
+    if (notes !== undefined) updateData.special_requests = notes;
+    if (special_requests !== undefined) updateData.special_requests = special_requests;
 
     const { data: updatedBooking, error } = await supabaseAdmin
       .from('bookings')
