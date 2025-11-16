@@ -118,9 +118,9 @@ export default function AdminDashboardPage() {
         // Calculate stats
         const totalBookings = allBookings.length;
 
-        // Active guests = bookings with status 'Confirmed' (checked-in)
+        // Active guests = bookings with status 'checked-in'
         const activeGuests = allBookings.filter(
-          (b: Booking) => b.status === 'Confirmed'
+          (b: Booking) => b.status === 'checked-in'
         ).length;
 
         // Calculate monthly revenue (current month)
@@ -136,30 +136,44 @@ export default function AdminDashboardPage() {
           })
           .reduce((sum: number, b: Booking) => sum + (b.total_amount || 0), 0);
 
-        // Available rooms calculation
+        // Available rooms calculation - rooms occupied by checked-in guests
         const today = new Date().toISOString().split('T')[0];
         const bookedRoomIds = allBookings
-          .filter((b: Booking) =>
-            b.status === 'Confirmed' &&
-            b.check_in <= today &&
-            b.check_out > today
-          )
+          .filter((b: Booking) => {
+            if (b.status !== 'checked-in') return false;
+            const checkInDate = new Date(b.check_in).toISOString().split('T')[0];
+            const checkOutDate = new Date(b.check_out).toISOString().split('T')[0];
+            return checkInDate <= today && checkOutDate > today;
+          })
           .map((b: Booking) => b.rooms?.room_number);
 
         const totalRooms = allRooms.filter((r: any) => r.is_active).length;
         const availableRooms = totalRooms - bookedRoomIds.length;
 
         // Today's activity
+        // Check-ins: Bookings scheduled to check in today OR currently checked-in status
         const todayCheckIns = allBookings.filter(
-          (b: Booking) => b.check_in === today && b.status !== 'Cancelled'
+          (b: Booking) => {
+            // Count as check-in if: scheduled for today OR has checked-in status
+            const checkInDate = new Date(b.check_in).toISOString().split('T')[0];
+            const scheduledForToday = checkInDate === today && b.status !== 'cancelled' && b.status !== 'checked-out';
+            const currentlyCheckedIn = b.status === 'checked-in';
+            return scheduledForToday || currentlyCheckedIn;
+          }
         ).length;
 
+        // Check-outs: Bookings scheduled to check out today OR already checked-out today
         const todayCheckOuts = allBookings.filter(
-          (b: Booking) => b.check_out === today && b.status === 'Confirmed'
+          (b: Booking) => {
+            const checkOutDate = new Date(b.check_out).toISOString().split('T')[0];
+            // Count if: scheduled to check out today (checked-in or checked-out status)
+            return checkOutDate === today &&
+                   (b.status === 'checked-in' || b.status === 'checked-out');
+          }
         ).length;
 
         const pendingBookings = allBookings.filter(
-          (b: Booking) => b.status === 'Pending'
+          (b: Booking) => b.status.toLowerCase() === 'pending'
         ).length;
 
         // Update stats
@@ -222,6 +236,10 @@ export default function AdminDashboardPage() {
         return "bg-red-100 text-red-700";
       case "completed":
         return "bg-blue-100 text-blue-700";
+      case "checked-in":
+        return "bg-blue-100 text-blue-700";
+      case "checked-out":
+        return "bg-gray-100 text-gray-700";
       default:
         return "bg-gray-100 text-gray-700";
     }
