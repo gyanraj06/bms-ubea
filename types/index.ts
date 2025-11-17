@@ -50,6 +50,11 @@ export interface Hall {
   available: boolean
 }
 
+export interface GuestDetail {
+  name: string
+  age: number
+}
+
 export interface Booking {
   id: string
   roomId: string
@@ -63,6 +68,16 @@ export interface Booking {
   totalPrice: number
   status: 'pending' | 'confirmed' | 'cancelled'
   paymentStatus: 'pending' | 'completed' | 'failed'
+  // New enhanced fields
+  bank_id_number?: string
+  govt_id_image_url?: string
+  bank_id_image_url?: string
+  booking_for?: 'self' | 'relative'
+  guest_details?: GuestDetail[]
+  needs_cot?: boolean
+  needs_extra_bed?: boolean
+  num_cots?: number
+  num_extra_beds?: number
 }
 
 export interface SearchParams {

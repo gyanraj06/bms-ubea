@@ -12,7 +12,9 @@ import {
   Clock,
   Calendar,
   Users,
+  Eye,
 } from "@phosphor-icons/react";
+import { BookingDetailsModal } from "@/components/admin/booking-details-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -58,6 +60,7 @@ export default function BookingsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -136,6 +139,11 @@ export default function BookingsPage() {
       notes: "",
     });
     setShowEditModal(true);
+  };
+
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking);
+    setShowDetailsModal(true);
   };
 
   const handleUpdateBooking = async () => {
@@ -497,6 +505,14 @@ export default function BookingsPage() {
                 {/* Actions */}
                 <div className="border-t border-gray-200 pt-4 flex flex-wrap gap-2">
                   <Button
+                    onClick={() => handleViewDetails(booking)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    size="sm"
+                  >
+                    <Eye size={16} className="mr-1" weight="bold" />
+                    View Details
+                  </Button>
+                  <Button
                     onClick={() => handleEditBooking(booking)}
                     className="bg-brown-dark hover:bg-brown-dark/90 text-white"
                     size="sm"
@@ -590,6 +606,13 @@ export default function BookingsPage() {
           </motion.div>
         </div>
       )}
+
+      {/* Booking Details Modal */}
+      <BookingDetailsModal
+        isOpen={showDetailsModal}
+        onClose={() => setShowDetailsModal(false)}
+        booking={selectedBooking}
+      />
     </div>
   );
 }

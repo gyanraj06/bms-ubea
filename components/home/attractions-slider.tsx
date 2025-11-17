@@ -4,59 +4,59 @@ import { MapPin } from '@phosphor-icons/react'
 
 const attractions = [
   {
-    name: 'Skiing',
-    distance: '24 km',
-    detail: 'slopes',
-    image: 'https://images.unsplash.com/photo-1701358232769-998897181fba?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwyfHxza2lpbmclMjBzbm93JTIwbW91bnRhaW5zJTIwd2ludGVyJTIwc2xvcGVzfGVufDB8MXx8fDE3NjI4NDUyNDR8MA&ixlib=rb-4.1.0&q=85',
-    attribution: 'Soonmok Kwon on Unsplash',
+    name: 'Upper Lake',
+    distance: '3 km',
+    detail: 'from property',
+    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Beautiful lake view',
     size: 'large',
   },
   {
-    name: 'Aquacity Poprad',
-    distance: '9 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1646702423992-abcca5bc2c12?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwyfHxzd2ltbWluZyUyMHBvb2wlMjB3YXRlciUyMGFxdWElMjBwYXJrJTIwYmx1ZXxlbnwwfDJ8fGJsdWV8MTc2Mjg0NTI0NHww&ixlib=rb-4.1.0&q=85',
-    attribution: 'Joseph Kellner on Unsplash',
+    name: 'Van Vihar National Park',
+    distance: '5 km',
+    detail: 'from property',
+    image: 'https://images.unsplash.com/photo-1549366021-9f761d450615?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Wildlife sanctuary',
     size: 'small',
   },
   {
-    name: 'Treetop walkway',
-    distance: '24 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1604626677347-525ed59b5ebb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwxfHx0cmVldG9wJTIwd2Fsa3dheSUyMGZvcmVzdCUyMHRyZWVzJTIwd29vZGVuJTIwYnJpZGdlfGVufDB8MHx8Z3JlZW58MTc2Mjg0NTI0NHww&ixlib=rb-4.1.0&q=85',
-    attribution: 'Jaime Dantas on Unsplash',
+    name: 'Sanchi Stupa',
+    distance: '46 km',
+    detail: 'UNESCO World Heritage',
+    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Ancient Buddhist monument',
     size: 'medium',
   },
   {
-    name: 'Belianska Cave',
-    distance: '9 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1620857520284-02ac92bc2ce1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwzfHxjYXZlJTIwc3RhbGFjdGl0ZXMlMjByb2NrJTIwZm9ybWF0aW9ucyUyMHVuZGVyZ3JvdW5kfGVufDB8Mnx8fDE3NjI4NDUyNDR8MA&ixlib=rb-4.1.0&q=85',
-    attribution: 'Intricate Explorer on Unsplash',
+    name: 'Bhimbetka Rock Shelters',
+    distance: '45 km',
+    detail: 'UNESCO World Heritage',
+    image: 'https://images.unsplash.com/photo-1620857520284-02ac92bc2ce1?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Prehistoric cave paintings',
     size: 'medium',
   },
   {
-    name: 'Lomnický štít',
-    distance: '19 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1758916922378-a17f51ba056a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwyfHxtb3VudGFpbiUyMHBlYWslMjByb2NreSUyMG1vdW50YWlucyUyMHN1bnNldCUyMGRyYW1hdGljJTIwbGFuZHNjYXBlfGVufDB8MHx8fDE3NjI4NDUyNDR8MA&ixlib=rb-4.1.0&q=85',
-    attribution: 'Marek Piwnicki on Unsplash',
+    name: 'Taj-ul-Masajid',
+    distance: '4 km',
+    detail: 'from property',
+    image: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Historic mosque',
     size: 'medium',
   },
   {
-    name: 'Climbing wall Wall',
-    distance: '9 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1683527945242-904da014fbb8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwxfHxjbGltYmluZyUyMHdhbGwlMjByb2NrJTIwY2xpbWJpbmclMjBjb2xvcmZ1bCUyMGhvbGRzJTIwcGVyc29uJTIwY2xpbWJpbmd8ZW58MHwxfHx8MTc2Mjg0NTI0NXww&ixlib=rb-4.1.0&q=85',
-    attribution: 'Luis Andrés Villalón Vega on Unsplash',
+    name: 'Regional Science Centre',
+    distance: '6 km',
+    detail: 'from property',
+    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Educational attraction',
     size: 'tall',
   },
   {
-    name: 'Golf Black Store',
-    distance: '4 km',
-    detail: 'od Chalet Matthe',
-    image: 'https://images.unsplash.com/photo-1596475380310-d8db2aa35b1f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHwzfHxnb2xmJTIwY291cnNlJTIwZ29sZmVyJTIwZ3JlZW4lMjBncmFzcyUyMHNwb3J0fGVufDB8MHx8Z3JlZW58MTc2Mjg0NTI0OHww&ixlib=rb-4.1.0&q=85',
-    attribution: 'Peter Drew on Unsplash',
+    name: 'Boat Club',
+    distance: '3 km',
+    detail: 'from property',
+    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop&q=80',
+    attribution: 'Boating experience',
     size: 'small',
   },
 ]
@@ -161,16 +161,16 @@ export function AttractionsSlider() {
         {/* Header */}
         <div className="text-center mb-14 max-w-3xl mx-auto">
           <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-normal text-[#4a3f35] mb-6 leading-tight">
-            Experiences in the heart of the Tatras
+            Experience in the heart of Madhya Pradesh
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Chalet Matthe Lomnica is an ideal starting point for exploring the beauty
-            of the High Tatras – regardless of the season. It is up to you whether you
-            set off on foot, by car or rent one of the electric bikes available to
-            guests.
+            Happy Holidays is an ideal starting point for exploring the rich cultural
+            heritage and natural beauty of Bhopal and Madhya Pradesh – throughout the year.
+            Discover ancient monuments, serene lakes, and vibrant wildlife, all within easy
+            reach of your tranquil retreat.
           </p>
           <button className="bg-[#4a3f35] text-white px-10 py-4 rounded-lg hover:bg-[#5a4f45] transition-all duration-300 text-sm font-medium shadow-md hover:shadow-lg">
-            Discover the surroundings of the Chalet
+            Discover the surroundings
           </button>
         </div>
 

@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion";
 import { MapPin } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 export function WelcomeSection() {
+  const router = useRouter();
+
   return (
     <section className="py-20 bg-white">
       <div className="container mx-auto px-4">
@@ -39,7 +42,10 @@ export function WelcomeSection() {
               service exceptional, every moment memorable.
             </p>
 
-            <button className="inline-flex items-center px-8 py-4 bg-brown-dark text-white rounded-full text-base font-medium hover:bg-brown-medium transition-all duration-150">
+            <button
+              onClick={() => router.push('/booking')}
+              className="inline-flex items-center px-8 py-4 bg-brown-dark text-white rounded-full text-base font-medium hover:bg-brown-medium transition-all duration-150"
+            >
               Book Your Experience
             </button>
           </motion.div>
