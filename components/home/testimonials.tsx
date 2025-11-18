@@ -1,146 +1,176 @@
 'use client'
 
-import { useState, useCallback, useEffect } from "react"
-import useEmblaCarousel from 'embla-carousel-react'
+import { useState, useRef } from "react"
 import { motion } from "framer-motion"
-import { Star, Quotes } from "@phosphor-icons/react"
+import { Star, CaretLeft, CaretRight } from "@phosphor-icons/react"
 
 const testimonials = [
   {
     id: 1,
-    name: "Sarah Johnson",
-    role: "Travel Blogger",
-    avatar: "https://i.pravatar.cc/150?img=1",
+    name: "Rajesh Kumar",
     rating: 5,
-    content: "Absolutely stunning property! The attention to detail and exceptional service made our stay unforgettable. The rooms are spacious, beautifully designed, and offer breathtaking views.",
+    content: "Excellent facility for union members! The location near Rani Kamlapati Station made it very convenient for my official visit. Clean rooms, friendly staff, and the subsidized rates are a huge benefit. Highly recommended for all UBEA members.",
   },
   {
     id: 2,
-    name: "Michael Chen",
-    role: "Business Executive",
-    avatar: "https://i.pravatar.cc/150?img=13",
+    name: "Priya Sharma",
     rating: 5,
-    content: "Perfect for business stays. The facilities are world-class, and the staff goes above and beyond. The high-speed internet and quiet work spaces were exactly what I needed.",
+    content: "A wonderful stay experience! The rooms are clean, well-maintained, and the self-cooking kitchen was perfect for my family. We felt safe and comfortable throughout our visit. Great initiative by UBEA and AIBEA for our members.",
   },
   {
     id: 3,
-    name: "Emma Williams",
-    role: "Newlywed",
-    avatar: "https://i.pravatar.cc/150?img=5",
+    name: "Amit Patel",
     rating: 5,
-    content: "Our honeymoon was magical here! The romantic ambiance, private dining, and spa treatments were exceptional. We couldn't have asked for a better experience.",
+    content: "Perfect for retired members like me! The peaceful environment and affordable tariff made my Bhopal visit very enjoyable. The proximity to AIIMS was especially helpful. Union Awaas feels like a home away from home.",
   },
   {
     id: 4,
-    name: "David Martinez",
-    role: "Family Vacationer",
-    avatar: "https://i.pravatar.cc/150?img=12",
+    name: "Sunita Reddy",
     rating: 5,
-    content: "Family-friendly and luxurious! The kids loved the pool and activities, while we enjoyed the spa and fine dining. Something for everyone in the family.",
+    content: "Impressed with the facilities! Used the meeting hall for our regional union gathering and it was perfect. Well-equipped, air-conditioned, and very reasonably priced. The entire team was cooperative and professional.",
+  },
+  {
+    id: 5,
+    name: "Vikram Singh",
+    rating: 5,
+    content: "Outstanding value for members! Stayed here during my training in Bhopal. The rooms are spacious, clean, and comfortable. Having RO water and kitchen facilities is a big plus. Will definitely stay here again on my next visit.",
+  },
+  {
+    id: 6,
+    name: "Kavita Desai",
+    rating: 5,
+    content: "Highly satisfied with the experience! Brought my family for a short vacation and everyone loved it. The secure environment, cleanliness, and member-focused service made our stay memorable. Thank you UBEA for this wonderful facility!",
   },
 ]
 
 export function Testimonials() {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'center' })
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(true)
 
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return
-    setSelectedIndex(emblaApi.selectedScrollSnap())
-  }, [emblaApi])
-
-  useEffect(() => {
-    if (!emblaApi) return
-    onSelect()
-    emblaApi.on('select', onSelect)
-    return () => {
-      emblaApi.off('select', onSelect)
+  const checkScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current
+      setCanScrollLeft(scrollLeft > 0)
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10)
     }
-  }, [emblaApi, onSelect])
+  }
+
+  const scroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 420 // Card width + gap
+      const newScrollLeft = direction === 'left'
+        ? scrollContainerRef.current.scrollLeft - scrollAmount
+        : scrollContainerRef.current.scrollLeft + scrollAmount
+
+      scrollContainerRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      })
+
+      setTimeout(checkScroll, 300)
+    }
+  }
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-20 md:py-24 bg-white overflow-hidden">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <div className="text-center mb-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-          >
-            <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-              Guest Experiences
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Hear what our guests have to say about their stay
-            </p>
-          </motion.div>
+          <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-medium text-brown-dark mb-4 leading-tight">
+            Guest Experiences
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Hear what our members have to say about their stay at Union Awaas
+          </p>
         </div>
 
-        {/* Carousel */}
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={testimonial.id}
-                className="flex-[0_0_100%] md:flex-[0_0_50%] lg:flex-[0_0_33.333%] min-w-0 px-4"
-              >
+        {/* Carousel Container */}
+        <div className="relative max-w-6xl mx-auto">
+          <div
+            ref={scrollContainerRef}
+            onScroll={checkScroll}
+            className="overflow-x-auto scrollbar-hide pb-6"
+          >
+            <div className="flex gap-6 min-w-max pb-2">
+              {testimonials.map((testimonial, index) => (
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  key={testimonial.id}
+                  initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1, duration: 0.5 }}
-                  className="bg-white rounded-2xl p-8 shadow-lg h-full relative"
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="bg-tan-light rounded-2xl p-8 hover:shadow-xl transition-all duration-300 flex-shrink-0 w-[calc((100vw-8rem)/3)] max-w-[380px] flex flex-col"
                 >
-                  {/* Quote Icon */}
-                  <div className="absolute -top-4 left-8 w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center">
-                    <Quotes size={24} weight="fill" className="text-white" />
-                  </div>
-
-                  {/* Rating */}
-                  <div className="flex space-x-1 mb-4 mt-4">
+                  {/* Star Rating */}
+                  <div className="flex gap-1 mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} size={20} weight="fill" className="text-accent-500" />
+                      <Star key={i} size={20} weight="fill" className="text-yellow-500" />
                     ))}
                   </div>
 
-                  {/* Content */}
-                  <p className="text-gray-700 mb-6 leading-relaxed">
+                  {/* Review Text */}
+                  <p className="text-gray-700 leading-relaxed mb-6 text-base flex-grow">
                     "{testimonial.content}"
                   </p>
 
-                  {/* Author */}
-                  <div className="flex items-center space-x-4 pt-6 border-t border-gray-200">
-                    <img
-                      src={testimonial.avatar}
-                      alt={testimonial.name}
-                      className="w-14 h-14 rounded-full object-cover"
-                    />
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{testimonial.name}</h4>
-                      <p className="text-sm text-gray-500">{testimonial.role}</p>
-                    </div>
+                  {/* Author Name Only */}
+                  <div className="border-t border-tan pt-4 mt-auto">
+                    <h4 className="font-semibold text-brown-dark text-lg">
+                      {testimonial.name}
+                    </h4>
                   </div>
                 </motion.div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Dots */}
-        <div className="flex justify-center space-x-2 mt-8">
-          {testimonials.map((_, index) => (
+          {/* Navigation Buttons - Desktop */}
+          <div className="hidden md:block">
             <button
-              key={index}
-              onClick={() => emblaApi?.scrollTo(index)}
-              className={`w-2 h-2 rounded-full transition-all ${
-                index === selectedIndex % testimonials.length
-                  ? 'bg-primary-600 w-8'
-                  : 'bg-gray-300'
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${
+                !canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-            />
-          ))}
+              aria-label="Previous testimonials"
+            >
+              <CaretLeft size={28} weight="bold" className="text-brown-dark group-hover:text-brown-medium transition-colors" />
+            </button>
+            <button
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${
+                !canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              aria-label="Next testimonials"
+            >
+              <CaretRight size={28} weight="bold" className="text-brown-dark group-hover:text-brown-medium transition-colors" />
+            </button>
+          </div>
+
+          {/* Navigation Buttons - Mobile */}
+          <div className="md:hidden flex justify-center gap-4 mt-8">
+            <button
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${
+                !canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              aria-label="Previous testimonials"
+            >
+              <CaretLeft size={24} weight="bold" className="text-brown-dark" />
+            </button>
+            <button
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${
+                !canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              aria-label="Next testimonials"
+            >
+              <CaretRight size={24} weight="bold" className="text-brown-dark" />
+            </button>
+          </div>
         </div>
       </div>
     </section>

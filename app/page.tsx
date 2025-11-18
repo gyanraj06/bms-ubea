@@ -7,6 +7,7 @@ import { WelcomeSection } from "@/components/home/welcome-section"
 import { LivingSpaces } from "@/components/home/living-spaces"
 import { AttractionsSlider } from "@/components/home/attractions-slider"
 import { AudienceCards } from "@/components/home/audience-cards"
+import { Testimonials } from "@/components/home/testimonials"
 
 export default function Home() {
   return (
@@ -17,6 +18,7 @@ export default function Home() {
       <LivingSpaces />
       <AttractionsSlider />
       <AudienceCards />
+      <Testimonials />
       <Footer />
     </main>
   )

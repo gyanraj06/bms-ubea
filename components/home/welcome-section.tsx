@@ -25,21 +25,21 @@ export function WelcomeSection() {
             </div>
 
             <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-medium text-brown-dark mb-6 leading-tight">
-              Welcome to Your Sanctuary
+              Welcome to Union Awaas
             </h2>
 
-            <p className="text-lg text-gray-600 leading-relaxed mb-8">
-              Nestled in the heart of nature, our Happy Holidays offers an
-              escape from the ordinary. Experience breathtaking views,
-              world-class amenities, and unparalleled service that transforms
-              every stay into an unforgettable journey.
+            <p className="text-lg text-gray-600 leading-relaxed mb-6">
+              The official holiday home for members of the United Bank Employees'
+              Association (UBEA) and All India Bank Employees' Association (AIBEA).
+              We offer a clean, secure, and affordable stay exclusively for our
+              union members and their families visiting Bhopal.
             </p>
 
-            <p className="text-base text-gray-600 leading-relaxed mb-10">
-              Whether you're seeking adventure or tranquility, our location
-              provides easy access to local attractions while maintaining the
-              peace and privacy you deserve. Every room is a masterpiece, every
-              service exceptional, every moment memorable.
+            <p className="text-lg text-gray-600 leading-relaxed mb-10">
+              Conveniently located near Rani Kamlapati Station and AIIMS, our
+              guest house provides easy access to the city's key landmarks. Enjoy
+              our air-conditioned rooms, self-cooking kitchen, and dedicated meeting
+              hall, all designed for your comfort.
             </p>
 
             <button

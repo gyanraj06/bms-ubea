@@ -1,22 +1,22 @@
 'use client'
 
-import { Users, Briefcase, UsersThree } from '@phosphor-icons/react'
+import { UserCircle, Presentation, UsersThree } from '@phosphor-icons/react'
 
 const audiences = [
   {
-    icon: Users,
-    title: 'Families with children',
-    description: 'Larger families, or several families, who like to seek comfort and prefer the cozy atmosphere of a cottage, but at the same time suffer from a high standard of accommodation.',
+    icon: UserCircle,
+    title: 'UBEA/AIBEA Members',
+    description: 'Whether you\'re visiting Bhopal for personal work, a short trip, or official bank duties, Union Awaas is your home base. We provide a secure, comfortable, and highly affordable stay for all serving and retired members.',
   },
   {
-    icon: Briefcase,
-    title: 'Corporate events',
-    description: 'An ideal space for corporate events of up to 12 people who prefer informal spaces for smaller training sessions or teambuilding.',
+    icon: Presentation,
+    title: 'Meetings & Functions',
+    description: 'Our air-conditioned hall can comfortably host 50-60 guests. It\'s the perfect, budget-friendly venue for union meetings, official gatherings, or small private functions. (Note: Hall booking is a separate process).',
   },
   {
     icon: UsersThree,
-    title: 'Friends',
-    description: 'For smaller groups of up to 12 people who prefer privacy and are looking for a relaxed, homely atmosphere combined with luxury. Ideal for friends, acquaintances or ladies weekends.',
+    title: 'Members\' Families',
+    description: 'We warmly welcome the families of our members. Our facility offers a safe environment and the convenience of a self-cooking kitchen with RO water, making it an ideal and economical choice for families traveling together.',
   },
 ]
 
@@ -37,7 +37,7 @@ export function AudienceCards() {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-normal text-[#4a3f35] mb-4 leading-tight max-w-3xl mx-auto">
-            For families, companies and groups of friends
+            For Our Members, Their Families, and Official Functions
           </h2>
         </div>
 
