@@ -25,12 +25,46 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
+    console.log("=" .repeat(80));
+    console.log("🚀 PHONE VERIFICATION COMPONENT MOUNTED");
+    console.log("=" .repeat(80));
+
+    // Add global error handler
+    const handleGlobalError = (event: ErrorEvent) => {
+      console.error("🔴 [GLOBAL ERROR]", {
+        message: event.message,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno,
+        error: event.error,
+        stack: event.error?.stack
+      });
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error("🔴 [UNHANDLED PROMISE REJECTION]", {
+        reason: event.reason,
+        promise: event.promise,
+        stack: event.reason?.stack
+      });
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
     if (!auth) {
-      return;
+      console.error("❌ NO AUTH OBJECT - Firebase not initialized");
+      return () => {
+        window.removeEventListener('error', handleGlobalError);
+        window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+      };
     }
 
     // Skip if verifier already exists (prevents re-initialization in Strict Mode)
-    if (recaptchaVerifierRef.current) return;
+    if (recaptchaVerifierRef.current) {
+      console.log("⏭️ Verifier already exists, skipping re-initialization");
+      return;
+    }
 
     const initRecaptcha = async () => {
       try {
@@ -120,6 +154,8 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
     // Cleanup only on true unmount
     return () => {
       clearTimeout(timeoutId);
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       if (recaptchaVerifierRef.current) {
         try {
           recaptchaVerifierRef.current.clear();
@@ -132,6 +168,10 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
   }, []);
 
   const handleSendOtp = async (e?: React.MouseEvent) => {
+    console.log("\n\n");
+    console.log("=" .repeat(80));
+    console.log("📞 📞 📞 SEND OTP BUTTON CLICKED 📞 📞 📞");
+    console.log("=" .repeat(80));
     console.log("📞 [SEND_OTP] Function called");
 
     if (e) {
@@ -176,7 +216,42 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
       console.log("📞 [SEND_OTP] Calling signInWithPhoneNumber...");
       console.log("📞 [SEND_OTP] Timestamp:", new Date().toISOString());
 
+      // Intercept network requests to see what's being sent
+      const originalFetch = window.fetch;
+      window.fetch = async (...args) => {
+        const [url, options] = args;
+        if (typeof url === 'string' && url.includes('identitytoolkit.googleapis.com')) {
+          console.log("🌐 [NETWORK] Firebase API Request:", {
+            url,
+            method: options?.method,
+            headers: options?.headers,
+            body: options?.body ? JSON.parse(options.body as string) : null
+          });
+        }
+        const response = await originalFetch(...args);
+        if (typeof url === 'string' && url.includes('identitytoolkit.googleapis.com')) {
+          const clonedResponse = response.clone();
+          try {
+            const responseData = await clonedResponse.json();
+            console.log("🌐 [NETWORK] Firebase API Response:", {
+              status: response.status,
+              statusText: response.statusText,
+              data: responseData
+            });
+          } catch (e) {
+            console.log("🌐 [NETWORK] Firebase API Response (non-JSON):", {
+              status: response.status,
+              statusText: response.statusText
+            });
+          }
+        }
+        return response;
+      };
+
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current);
+
+      // Restore original fetch
+      window.fetch = originalFetch;
 
       console.log("✅ [SEND_OTP] Success! OTP sent", {
         hasVerificationId: !!confirmationResult?.verificationId,
