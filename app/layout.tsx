@@ -44,6 +44,17 @@ export default function RootLayout({
         <Script
           src={`https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY}`}
           strategy="beforeInteractive"
+          onLoad={() => {
+            console.log("✅ [SCRIPT] reCAPTCHA Enterprise script loaded", {
+              enterpriseKey: process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY,
+              scriptSrc: `https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY}`,
+              hasGrecaptcha: typeof window !== 'undefined' && !!(window as any).grecaptcha,
+              grecaptchaEnterprise: typeof window !== 'undefined' && !!(window as any).grecaptcha?.enterprise
+            });
+          }}
+          onError={(e) => {
+            console.error("❌ [SCRIPT] Failed to load reCAPTCHA Enterprise script", e);
+          }}
         />
 
         <Providers>

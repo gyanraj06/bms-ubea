@@ -34,29 +34,60 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
 
     const initRecaptcha = async () => {
       try {
+        console.log("🔧 [INIT] Starting reCAPTCHA initialization");
+        console.log("🔧 [INIT] Environment:", {
+          hasEnterpriseKey: !!process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY,
+          enterpriseKey: process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY,
+          hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
+          origin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
+        });
+
         // Check if button exists
         const button = document.getElementById("send-otp-button");
         if (!button) {
+          console.error("🔧 [INIT] Button #send-otp-button not found");
           return;
         }
+        console.log("🔧 [INIT] Button found:", button);
+
+        // Check if grecaptcha is loaded
+        console.log("🔧 [INIT] window.grecaptcha:", typeof window !== 'undefined' ? (window as any).grecaptcha : 'no window');
 
         const verifier = new RecaptchaVerifier(auth, "send-otp-button", {
           size: "invisible",
           callback: (response: any) => {
-            console.log("DEBUG: reCAPTCHA Enterprise solved", response);
+            console.log("✅ [RECAPTCHA] Enterprise solved successfully", {
+              responseLength: response?.length,
+              responsePreview: response?.substring(0, 50) + "..."
+            });
           },
           "expired-callback": () => {
-            console.error("DEBUG: reCAPTCHA expired");
+            console.error("❌ [RECAPTCHA] Expired");
             toast.error("Recaptcha expired. Please try again.");
           },
           "error-callback": (error: any) => {
-            console.error("DEBUG: reCAPTCHA error", error);
+            console.error("❌ [RECAPTCHA] Error callback", {
+              error,
+              message: error?.message,
+              code: error?.code,
+              stack: error?.stack
+            });
           }
         });
 
+        console.log("🔧 [INIT] RecaptchaVerifier created, calling render()");
         await verifier.render();
+        console.log("✅ [INIT] RecaptchaVerifier rendered successfully");
         recaptchaVerifierRef.current = verifier;
       } catch (error: any) {
+        console.error("❌ [INIT] Initialization failed", {
+          error,
+          message: error?.message,
+          code: error?.code,
+          stack: error?.stack,
+          fullError: JSON.stringify(error, null, 2)
+        });
+
         // Set error state for display
         let errorMessage = "Failed to initialize phone verification.";
 
@@ -96,43 +127,72 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
   }, []);
 
   const handleSendOtp = async (e?: React.MouseEvent) => {
+    console.log("📞 [SEND_OTP] Function called");
+
     if (e) {
       e.preventDefault();
       e.stopPropagation();
+      console.log("📞 [SEND_OTP] Event prevented");
     }
 
     if (!phone || phone.length < 10) {
+      console.warn("📞 [SEND_OTP] Invalid phone number:", phone);
       toast.error("Please enter a valid phone number");
       return;
     }
 
     if (!recaptchaVerifierRef.current) {
+      console.error("📞 [SEND_OTP] Recaptcha verifier not initialized");
       toast.error("Recaptcha not initialized. Please refresh the page.");
       return;
     }
 
+    console.log("📞 [SEND_OTP] Pre-flight checks passed");
     setIsSending(true);
 
     try {
       // Format phone number - ensure it has country code
       const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
 
-      console.log("DEBUG: Starting signInWithPhoneNumber", { 
-        phone: formattedPhone, 
-        verifier: !!recaptchaVerifierRef.current 
+      console.log("📞 [SEND_OTP] Phone formatted:", {
+        original: phone,
+        formatted: formattedPhone,
+        hasVerifier: !!recaptchaVerifierRef.current,
+        verifierType: recaptchaVerifierRef.current?.constructor?.name
       });
 
+      console.log("📞 [SEND_OTP] Firebase auth object:", {
+        hasAuth: !!auth,
+        authType: auth?.constructor?.name,
+        currentUser: auth?.currentUser,
+        apiKey: auth?.config?.apiKey?.substring(0, 10) + "..."
+      });
+
+      console.log("📞 [SEND_OTP] Calling signInWithPhoneNumber...");
+      console.log("📞 [SEND_OTP] Timestamp:", new Date().toISOString());
+
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current);
-      
-      console.log("DEBUG: OTP Sent Result", {
-        verificationId: confirmationResult.verificationId,
-        fullResult: confirmationResult
+
+      console.log("✅ [SEND_OTP] Success! OTP sent", {
+        hasVerificationId: !!confirmationResult?.verificationId,
+        verificationIdLength: confirmationResult?.verificationId?.length,
+        verificationIdPreview: confirmationResult?.verificationId?.substring(0, 20) + "...",
+        resultType: confirmationResult?.constructor?.name,
+        timestamp: new Date().toISOString()
       });
 
       setVerificationId(confirmationResult);
       toast.success("OTP sent successfully!");
     } catch (error: any) {
-      console.error("DEBUG: OTP Error", error);
+      console.error("❌ [SEND_OTP] Error occurred", {
+        error,
+        errorType: error?.constructor?.name,
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+        fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
+        timestamp: new Date().toISOString()
+      });
       
       if (error.code === 'auth/invalid-phone-number') {
         toast.error("Invalid phone number format.");
