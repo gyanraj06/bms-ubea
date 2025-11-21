@@ -170,16 +170,7 @@ input[type="date"] {
   background: transparent;
 }
 
-/* Hide reCAPTCHA v2 badge/checkbox (Enterprise is handling verification) */
+/* reCAPTCHA styling - let it show for now */
 .grecaptcha-badge {
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-iframe[src*="recaptcha"] {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  position: absolute !important;
-  z-index: -9999 !important;
+  /* Visible - user needs to interact */
 }
