@@ -42,6 +42,14 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
           origin: typeof window !== 'undefined' ? window.location.origin : 'unknown',
         });
 
+        // Check if reCAPTCHA Enterprise script loaded
+        console.log("🔧 [INIT] Script status:", {
+          hasGrecaptcha: typeof window !== 'undefined' && !!(window as any).grecaptcha,
+          hasEnterprise: typeof window !== 'undefined' && !!(window as any).grecaptcha?.enterprise,
+          grecaptchaReady: typeof window !== 'undefined' && !!(window as any).grecaptcha?.ready,
+          allScripts: typeof document !== 'undefined' ? Array.from(document.scripts).map(s => s.src).filter(s => s.includes('recaptcha')) : []
+        });
+
         // Check if button exists
         const button = document.getElementById("send-otp-button");
         if (!button) {
@@ -49,9 +57,6 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
           return;
         }
         console.log("🔧 [INIT] Button found:", button);
-
-        // Check if grecaptcha is loaded
-        console.log("🔧 [INIT] window.grecaptcha:", typeof window !== 'undefined' ? (window as any).grecaptcha : 'no window');
 
         const verifier = new RecaptchaVerifier(auth, "send-otp-button", {
           size: "invisible",
