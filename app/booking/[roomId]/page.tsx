@@ -27,6 +27,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { PhoneVerification } from "@/components/booking/phone-verification";
 
 function BookingDetailContent() {
   const params = useParams();
@@ -70,6 +71,7 @@ function BookingDetailContent() {
   const [numExtraBeds, setNumExtraBeds] = useState(1);
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
   const [uploadingBankId, setUploadingBankId] = useState(false);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
 
   // Get booking details from URL params
   const checkIn = searchParams.get("checkIn");
@@ -317,6 +319,11 @@ function BookingDetailContent() {
 
     if (!room) {
       toast.error("Room details not loaded");
+      return;
+    }
+
+    if (!isPhoneVerified) {
+      toast.error("Please verify your phone number to proceed");
       return;
     }
 
@@ -682,17 +689,14 @@ function BookingDetailContent() {
                           className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark focus:ring-2 focus:ring-brown-dark/20 outline-none transition-all"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="phone">Phone Number *</Label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          required
-                          placeholder="+91"
-                          className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark focus:ring-2 focus:ring-brown-dark/20 outline-none transition-all"
+
+                      <div className="col-span-1 md:col-span-2">
+                        <PhoneVerification 
+                          initialPhone={formData.phone}
+                          onVerified={(phone) => {
+                            setFormData(prev => ({ ...prev, phone }));
+                            setIsPhoneVerified(true);
+                          }}
                         />
                       </div>
                     </div>
