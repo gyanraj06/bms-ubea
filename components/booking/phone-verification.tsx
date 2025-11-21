@@ -43,7 +43,7 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
         const verifier = new RecaptchaVerifier(auth, "send-otp-button", {
           size: "invisible",
           callback: (response: any) => {
-            console.log("DEBUG: reCAPTCHA solved", response);
+            console.log("DEBUG: reCAPTCHA Enterprise solved", response);
           },
           "expired-callback": () => {
             console.error("DEBUG: reCAPTCHA expired");
