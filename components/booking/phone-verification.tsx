@@ -64,11 +64,14 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
 
         // Provide helpful error messages
         if (error.code === 'auth/invalid-app-credential') {
-          errorMessage = "Firebase configuration error. Please add 'localhost' to Authorized Domains in Firebase Console.";
+          const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'unknown';
+          errorMessage = `Domain "${currentDomain}" not authorized. Add it to Firebase Console Authorized Domains.`;
         } else if (error.message?.includes('network')) {
           errorMessage = "Network error. Please check your internet connection.";
         } else if (error.code === 'auth/operation-not-allowed') {
           errorMessage = "Phone authentication not enabled. Please enable it in Firebase Console.";
+        } else if (error.message) {
+          errorMessage = `Initialization failed: ${error.message}`;
         }
 
         setInitError(errorMessage);
@@ -94,7 +97,12 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
     };
   }, []);
 
-  const handleSendOtp = async () => {
+  const handleSendOtp = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!phone || phone.length < 10) {
       toast.error("Please enter a valid phone number");
       return;
@@ -110,12 +118,24 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
     try {
       // Format phone number - ensure it has country code
       const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-      
+
+      console.log("DEBUG: Starting signInWithPhoneNumber", { 
+        phone: formattedPhone, 
+        verifier: !!recaptchaVerifierRef.current 
+      });
+
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current);
       
+      console.log("DEBUG: OTP Sent Result", {
+        verificationId: confirmationResult.verificationId,
+        fullResult: confirmationResult
+      });
+
       setVerificationId(confirmationResult);
       toast.success("OTP sent successfully!");
     } catch (error: any) {
+      console.error("DEBUG: OTP Error", error);
+      
       if (error.code === 'auth/invalid-phone-number') {
         toast.error("Invalid phone number format.");
       } else if (error.code === 'auth/too-many-requests') {
@@ -141,7 +161,12 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!otp || otp.length < 6) {
       toast.error("Please enter a valid 6-digit OTP");
       return;
@@ -217,6 +242,12 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!verificationId && phone) handleSendOtp();
+                  }
+                }}
                 placeholder="9876543210"
                 disabled={!!verificationId || isSending}
                 className="flex-1"
@@ -246,6 +277,12 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (otp.length >= 6) handleVerifyOtp();
+                    }
+                  }}
                   placeholder="123456"
                   maxLength={6}
                   disabled={isVerifying}
