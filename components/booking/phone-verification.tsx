@@ -25,6 +25,10 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
   useEffect(() => {
+    // Force logs to always show even in production
+    if (typeof window !== 'undefined') {
+      (window as any).PHONE_VERIFICATION_DEBUG = true;
+    }
     console.log("=" .repeat(80));
     console.log("🚀 PHONE VERIFICATION COMPONENT MOUNTED");
     console.log("=" .repeat(80));
@@ -252,6 +256,9 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
         console.error("❌ [SEND_OTP] Firebase Error Code:", error.code);
       }
 
+      // Show error details in toast for debugging
+      const errorDetails = `Error Code: ${error.code || 'none'}\nMessage: ${error.message || 'none'}`;
+
       if (error.code === 'auth/invalid-phone-number') {
         toast.error("Invalid phone number format.");
       } else if (error.code === 'auth/too-many-requests') {
@@ -261,7 +268,18 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
       } else if (error.code === 'auth/captcha-check-failed') {
         toast.error("reCAPTCHA verification failed. Please refresh and try again.");
       } else {
+        // Show full error details in production for debugging
         toast.error(`Failed to send OTP: ${error.code || error.message || 'Unknown error'}`);
+        // Also log to window object so it can be accessed from console
+        if (typeof window !== 'undefined') {
+          (window as any).LAST_OTP_ERROR = {
+            code: error.code,
+            message: error.message,
+            customData: error.customData,
+            fullError: error
+          };
+          console.error("❌ Last error saved to window.LAST_OTP_ERROR");
+        }
       }
 
       // Reset recaptcha on error so user can try again
