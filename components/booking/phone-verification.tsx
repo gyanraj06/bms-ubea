@@ -216,42 +216,7 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
       console.log("📞 [SEND_OTP] Calling signInWithPhoneNumber...");
       console.log("📞 [SEND_OTP] Timestamp:", new Date().toISOString());
 
-      // Intercept network requests to see what's being sent
-      const originalFetch = window.fetch;
-      window.fetch = async (...args) => {
-        const [url, options] = args;
-        if (typeof url === 'string' && url.includes('identitytoolkit.googleapis.com')) {
-          console.log("🌐 [NETWORK] Firebase API Request:", {
-            url,
-            method: options?.method,
-            headers: options?.headers,
-            body: options?.body ? JSON.parse(options.body as string) : null
-          });
-        }
-        const response = await originalFetch(...args);
-        if (typeof url === 'string' && url.includes('identitytoolkit.googleapis.com')) {
-          const clonedResponse = response.clone();
-          try {
-            const responseData = await clonedResponse.json();
-            console.log("🌐 [NETWORK] Firebase API Response:", {
-              status: response.status,
-              statusText: response.statusText,
-              data: responseData
-            });
-          } catch (e) {
-            console.log("🌐 [NETWORK] Firebase API Response (non-JSON):", {
-              status: response.status,
-              statusText: response.statusText
-            });
-          }
-        }
-        return response;
-      };
-
       const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, recaptchaVerifierRef.current);
-
-      // Restore original fetch
-      window.fetch = originalFetch;
 
       console.log("✅ [SEND_OTP] Success! OTP sent", {
         hasVerificationId: !!confirmationResult?.verificationId,
@@ -264,24 +229,39 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
       setVerificationId(confirmationResult);
       toast.success("OTP sent successfully!");
     } catch (error: any) {
+      // Enhanced error logging
       console.error("❌ [SEND_OTP] Error occurred", {
         error,
         errorType: error?.constructor?.name,
         message: error?.message,
         code: error?.code,
+        name: error?.name,
         stack: error?.stack,
+        customData: error?.customData,
         fullError: JSON.stringify(error, Object.getOwnPropertyNames(error), 2),
         timestamp: new Date().toISOString()
       });
-      
+
+      // Try to extract more details from the error
+      if (error?.customData) {
+        console.error("❌ [SEND_OTP] Custom Error Data:", error.customData);
+      }
+
+      // Log the actual error response if available
+      if (error?.code) {
+        console.error("❌ [SEND_OTP] Firebase Error Code:", error.code);
+      }
+
       if (error.code === 'auth/invalid-phone-number') {
         toast.error("Invalid phone number format.");
       } else if (error.code === 'auth/too-many-requests') {
         toast.error("Too many requests. Please try again later.");
       } else if (error.code === 'auth/invalid-app-credential') {
         toast.error("Configuration Error: Domain not authorized.");
+      } else if (error.code === 'auth/captcha-check-failed') {
+        toast.error("reCAPTCHA verification failed. Please refresh and try again.");
       } else {
-        toast.error("Failed to send OTP. Please try again.");
+        toast.error(`Failed to send OTP: ${error.code || error.message || 'Unknown error'}`);
       }
 
       // Reset recaptcha on error so user can try again
