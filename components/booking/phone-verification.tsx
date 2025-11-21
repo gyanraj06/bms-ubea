@@ -34,25 +34,23 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
 
     const initRecaptcha = async () => {
       try {
-        // Check if container exists
-        const container = document.getElementById("recaptcha-container");
-        if (!container) {
+        // Check if button exists
+        const button = document.getElementById("send-otp-button");
+        if (!button) {
           return;
         }
 
-        // Clear any existing recaptcha widgets
-        container.innerHTML = '';
-
-        const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        const verifier = new RecaptchaVerifier(auth, "send-otp-button", {
           size: "invisible",
-          callback: () => {
-            // reCAPTCHA solved
+          callback: (response: any) => {
+            console.log("DEBUG: reCAPTCHA solved", response);
           },
           "expired-callback": () => {
+            console.error("DEBUG: reCAPTCHA expired");
             toast.error("Recaptcha expired. Please try again.");
           },
-          "error-callback": () => {
-            // reCAPTCHA error
+          "error-callback": (error: any) => {
+            console.error("DEBUG: reCAPTCHA error", error);
           }
         });
 
@@ -201,8 +199,6 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
 
   return (
     <div className="space-y-4">
-      <div id="recaptcha-container"></div>
-
       {initError && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="space-y-2">
@@ -253,9 +249,10 @@ export function PhoneVerification({ onVerified, initialPhone = "" }: PhoneVerifi
                 className="flex-1"
               />
               {!verificationId && (
-                <Button 
-                  type="button" 
-                  onClick={handleSendOtp} 
+                <Button
+                  id="send-otp-button"
+                  type="button"
+                  onClick={handleSendOtp}
                   disabled={isSending || !phone}
                   className="bg-brown-dark hover:bg-brown-medium text-white"
                 >
