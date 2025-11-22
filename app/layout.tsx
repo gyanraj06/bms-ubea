@@ -40,12 +40,6 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${montserrat.variable}`}>
       <body className="font-sans antialiased">
-        {/* Firebase reCAPTCHA Enterprise script for phone authentication */}
-        <Script
-          src={`https://www.google.com/recaptcha/enterprise.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY}`}
-          strategy="beforeInteractive"
-        />
-
         <Providers>
           {children}
           <Toaster position="top-right" richColors />

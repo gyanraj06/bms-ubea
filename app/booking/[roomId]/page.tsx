@@ -27,7 +27,10 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { PhoneVerification } from "@/components/booking/phone-verification";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
+import { isValidPhoneNumber } from "libphonenumber-js";
+import PhoneVerificationModal from "@/components/booking/PhoneVerificationModal";
 
 function BookingDetailContent() {
   const params = useParams();
@@ -71,7 +74,11 @@ function BookingDetailContent() {
   const [numExtraBeds, setNumExtraBeds] = useState(1);
   const [uploadingGovtId, setUploadingGovtId] = useState(false);
   const [uploadingBankId, setUploadingBankId] = useState(false);
+
+  // Phone verification states
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [verifiedPhone, setVerifiedPhone] = useState<string>("");
+  const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
 
   // Get booking details from URL params
   const checkIn = searchParams.get("checkIn");
@@ -303,6 +310,26 @@ function BookingDetailContent() {
     setGuestDetails(updated);
   };
 
+  // Phone verification handlers
+  const handlePhoneVerified = (phone: string) => {
+    setVerifiedPhone(phone);
+    setIsPhoneVerified(true);
+    setFormData({ ...formData, phone: phone.replace("+91", "") });
+    toast.success("Phone number verified successfully!");
+  };
+
+  const handlePhoneChange = (value: string | undefined) => {
+    const newPhone = value || "";
+    setFormData({ ...formData, phone: newPhone });
+
+    // Clear verification if phone number changes
+    if (isPhoneVerified && newPhone !== verifiedPhone.replace("+91", "")) {
+      setIsPhoneVerified(false);
+      setVerifiedPhone("");
+      toast.info("Phone number changed. Please verify again.");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -322,8 +349,16 @@ function BookingDetailContent() {
       return;
     }
 
+    // Phone verification check
     if (!isPhoneVerified) {
-      toast.error("Please verify your phone number to proceed");
+      toast.error("Please verify your phone number before booking");
+      return;
+    }
+
+    // Validate phone number format
+    const phoneToValidate = verifiedPhone || formData.phone;
+    if (!phoneToValidate || !isValidPhoneNumber(phoneToValidate, "IN")) {
+      toast.error("Please enter a valid Indian phone number");
       return;
     }
 
@@ -691,13 +726,46 @@ function BookingDetailContent() {
                       </div>
 
                       <div className="col-span-1 md:col-span-2">
-                        <PhoneVerification 
-                          initialPhone={formData.phone}
-                          onVerified={(phone) => {
-                            setFormData(prev => ({ ...prev, phone }));
-                            setIsPhoneVerified(true);
-                          }}
-                        />
+                        <Label htmlFor="phone" className="text-sm font-medium text-gray-700 mb-2 flex items-center justify-between">
+                          <span>Phone Number *</span>
+                          {isPhoneVerified && (
+                            <span className="text-xs font-semibold text-green-600 flex items-center gap-1">
+                              <Check size={16} weight="bold" />
+                              Verified
+                            </span>
+                          )}
+                        </Label>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <PhoneInput
+                              defaultCountry="IN"
+                              countries={["IN"]}
+                              value={formData.phone.startsWith("+") ? formData.phone : `+91${formData.phone}`}
+                              onChange={handlePhoneChange}
+                              placeholder="9876543210"
+                              className="w-full"
+                              disabled={isPhoneVerified}
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowPhoneVerificationModal(true)}
+                            disabled={isPhoneVerified || !formData.phone}
+                            className={cn(
+                              "px-4 py-2 rounded-lg font-semibold transition-all whitespace-nowrap",
+                              isPhoneVerified
+                                ? "bg-green-100 text-green-700 cursor-not-allowed"
+                                : "bg-brown-dark text-white hover:bg-brown-dark/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                            )}
+                          >
+                            {isPhoneVerified ? "✓ Verified" : "Verify"}
+                          </button>
+                        </div>
+                        {!isPhoneVerified && formData.phone && (
+                          <p className="mt-1 text-xs text-orange-600 flex items-center gap-1">
+                            <span>⚠</span> Please verify your phone number to proceed
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1329,6 +1397,14 @@ function BookingDetailContent() {
           )}
         </div>
       )}
+
+      {/* Phone Verification Modal */}
+      <PhoneVerificationModal
+        isOpen={showPhoneVerificationModal}
+        onClose={() => setShowPhoneVerificationModal(false)}
+        onVerified={handlePhoneVerified}
+        initialPhone={formData.phone}
+      />
 
       <Footer />
     </main>
