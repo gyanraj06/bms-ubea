@@ -254,6 +254,12 @@ export function Footer() {
               >
                 Legal Notice
               </Link>
+              <Link
+                href="/refunds-cancellation"
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                Refunds & Cancellation
+              </Link>
             </div>
           </div>
         </div>
