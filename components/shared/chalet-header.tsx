@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { List, X, UserCircle, SignOut, User, ShieldCheck, House } from "@phosphor-icons/react";
+import { List, X, UserCircle, SignOut, User, ShieldCheck, House, ShoppingCart } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-context";
 import { toast } from "sonner";
@@ -214,7 +214,21 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
 
             {/* User Menu */}
             {!loading && !adminUser && user && (
-              <div className="relative" data-user-menu>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/booking/checkout"
+                  className={cn(
+                    "flex items-center justify-center p-2 rounded-full transition-all relative",
+                    shouldShowLight
+                      ? "text-brown-dark hover:bg-gray-100"
+                      : "text-white hover:bg-white/10"
+                  )}
+                  aria-label="Checkout"
+                >
+                  <ShoppingCart size={24} weight="fill" />
+                </Link>
+
+                <div className="relative" data-user-menu>
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
                   className={cn(
@@ -278,6 +292,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                   )}
                 </AnimatePresence>
               </div>
+            </div>
             )}
 
             {/* Login Button (when logged out) */}

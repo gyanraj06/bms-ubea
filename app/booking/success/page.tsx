@@ -13,17 +13,18 @@ export default function BookingSuccessPage() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
   const bookingNumber = searchParams.get("bookingNumber");
+  const bookingIds = searchParams.get("bookingIds");
 
   useEffect(() => {
     // Don't redirect immediately - show success message even without params
-    if (!bookingId && !bookingNumber) {
+    if (!bookingId && !bookingNumber && !bookingIds) {
       const timer = setTimeout(() => {
         router.push("/");
       }, 5000); // Redirect after 5 seconds if no booking info
 
       return () => clearTimeout(timer);
     }
-  }, [bookingId, bookingNumber, router]);
+  }, [bookingId, bookingNumber, bookingIds, router]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -49,7 +50,7 @@ export default function BookingSuccessPage() {
             </motion.div>
 
             <h1 className="font-serif text-4xl font-bold text-gray-900 mb-3">
-              Booking Confirmed!
+              {bookingIds ? "Bookings Confirmed!" : "Booking Confirmed!"}
             </h1>
             <p className="text-xl text-gray-600 mb-2">
               Thank you for choosing Happy Holidays
@@ -58,6 +59,12 @@ export default function BookingSuccessPage() {
               <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
                 <p className="text-sm text-gray-600 mb-1">Booking Number</p>
                 <p className="text-2xl font-bold text-primary-700">{bookingNumber}</p>
+              </div>
+            )}
+            {bookingIds && !bookingNumber && (
+               <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
+                <p className="text-sm text-gray-600 mb-1">Bookings Created</p>
+                <p className="text-xl font-bold text-primary-700">{bookingIds.split(',').length} Rooms Booked</p>
               </div>
             )}
           </div>

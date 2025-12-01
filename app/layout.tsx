@@ -42,7 +42,16 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Providers>
           {children}
-          <Toaster position="top-right" richColors />
+          <Toaster 
+            position="top-right" 
+            richColors 
+            closeButton 
+            toastOptions={{
+              classNames: {
+                closeButton: "!bg-white !text-gray-600 !border-gray-200 !w-8 !h-8 !p-2 hover:!bg-gray-100"
+              }
+            }}
+          />
         </Providers>
       </body>
     </html>

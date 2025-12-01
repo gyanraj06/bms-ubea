@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import Image from "next/image";
 import { ChaletHeader } from "@/components/shared/chalet-header";
@@ -10,13 +10,6 @@ import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import {
   CalendarBlank,
@@ -31,9 +24,12 @@ import {
   Car,
   Plus,
   Minus,
+  ShoppingCart,
+  Eye,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/hooks/use-cart";
 
 function BookingContent() {
   const searchParams = useSearchParams();
@@ -41,39 +37,67 @@ function BookingContent() {
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
   const [guests, setGuests] = useState(2);
-  const [rooms, setRooms] = useState(1);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
   const [guestsOpen, setGuestsOpen] = useState(false);
-  const [roomsOpen, setRoomsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [availableRooms, setAvailableRooms] = useState<any[]>([]);
-  const [isLoadingRooms, setIsLoadingRooms] = useState(true);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  
+  // Use persistent cart hook
+  const { cart, updateCart, totalItems, subtotal } = useCart();
+
+  // Check user login
+  useEffect(() => {
+    const checkUser = () => {
+      const userDataStr = localStorage.getItem("userData");
+      const sessionStr = localStorage.getItem("userSession");
+
+      if (userDataStr && sessionStr && userDataStr !== "null" && sessionStr !== "null") {
+        try {
+          const userData = JSON.parse(userDataStr);
+          setUser(userData);
+        } catch (error) {
+          console.error("Error parsing user:", error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    };
+    checkUser();
+    window.addEventListener("storage", checkUser);
+    return () => window.removeEventListener("storage", checkUser);
+  }, []);
 
   // Fetch available rooms from database with date filtering
   useEffect(() => {
     const fetchRooms = async () => {
+      // Only fetch if dates are selected
+      if (!checkInDate || !checkOutDate) {
+        setAvailableRooms([]);
+        return;
+      }
+
       try {
         setIsLoadingRooms(true);
 
-        // If dates are selected, filter by availability
-        let url = '/api/rooms';
-        if (checkInDate && checkOutDate) {
-          const checkIn = checkInDate.toISOString().split('T')[0];
-          const checkOut = checkOutDate.toISOString().split('T')[0];
-          url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}`;
-        }
+        const checkIn = checkInDate.toISOString().split('T')[0];
+        const checkOut = checkOutDate.toISOString().split('T')[0];
+        const url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}`;
 
         const response = await fetch(url);
         const data = await response.json();
 
         if (data.success) {
           setAvailableRooms(data.rooms || []);
-          // Don't show toast, we'll show prominent message on page
+          setAvailabilityMessage(data.message || 'Search completed');
         } else {
           setAvailableRooms([]);
+          setAvailabilityMessage(data.message || 'No rooms available for selected dates');
         }
       } catch (error) {
         console.error('Error fetching rooms:', error);
@@ -112,20 +136,11 @@ function BookingContent() {
 
   // Guest increment/decrement handlers
   const incrementGuests = () => {
-    setGuests(prev => Math.min(prev + 1, 10));
+    setGuests(prev => Math.min(prev + 1, 20));
   };
 
   const decrementGuests = () => {
     setGuests(prev => Math.max(prev - 1, 1));
-  };
-
-  // Room increment/decrement handlers
-  const incrementRooms = () => {
-    setRooms(prev => Math.min(prev + 1, 4));
-  };
-
-  const decrementRooms = () => {
-    setRooms(prev => Math.max(prev - 1, 1));
   };
 
   const amenityIcons: { [key: string]: any } = {
@@ -161,7 +176,7 @@ function BookingContent() {
           check_in: checkInDate.toISOString().split('T')[0],
           check_out: checkOutDate.toISOString().split('T')[0],
           num_guests: guests,
-          num_rooms: rooms,
+          // We don't send num_rooms here as we want to see all options
         }),
       });
 
@@ -169,22 +184,10 @@ function BookingContent() {
 
       if (data.success) {
         setAvailableRooms(data.available_rooms || []);
-
-        // Show warning if capacity issues
-        const message = data.warning
-          ? `${data.message}\n\n⚠️ ${data.warning}`
-          : data.message || 'Search completed';
-
-        setAvailabilityMessage(message);
+        setAvailabilityMessage(data.message || 'Search completed');
       } else {
         setAvailableRooms([]);
-
-        // Show detailed error with warning
-        const errorMsg = data.warning
-          ? `${data.message || 'No rooms available'}\n\n⚠️ ${data.warning}`
-          : data.error || data.message || 'No rooms available for selected dates';
-
-        setAvailabilityMessage(errorMsg);
+        setAvailabilityMessage(data.message || 'No rooms available for selected dates');
       }
     } catch (error) {
       console.error('Error searching rooms:', error);
@@ -194,21 +197,49 @@ function BookingContent() {
     }
   };
 
-  const handleBookRoom = (roomId: string) => {
+  const handleUpdateCart = (
+    roomId: string, 
+    delta: number, 
+    roomDetails?: { 
+      roomType: string; 
+      price: number; 
+      maxGuests: number; 
+      maxAvailable: number; 
+    }
+  ) => {
+    if (!user) {
+      toast.error("Please login to add rooms to your stay");
+      router.push("/login");
+      return;
+    }
+    updateCart(roomId, delta, roomDetails);
+  };
+
+  const proceedToCheckout = () => {
     if (!checkInDate || !checkOutDate) {
       toast.error("Please select dates first");
       return;
     }
 
-    // Navigate to booking detail page with all parameters
+    if (!user) {
+      toast.error("Please login to proceed");
+      router.push("/login");
+      return;
+    }
+
+    // Build selection string: id1:qty,id2:qty
+    const selection = Object.entries(cart)
+      .map(([id, item]) => `${id}:${item.quantity}`)
+      .join(',');
+
     const params = new URLSearchParams({
       checkIn: checkInDate.toISOString(),
       checkOut: checkOutDate.toISOString(),
       guests: guests.toString(),
-      rooms: rooms.toString(),
+      selection,
     });
 
-    router.push(`/booking/${roomId}?${params.toString()}`);
+    router.push(`/booking/checkout?${params.toString()}`);
   };
 
   const isDateDisabled = (date: Date) => {
@@ -217,8 +248,53 @@ function BookingContent() {
     return date < today;
   };
 
+  // Group rooms by type
+  // Since the API returns individual rooms, we group them manually
+  const groupedRooms = availableRooms.reduce((acc: any, room: any) => {
+    if (!acc[room.room_type]) {
+      acc[room.room_type] = {
+        ...room,
+        count: 0,
+        ids: []
+      };
+    }
+    acc[room.room_type].count++;
+    acc[room.room_type].ids.push(room.id);
+    return acc;
+  }, {});
+
+  const roomTypes = Object.values(groupedRooms);
+  
+  // Calculate total price (including taxes)
+  const calculateTotalWithTax = () => {
+    return Object.values(cart).reduce((total, item) => {
+      // We need to find the room to get GST percentage if possible, or assume 12%
+      // Since cart item might not have GST, we can try to find it in availableRooms if loaded
+      const room = availableRooms.find(r => r.id === item.roomId);
+      const gstPercentage = room?.gst_percentage || 12;
+      const itemTotal = item.price * item.quantity;
+      const tax = itemTotal * (gstPercentage / 100);
+      return total + itemTotal + tax;
+    }, 0);
+  };
+
+  const totalPriceWithTax = calculateTotalWithTax();
+
+  const nights = checkInDate && checkOutDate 
+    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) 
+    : 0;
+
+  const navigateToRoomDetails = (roomId: string) => {
+    const params = new URLSearchParams();
+    if (checkInDate) params.set('checkIn', checkInDate.toISOString());
+    if (checkOutDate) params.set('checkOut', checkOutDate.toISOString());
+    params.set('guests', guests.toString());
+    
+    router.push(`/booking/${roomId}?${params.toString()}`);
+  };
+
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pb-24">
       <ChaletHeader />
 
       {/* Hero Section */}
@@ -251,7 +327,7 @@ function BookingContent() {
           transition={{ duration: 0.3 }}
           className="bg-white rounded-2xl shadow-2xl p-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Check-in Date */}
             <div className="space-y-2">
               <Label className={cn(
@@ -384,7 +460,7 @@ function BookingContent() {
                       <span className="text-2xl font-bold text-gray-900">{guests}</span>
                       <button
                         onClick={incrementGuests}
-                        disabled={guests >= 10}
+                        disabled={guests >= 20}
                         className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 text-gray-700 transition-all hover:border-brown-dark hover:bg-brown-dark hover:text-white disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-700"
                       >
                         <Plus size={20} weight="bold" />
@@ -392,66 +468,6 @@ function BookingContent() {
                     </div>
                     <button
                       onClick={() => setGuestsOpen(false)}
-                      className="w-full h-9 px-4 bg-brown-dark text-white rounded-lg font-medium hover:bg-brown-medium transition-colors text-sm"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </PopoverContent>
-              </Popover>
-            </div>
-
-            {/* Rooms */}
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">
-                Rooms
-              </Label>
-              <Popover open={roomsOpen} onOpenChange={setRoomsOpen}>
-                <PopoverTrigger asChild>
-                  <button
-                    className={cn(
-                      "flex h-11 w-full items-center justify-start rounded-lg border-2 bg-white px-4 py-2 text-sm font-medium transition-all",
-                      roomsOpen
-                        ? "border-brown-dark ring-2 ring-brown-dark/20 shadow-md"
-                        : "border-gray-300 hover:border-gray-400"
-                    )}
-                  >
-                    <Bed
-                      size={20}
-                      className={cn(
-                        "mr-2 flex-shrink-0 transition-colors",
-                        roomsOpen ? "text-brown-dark" : "text-gray-400"
-                      )}
-                    />
-                    <span className="truncate">
-                      {rooms} {rooms === 1 ? 'Room' : 'Rooms'}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-64 p-4" align="start">
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">Number of Rooms</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <button
-                        onClick={decrementRooms}
-                        disabled={rooms <= 1}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 text-gray-700 transition-all hover:border-brown-dark hover:bg-brown-dark hover:text-white disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-700"
-                      >
-                        <Minus size={20} weight="bold" />
-                      </button>
-                      <span className="text-2xl font-bold text-gray-900">{rooms}</span>
-                      <button
-                        onClick={incrementRooms}
-                        disabled={rooms >= 4}
-                        className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 text-gray-700 transition-all hover:border-brown-dark hover:bg-brown-dark hover:text-white disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-gray-300 disabled:hover:bg-transparent disabled:hover:text-gray-700"
-                      >
-                        <Plus size={20} weight="bold" />
-                      </button>
-                    </div>
-                    <button
-                      onClick={() => setRoomsOpen(false)}
                       className="w-full h-9 px-4 bg-brown-dark text-white rounded-lg font-medium hover:bg-brown-medium transition-colors text-sm"
                     >
                       Done
@@ -505,7 +521,7 @@ function BookingContent() {
           </p>
         </div>
 
-        {/* Availability Message - Prominent Display */}
+        {/* Availability Message */}
         {hasSearched && availabilityMessage && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -525,213 +541,208 @@ function BookingContent() {
           </motion.div>
         )}
 
-        {/* Date-Based Availability Message */}
-        {checkInDate && checkOutDate && !hasSearched && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8"
-          >
-            <div className="max-w-3xl mx-auto px-6 py-4 rounded-lg bg-blue-50 border-2 border-blue-500 text-center">
-              <p className="text-blue-800 font-semibold text-lg">
-                {availableRooms.length} room{availableRooms.length === 1 ? '' : 's'} available for {format(checkInDate, 'MMM dd')} - {format(checkOutDate, 'MMM dd, yyyy')}
-              </p>
-              <p className="text-blue-600 text-sm mt-1">
-                {Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))} night{Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) === 1 ? '' : 's'}
-              </p>
-            </div>
-          </motion.div>
-        )}
+        {/* Rooms List - Only show if dates are selected */}
+        {!checkInDate || !checkOutDate ? (
+          <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
+            <CalendarBlank size={48} className="mx-auto text-gray-300 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Dates to View Rooms</h3>
+            <p className="text-gray-500">Please select check-in and check-out dates to see available rooms and prices.</p>
+          </div>
+        ) : (
+          !isLoadingRooms && roomTypes.length > 0 && (
+            <div className="space-y-6">
+              {roomTypes.map((room: any, index: number) => {
+                const hasImage = room.images && room.images.length > 0;
+                const roomImage = hasImage ? room.images[0] : null;
+                
+                const representativeId = room.id;
+                const quantityInCart = cart[representativeId]?.quantity || 0;
+                const maxAvailable = room.count;
 
-        {/* No Rooms Available Message */}
-        {!isLoadingRooms && availableRooms.length === 0 && !hasSearched && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-16 px-4"
-          >
-            <div className="max-w-md mx-auto">
-              <div className="bg-tan-light rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
-                <Bed size={48} weight="fill" className="text-brown-dark" />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                No Rooms Available
-              </h3>
-              <p className="text-gray-600 mb-6">
-                We currently don't have any rooms available in the property. Please check back later or contact us for more information.
-              </p>
-              <a
-                href="/contact"
-                className="inline-block px-6 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors"
-              >
-                Contact Us
-              </a>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Rooms List */}
-        {!isLoadingRooms && availableRooms.length > 0 && (
-          <div className="space-y-6">
-            {availableRooms.map((room, index) => {
-              // Get first image if available
-              const hasImage = room.images && room.images.length > 0;
-              const roomImage = hasImage ? room.images[0] : null;
-
-              return (
-                <motion.div
-                  key={room.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.3 }}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-                >
-                  <div className={cn(
-                    "grid gap-6",
-                    hasImage ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
-                  )}>
-                    {/* Room Image - Only show if image exists */}
-                    {hasImage && (
-                      <div className="relative h-64 lg:h-auto min-h-[256px] bg-gray-100">
-                        <Image
-                          src={roomImage!}
-                          alt={room.room_type}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 1024px) 100vw, 33vw"
-                          loading={index === 0 ? "eager" : "lazy"}
-                          quality={75}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
-                        />
-                        {!room.is_available && (
-                          <div className="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-semibold z-10">
-                            Currently Unavailable
+                return (
+                  <motion.div
+                    key={room.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.3 }}
+                    className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+                  >
+                    <div className={cn(
+                      "grid gap-6",
+                      hasImage ? "grid-cols-1 lg:grid-cols-3" : "grid-cols-1"
+                    )}>
+                      {/* Room Image */}
+                      {hasImage && (
+                        <div className="relative h-64 lg:h-auto min-h-[256px] bg-gray-100 cursor-pointer" onClick={() => navigateToRoomDetails(room.id)}>
+                          <Image
+                            src={roomImage!}
+                            alt={room.room_type}
+                            fill
+                            className="object-cover"
+                            sizes="(max-width: 1024px) 100vw, 33vw"
+                          />
+                          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur text-gray-900 px-3 py-1 rounded-full text-sm font-semibold shadow-sm">
+                            {maxAvailable} Available
                           </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Room Details */}
-                    <div className={cn("p-6", hasImage && "lg:col-span-2")}>
-                      <div className="flex flex-col h-full">
-                        <div className="flex-1">
-                          <div className="flex items-start justify-between mb-4">
-                            <div>
-                              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                                {room.room_type}
-                              </h3>
-                              <p className="text-sm text-gray-500 mb-3">
-                                Room #{room.room_number} {room.view_type && `• ${room.view_type}`}
-                              </p>
-                              <p className="text-gray-600 mb-4">{room.description}</p>
+                          <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center group">
+                            <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity font-medium text-sm flex items-center gap-2">
+                              <Eye size={16} /> View Details
                             </div>
                           </div>
+                        </div>
+                      )}
 
-                          {/* Room Info */}
-                          <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
-                            <div className="flex items-center gap-2">
-                              <Users size={18} weight="fill" className="text-brown-dark" />
-                              <span>Up to {room.max_guests} guests</span>
+                      {/* Room Details */}
+                      <div className={cn("p-6", hasImage && "lg:col-span-2")}>
+                        <div className="flex flex-col h-full">
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <h3 className="text-2xl font-bold text-gray-900 mb-1 cursor-pointer hover:text-brown-dark transition-colors" onClick={() => navigateToRoomDetails(room.id)}>
+                                  {room.room_type}
+                                </h3>
+                                <p className="text-sm text-gray-500 mb-3">
+                                  {room.view_type && `${room.view_type} View`}
+                                </p>
+                                <p className="text-gray-600 mb-4 line-clamp-2">{room.description}</p>
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Bed size={18} weight="fill" className="text-brown-dark" />
-                              <span>{room.bed_type}</span>
-                            </div>
-                            {room.size_sqft > 0 && (
+
+                            <div className="flex flex-wrap gap-4 mb-4 text-sm text-gray-600">
                               <div className="flex items-center gap-2">
-                                <span className="text-brown-dark font-semibold">
-                                  {room.size_sqft} sq ft
-                                </span>
+                                <Users size={18} weight="fill" className="text-brown-dark" />
+                                <span>Up to {room.max_guests} guests</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Bed size={18} weight="fill" className="text-brown-dark" />
+                                <span>{room.bed_type}</span>
+                              </div>
+                              {room.size_sqft > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <span className="text-brown-dark font-semibold">
+                                    {room.size_sqft} sq ft
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Amenities */}
+                            {room.amenities && room.amenities.length > 0 && (
+                              <div className="mb-6">
+                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                  {room.amenities.slice(0, 6).map((amenity: string) => {
+                                    const Icon = amenityIcons[amenity] || Check;
+                                    return (
+                                      <div key={amenity} className="flex items-center gap-2 text-sm text-gray-700">
+                                        <Icon size={18} weight="fill" className="text-green-600" />
+                                        <span>{amenity}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             )}
                           </div>
 
-                          {/* Amenities */}
-                          {room.amenities && room.amenities.length > 0 && (
-                            <div className="mb-6">
-                              <h4 className="text-sm font-semibold text-gray-900 mb-3">
-                                Room Amenities
-                              </h4>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                {room.amenities.map((amenity: string) => {
-                                  const Icon = amenityIcons[amenity] || Check;
-                                  return (
-                                    <div
-                                      key={amenity}
-                                      className="flex items-center gap-2 text-sm text-gray-700"
-                                    >
-                                      <Icon
-                                        size={18}
-                                        weight="fill"
-                                        className="text-green-600"
-                                      />
-                                      <span>{amenity}</span>
-                                    </div>
-                                  );
-                                })}
+                          {/* Price and Selection */}
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                            <div>
+                              <div className="text-3xl font-bold text-gray-900">
+                                ₹{room.base_price.toLocaleString()}
+                                <span className="text-base font-normal text-gray-600">/night</span>
                               </div>
+                              <p className="text-sm text-gray-500 mt-1">+ taxes & fees</p>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Price and Book Button */}
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                          <div>
-                            <div className="text-3xl font-bold text-gray-900">
-                              ₹{room.base_price.toLocaleString()}
-                              <span className="text-base font-normal text-gray-600">
-                                /night
-                              </span>
+                            
+                            <div className="flex items-center gap-4">
+                              <button
+                                onClick={() => navigateToRoomDetails(room.id)}
+                                className="px-4 py-2 text-brown-dark font-medium hover:bg-brown-dark/5 rounded-lg transition-colors"
+                              >
+                                View Details
+                              </button>
+                              
+                              {quantityInCart > 0 ? (
+                                <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-1">
+                                  <button
+                                    onClick={() => handleUpdateCart(representativeId, -1)}
+                                    className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-gray-50 text-gray-700"
+                                  >
+                                    <Minus size={16} weight="bold" />
+                                  </button>
+                                  <span className="font-bold text-lg w-4 text-center">{quantityInCart}</span>
+                                  <button
+                                    onClick={() => handleUpdateCart(representativeId, 1, {
+                                      roomType: room.room_type,
+                                      price: room.base_price,
+                                      maxGuests: room.max_guests,
+                                      maxAvailable: maxAvailable
+                                    })}
+                                    className="w-8 h-8 flex items-center justify-center bg-white rounded-md shadow-sm hover:bg-gray-50 text-gray-700"
+                                    disabled={quantityInCart >= maxAvailable}
+                                  >
+                                    <Plus size={16} weight="bold" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleUpdateCart(representativeId, 1, {
+                                    roomType: room.room_type,
+                                    price: room.base_price,
+                                    maxGuests: room.max_guests,
+                                    maxAvailable: maxAvailable
+                                  })}
+                                  className="px-6 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md"
+                                >
+                                  Add to Stay
+                                </button>
+                              )}
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              + taxes & fees
-                            </p>
                           </div>
-                          <button
-                            onClick={() => handleBookRoom(room.id)}
-                            disabled={!room.is_available}
-                            className="px-8 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-brown-dark"
-                          >
-                            {room.is_available ? 'Book Now' : 'Unavailable'}
-                          </button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )
         )}
-
-        {/* Additional Info */}
-        <div className="mt-12 bg-blue-50 border border-blue-200 rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">
-            Booking Information
-          </h3>
-          <ul className="space-y-2 text-sm text-gray-700">
-            <li className="flex items-start gap-2">
-              <Check size={18} weight="bold" className="text-green-600 mt-0.5" />
-              <span>Check-in time: 11:00 AM | Check-out time: 10:00 AM</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={18} weight="bold" className="text-green-600 mt-0.5" />
-              <span>Free cancellation up to 24 hours before check-in</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={18} weight="bold" className="text-green-600 mt-0.5" />
-              <span>Valid ID proof required at check-in</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Check size={18} weight="bold" className="text-green-600 mt-0.5" />
-              <span>Payment can be made online or at the property</span>
-            </li>
-          </ul>
-        </div>
       </div>
+
+      {/* Floating Checkout Bar */}
+      <AnimatePresence>
+        {totalItems > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-40 p-4"
+          >
+            <div className="container mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-brown-dark text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg">
+                  {totalItems}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Total for {nights} night{nights !== 1 ? 's' : ''}</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    ₹{(totalPriceWithTax * nights).toLocaleString()}
+                    <span className="text-xs font-normal text-gray-500 ml-1">(incl. taxes)</span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={proceedToCheckout}
+                className="px-8 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md flex items-center gap-2"
+              >
+                <span>Proceed to Checkout</span>
+                <ShoppingCart size={20} weight="bold" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer />
     </main>

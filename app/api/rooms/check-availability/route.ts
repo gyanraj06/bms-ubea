@@ -124,7 +124,10 @@ export async function POST(request: NextRequest) {
     // Check guest capacity if num_guests provided
     let roomsMatchingGuestCapacity = availableRooms || [];
     if (num_guests && num_guests > 0) {
-      roomsMatchingGuestCapacity = availableRooms?.filter(room => room.max_guests >= num_guests) || [];
+      // Calculate total capacity based on requested rooms
+      // If user requests 2 rooms, total capacity is room.max_guests * 2
+      const requestedRoomsCount = num_rooms || 1;
+      roomsMatchingGuestCapacity = availableRooms?.filter(room => (room.max_guests * requestedRoomsCount) >= num_guests) || [];
     }
 
     // Check if we need multiple rooms

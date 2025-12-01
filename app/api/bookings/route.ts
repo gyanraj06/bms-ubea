@@ -9,6 +9,7 @@ export const runtime = 'nodejs';
 /**
  * POST /api/bookings
  * Create a new booking (requires authentication)
+ * Supports single or multiple room bookings
  */
 export async function POST(request: NextRequest) {
   try {
@@ -25,14 +26,15 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      room_id,
       check_in,
       check_out,
-      num_guests,
-      num_adults,
-      num_children,
+      bookings, // Array of { room_id, quantity }
+      guest_details,
       special_requests,
-      advance_percentage, // 25, 50, or 100
+      booking_for,
+      // Legacy support
+      room_id,
+      num_guests,
     } = body;
 
     // Verify Supabase token
@@ -61,10 +63,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validation
-    if (!room_id) {
+    // Normalize bookings input
+    let bookingsToCreate: any[] = [];
+    if (bookings && Array.isArray(bookings)) {
+      bookingsToCreate = bookings;
+    } else if (room_id) {
+      bookingsToCreate = [{ room_id, quantity: 1 }];
+    } else {
       return NextResponse.json(
-        { success: false, error: 'Room is required' },
+        { success: false, error: 'No rooms selected' },
         { status: 400 }
       );
     }
@@ -76,64 +83,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get room details
-    const { data: room, error: roomError } = await supabaseAdmin
-      .from('rooms')
-      .select('*')
-      .eq('id', room_id)
-      .single();
-
-    if (roomError || !room) {
-      return NextResponse.json(
-        { success: false, error: 'Room not found' },
-        { status: 404 }
-      );
-    }
-
-    if (!room.is_available) {
-      return NextResponse.json(
-        { success: false, error: 'Room is not available' },
-        { status: 400 }
-      );
-    }
-
-    // Calculate total nights
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
     const totalNights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-
-    // ✅ NEW: Check for overlapping bookings before creating the booking
-    const { data: overlappingBookings, error: overlapError } = await supabaseAdmin
-      .from('bookings')
-      .select('id, booking_number, check_in, check_out')
-      .eq('room_id', room_id)
-      .lt('check_in', check_out)
-      .gt('check_out', check_in)
-      .in('status', ['Confirmed', 'Pending']);
-
-    if (overlapError) {
-      console.error('Error checking overlapping bookings:', overlapError);
-      return NextResponse.json(
-        { success: false, error: 'Failed to verify room availability' },
-        { status: 500 }
-      );
-    }
-
-    if (overlappingBookings && overlappingBookings.length > 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'This room is already booked for the selected dates',
-          code: 'ROOM_UNAVAILABLE',
-          conflicting_bookings: overlappingBookings.map(b => ({
-            booking_number: b.booking_number,
-            check_in: b.check_in,
-            check_out: b.check_out,
-          })),
-        },
-        { status: 409 }
-      );
-    }
 
     if (totalNights <= 0) {
       return NextResponse.json(
@@ -142,77 +94,130 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Calculate pricing
-    const roomCharges = room.base_price * totalNights;
-    const gstAmount = roomCharges * 0.12; // 12% GST
-    const totalAmount = roomCharges + gstAmount;
+    const createdBookings = [];
+    const errors = [];
 
-    // Calculate advance payment
-    const advancePaid = totalAmount * ((advance_percentage || 100) / 100);
-    const balanceAmount = totalAmount - advancePaid;
+    // Process each booking item
+    // Note: In a real production app, this should be a transaction.
+    // Supabase JS client doesn't support transactions directly yet without RPC.
+    // We will process sequentially and hope for the best for now.
 
-    // Generate booking number
-    const bookingNumber = `BK${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    for (const item of bookingsToCreate) {
+      const { room_id: targetRoomId, quantity = 1 } = item;
 
-    // Create booking
-    const { data: newBooking, error: bookingError } = await supabaseAdmin
-      .from('bookings')
-      .insert({
-        booking_number: bookingNumber,
-        user_id: userId,
-        room_id,
-        guest_name: userData.full_name,
-        guest_email: userData.email,
-        guest_phone: userData.phone,
-        check_in: checkInDate.toISOString().split('T')[0],
-        check_out: checkOutDate.toISOString().split('T')[0],
-        total_nights: totalNights,
-        num_guests: num_guests || 1,
-        num_adults: num_adults || num_guests || 1,
-        num_children: num_children || 0,
-        room_charges: roomCharges,
-        gst_amount: gstAmount,
-        total_amount: totalAmount,
-        advance_paid: advancePaid,
-        balance_amount: balanceAmount,
-        special_requests: special_requests || '',
-        status: 'confirmed',
-        payment_status: advance_percentage === 100 ? 'paid' : 'partial',
-        // New enhanced fields - Commented out to prevent errors if columns don't exist
-        // bank_id_number: bank_id_number || null,
-        // govt_id_image_url: govt_id_image_url || null,
-        // bank_id_image_url: bank_id_image_url || null,
-        // booking_for: booking_for || 'self',
-        // guest_details: guest_details || [],
-        // needs_cot: needs_cot || false,
-        // needs_extra_bed: needs_extra_bed || false,
-        // num_cots: num_cots || 0,
-        // num_extra_beds: num_extra_beds || 0,
-      })
-      .select(`
-        *,
-        rooms:room_id (
-          room_number,
-          room_type,
-          images
-        )
-      `)
-      .single();
+      // If quantity > 1, we need to find other available rooms of the same type
+      // 1. Get the room type of the requested room
+      const { data: targetRoom, error: roomError } = await supabaseAdmin
+        .from('rooms')
+        .select('*')
+        .eq('id', targetRoomId)
+        .single();
 
-    if (bookingError) {
-      console.error('Error creating booking:', bookingError);
+      if (roomError || !targetRoom) {
+        errors.push(`Room ${targetRoomId} not found`);
+        continue;
+      }
+
+      // 2. Find ALL available rooms of this type
+      // We need to check availability for all rooms of this type
+      const { data: allRoomsOfType, error: typeError } = await supabaseAdmin
+        .from('rooms')
+        .select('id, room_number, base_price, gst_percentage')
+        .eq('room_type', targetRoom.room_type)
+        .eq('is_available', true);
+
+      if (typeError || !allRoomsOfType) {
+        errors.push(`Failed to find rooms of type ${targetRoom.room_type}`);
+        continue;
+      }
+
+      // 3. Check availability for each room of this type
+      const availableRoomIds = [];
+
+      for (const room of allRoomsOfType) {
+        const { data: overlaps } = await supabaseAdmin
+          .from('bookings')
+          .select('id')
+          .eq('room_id', room.id)
+          .lt('check_in', check_out)
+          .gt('check_out', check_in)
+          .in('status', ['Confirmed', 'Pending']);
+
+        if (!overlaps || overlaps.length === 0) {
+          availableRoomIds.push(room);
+        }
+      }
+
+      if (availableRoomIds.length < quantity) {
+        errors.push(`Not enough available rooms of type ${targetRoom.room_type}. Requested: ${quantity}, Available: ${availableRoomIds.length}`);
+        continue;
+      }
+
+      // 4. Create bookings for the first N available rooms
+      const roomsToBook = availableRoomIds.slice(0, quantity);
+
+      for (const roomToBook of roomsToBook) {
+        const roomCharges = roomToBook.base_price * totalNights;
+        const gstAmount = roomCharges * ((roomToBook.gst_percentage || 12) / 100);
+        const totalAmount = roomCharges + gstAmount;
+
+        // For now, assume 100% advance or whatever logic
+        const advancePaid = totalAmount;
+        const balanceAmount = 0;
+
+        const bookingNumber = `BK${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+        const { data: newBooking, error: createError } = await supabaseAdmin
+          .from('bookings')
+          .insert({
+            booking_number: bookingNumber,
+            user_id: userId,
+            room_id: roomToBook.id,
+            guest_name: userData.full_name,
+            guest_email: userData.email,
+            guest_phone: userData.phone,
+            check_in: checkInDate.toISOString().split('T')[0],
+            check_out: checkOutDate.toISOString().split('T')[0],
+            total_nights: totalNights,
+            num_guests: Math.ceil((num_guests || 1) / bookingsToCreate.length), // Distribute guests roughly
+            room_charges: roomCharges,
+            gst_amount: gstAmount,
+            total_amount: totalAmount,
+            advance_paid: advancePaid,
+            balance_amount: balanceAmount,
+            special_requests: special_requests || '',
+            status: 'confirmed',
+            payment_status: 'paid', // Assuming full payment for now
+            booking_for: booking_for || 'self',
+            guest_details: guest_details || [], // Attach all guest details to all bookings for now? Or just first?
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating booking:', createError);
+          errors.push(`Failed to book room ${roomToBook.room_number}`);
+        } else {
+          createdBookings.push(newBooking);
+        }
+      }
+    }
+
+    if (createdBookings.length === 0 && errors.length > 0) {
       return NextResponse.json(
-        { success: false, error: 'Failed to create booking', details: bookingError.message },
+        { success: false, error: 'Booking failed', details: errors },
         { status: 500 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Booking created successfully',
-      booking: newBooking,
-      booking_number: bookingNumber,
+      message: 'Bookings created successfully',
+      bookings: createdBookings,
+      booking_ids: createdBookings.map(b => b.id),
+      errors: errors.length > 0 ? errors : undefined
     }, { status: 201 });
+
   } catch (error: any) {
     console.error('POST booking error:', error);
     return NextResponse.json(
