@@ -23,7 +23,7 @@ export default function LegalNoticePage() {
               <p className="text-gray-700"><strong>Business Type:</strong> Guest House / Lodging Establishment</p>
               <p className="text-gray-700"><strong>Location:</strong> Bhopal, Madhya Pradesh, India</p>
               <p className="text-gray-700"><strong>Email:</strong> info@happyholidays.com</p>
-              <p className="text-gray-700"><strong>Phone:</strong> +91 [Phone Number]</p>
+              <p className="text-gray-700"><strong>Phone:</strong> +91 98270 58059</p>
             </div>
           </section>
 
@@ -40,8 +40,8 @@ export default function LegalNoticePage() {
               This website serves as the official online booking platform for Happy Holidays Guest House. The website provides information about our accommodation services, facilities, pricing, and enables online reservations.
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li><strong>Domain:</strong> [Your Domain Name]</li>
-              <li><strong>Hosted in:</strong> India (or specify hosting location)</li>
+              <li><strong>Domain:</strong> unionawasholidayhome</li>
+              <li><strong>Hosted in:</strong> India</li>
               <li><strong>Technical Support:</strong> info@happyholidays.com</li>
             </ul>
           </section>
@@ -157,21 +157,7 @@ export default function LegalNoticePage() {
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">14. Grievance Redressal</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              In accordance with the Information Technology Act, 2000 and the Digital Personal Data Protection Act, 2023, we have appointed a Grievance Officer to address any concerns or complaints:
-            </p>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-900 font-semibold">Grievance Officer</p>
-              <p className="text-gray-700">Happy Holidays Guest House</p>
-              <p className="text-gray-700">Bhopal, Madhya Pradesh, India</p>
-              <p className="text-gray-700">Email: grievance@happyholidays.com</p>
-              <p className="text-gray-700 mt-2">
-                <strong>Response Time:</strong> We aim to acknowledge all complaints within 24 hours and resolve them within 30 days.
-              </p>
-            </div>
-          </section>
+
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Modifications to This Legal Notice</h2>
@@ -187,19 +173,7 @@ export default function LegalNoticePage() {
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">17. GST Information</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              All prices displayed on this website are subject to applicable Goods and Services Tax (GST) as per Indian tax laws. The current GST rate applicable to accommodation services is:
-            </p>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-700"><strong>GST Rate:</strong> 12% on room tariff</p>
-              <p className="text-gray-700"><strong>GSTIN:</strong> [Your GST Number]</p>
-              <p className="text-gray-700 mt-2 text-sm">
-                GST will be charged separately and will be clearly indicated in your booking confirmation and invoice.
-              </p>
-            </div>
-          </section>
+
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">18. Language</h2>
@@ -208,21 +182,7 @@ export default function LegalNoticePage() {
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">19. Contact Information</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              For any questions, concerns, or feedback regarding this Legal Notice or our website, please contact us:
-            </p>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-900 font-semibold">Happy Holidays Guest House</p>
-              <p className="text-gray-700">Bhopal, Madhya Pradesh, India</p>
-              <p className="text-gray-700">Email: info@happyholidays.com</p>
-              <p className="text-gray-700">Phone: +91 [Phone Number]</p>
-              <p className="text-gray-700 mt-2">
-                <strong>Business Hours:</strong> 9:00 AM - 9:00 PM (All days)
-              </p>
-            </div>
-          </section>
+
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">20. Acknowledgment</h2>

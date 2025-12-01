@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { X } from "@phosphor-icons/react";
+import { Label } from "@/components/ui/label";
 import {
   CalendarCheck,
   Users,
@@ -12,6 +15,12 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  CalendarBlank,
+  User,
+  IdentificationCard,
+  Files,
+  Plus,
+  Star,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -78,7 +87,10 @@ export default function AdminDashboardPage() {
     pending: 0,
   });
 
+
   useEffect(() => {
+    // Check for admin token
+    const token = localStorage.getItem("adminToken");
     const adminUser = localStorage.getItem("adminUser");
     if (adminUser) {
       const user = JSON.parse(adminUser);
@@ -259,6 +271,10 @@ export default function AdminDashboardPage() {
         return "bg-gray-100 text-gray-600";
     }
   };
+
+
+
+
 
   if (isLoading) {
     return (
@@ -460,45 +476,9 @@ export default function AdminDashboardPage() {
         )}
       </motion.div>
 
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-        className="bg-white rounded-lg p-6 shadow-sm border border-gray-200"
-      >
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <button
-            onClick={() => window.location.href = '/admin/dashboard/bookings'}
-            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
-          >
-            <CalendarCheck size={32} className="text-brown-dark" weight="fill" />
-            <span className="text-sm font-medium text-gray-700">View Bookings</span>
-          </button>
-          <button
-            onClick={() => window.location.href = '/booking'}
-            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
-          >
-            <Users size={32} className="text-brown-dark" weight="fill" />
-            <span className="text-sm font-medium text-gray-700">New Booking</span>
-          </button>
-          <button
-            onClick={() => window.location.href = '/admin/dashboard/bookings'}
-            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
-          >
-            <CheckCircle size={32} className="text-brown-dark" weight="fill" />
-            <span className="text-sm font-medium text-gray-700">Check-in</span>
-          </button>
-          <button
-            onClick={() => window.location.href = '/admin/dashboard/bookings'}
-            className="flex flex-col items-center gap-2 p-4 border-2 border-gray-200 rounded-lg hover:border-brown-dark hover:bg-brown-dark/5 transition-colors"
-          >
-            <XCircle size={32} className="text-brown-dark" weight="fill" />
-            <span className="text-sm font-medium text-gray-700">Check-out</span>
-          </button>
-        </div>
-      </motion.div>
+
+
+
     </div>
   );
 }

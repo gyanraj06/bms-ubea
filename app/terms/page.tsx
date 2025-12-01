@@ -67,7 +67,7 @@ export default function TermsOfServicePage() {
               <li>Credit/Debit Cards (Visa, Mastercard, RuPay)</li>
               <li>UPI (Unified Payments Interface)</li>
               <li>Net Banking</li>
-              <li>Cash (at the property)</li>
+
             </ul>
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">4.2 Pricing and Taxes</h3>
@@ -89,8 +89,7 @@ export default function TermsOfServicePage() {
 
             <h3 className="text-xl font-semibold text-gray-900 mb-3">5.1 Timings</h3>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4 mb-4">
-              <li><strong>Check-in Time:</strong> 11:00 AM (1100 hours)</li>
-              <li><strong>Check-out Time:</strong> 10:00 AM (1000 hours)</li>
+              <li><strong>Check-in/Check-out:</strong> 24 hours from the time of arrival</li>
               <li>Early check-in and late check-out are subject to availability and may incur additional charges</li>
             </ul>
 
@@ -107,34 +106,7 @@ export default function TermsOfServicePage() {
             </ul>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Cancellation and Refund Policy</h2>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">6.1 Cancellation by Guest</h3>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4 mb-4">
-              <li><strong>Free Cancellation:</strong> Up to 24 hours before check-in date - Full refund</li>
-              <li><strong>24 hours or less:</strong> No refund on advance payment</li>
-              <li><strong>No-show:</strong> Full booking amount will be charged</li>
-            </ul>
-
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">6.2 Cancellation by Property</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              We reserve the right to cancel bookings in the following circumstances:
-            </p>
-            <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
-              <li>Force majeure events (natural disasters, pandemics, government orders)</li>
-              <li>Property maintenance or safety issues</li>
-              <li>Suspected fraudulent bookings</li>
-            </ul>
-            <p className="text-gray-700 leading-relaxed mt-4">
-              In such cases, a full refund will be provided within 7-10 business days.
-            </p>
-
-            <h3 className="text-xl font-semibold text-gray-900 mb-3 mt-6">6.3 Refund Processing</h3>
-            <p className="text-gray-700 leading-relaxed">
-              Approved refunds will be processed within 7-10 business days to the original payment method. Bank processing times may vary.
-            </p>
-          </section>
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Guest Conduct and Responsibilities</h2>
@@ -227,16 +199,7 @@ export default function TermsOfServicePage() {
               Any disputes arising out of or relating to these Terms or the use of our services shall be subject to the exclusive jurisdiction of the courts in Bhopal, Madhya Pradesh, India.
             </p>
 
-            <h3 className="text-xl font-semibold text-gray-900 mb-3">12.3 Grievance Redressal</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Before initiating legal proceedings, guests are encouraged to contact our Grievance Officer:
-            </p>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-900 font-semibold">Grievance Officer</p>
-              <p className="text-gray-700">Happy Holidays Guest House</p>
-              <p className="text-gray-700">Email: grievance@happyholidays.com</p>
-              <p className="text-gray-700 mt-2">Response Time: Within 72 hours</p>
-            </div>
+
           </section>
 
           <section>
@@ -253,18 +216,7 @@ export default function TermsOfServicePage() {
             </p>
           </section>
 
-          <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">15. Contact Information</h2>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              For questions about these Terms of Service, please contact us:
-            </p>
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-900 font-semibold">Happy Holidays Guest House</p>
-              <p className="text-gray-700">Bhopal, Madhya Pradesh, India</p>
-              <p className="text-gray-700">Email: info@happyholidays.com</p>
-              <p className="text-gray-700">Phone: +91 [Phone Number]</p>
-            </div>
-          </section>
+
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">16. Acknowledgment</h2>

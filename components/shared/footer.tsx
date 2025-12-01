@@ -118,8 +118,6 @@ export function Footer() {
             <ul className="space-y-2">
               {[
                 { name: "Home", href: "/" },
-                { name: "Rooms & Suites", href: "/rooms" },
-                { name: "Gallery", href: "/gallery" },
                 { name: "About Us", href: "/about" },
                 { name: "Contact", href: "/contact" },
               ].map((link) => (
@@ -190,10 +188,7 @@ export function Footer() {
                 />
                 <div>
                   <div className="text-gray-400">
-                    <span className="font-semibold text-white">Check-in:</span> {formatTime(settings.check_in_time)}
-                  </div>
-                  <div className="text-gray-400">
-                    <span className="font-semibold text-white">Check-out:</span> {formatTime(settings.check_out_time)}
+                    <span className="font-semibold text-white">Check-in/out:</span> 24 hours from arrival
                   </div>
                 </div>
               </li>

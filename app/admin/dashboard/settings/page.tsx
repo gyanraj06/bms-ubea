@@ -144,7 +144,7 @@ export default function SettingsPage() {
   const loadPropertySettings = async () => {
     try {
       setIsLoadingSettings(true);
-      const response = await fetch('/api/admin/property-settings');
+      const response = await fetch(`/api/admin/property-settings?t=${new Date().getTime()}`);
 
       if (response.ok) {
         const data = await response.json();

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { verifyToken } from '@/lib/auth';
+import { createClient } from '@supabase/supabase-js';
+
+export const dynamic = 'force-dynamic';
 
 /**
  * Verify admin token for protected operations
@@ -27,11 +30,28 @@ function verifyAdminAuth(request: NextRequest): { valid: boolean; role?: string;
  */
 export async function GET(request: NextRequest) {
   try {
-    const { data: settings, error } = await supabaseAdmin
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+    // Mimic debug-db exactly BUT with explicit cache busting
+    const adminClient = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+      global: {
+        headers: { 'Cache-Control': 'no-store' },
+        fetch: (url, options) => {
+          return fetch(url, {
+            ...options,
+            cache: 'no-store',
+            next: { revalidate: 0 }
+          });
+        }
+      }
+    });
+
+    const { data: settings, error } = await adminClient
       .from('property_settings')
       .select('*')
-      .limit(1)
-      .single();
+      .order('updated_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching property settings:', error);
@@ -41,10 +61,18 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json({
+    const firstSetting = settings && settings.length > 0 ? settings[0] : null;
+
+    const response = NextResponse.json({
       success: true,
-      settings: settings || null,
+      settings: firstSetting,
     });
+
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error: any) {
     console.error('GET property settings error:', error);
     return NextResponse.json(
@@ -73,7 +101,15 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { success: false, error: 'Server configuration error: Missing Service Role Key' },
+        { status: 500 }
+      );
+    }
+
     const body = await request.json();
+
     const {
       property_name,
       address,
@@ -86,7 +122,7 @@ export async function PUT(request: NextRequest) {
       description,
     } = body;
 
-    // Validate required fields
+    // Validate required field
     if (!property_name || !address || !phone || !email) {
       return NextResponse.json(
         { success: false, error: 'Property name, address, phone, and email are required' },
@@ -94,12 +130,24 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Get existing settings
-    const { data: existingSettings } = await supabaseAdmin
+    // Create a fresh client to ensure we use the service role key
+    const adminClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
+    // Get existing settings using admin client
+    const { data: existingSettings } = await adminClient
       .from('property_settings')
       .select('*')
       .limit(1)
-      .single();
+      .maybeSingle();
 
     const updateData = {
       property_name,
@@ -120,7 +168,7 @@ export async function PUT(request: NextRequest) {
 
     if (existingSettings) {
       // Update existing settings
-      const result = await supabaseAdmin
+      const result = await adminClient
         .from('property_settings')
         .update(updateData)
         .eq('id', existingSettings.id)
@@ -131,7 +179,7 @@ export async function PUT(request: NextRequest) {
       error = result.error;
     } else {
       // Insert new settings if none exist
-      const result = await supabaseAdmin
+      const result = await adminClient
         .from('property_settings')
         .insert(updateData)
         .select()
@@ -142,7 +190,6 @@ export async function PUT(request: NextRequest) {
     }
 
     if (error) {
-      console.error('Error updating property settings:', error);
       return NextResponse.json(
         { success: false, error: 'Failed to update property settings' },
         { status: 500 }
@@ -158,11 +205,18 @@ export async function PUT(request: NextRequest) {
       new_data: { property_name, phone, email },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Property settings updated successfully',
       settings: updatedSettings,
     });
+
+    // Disable caching for PUT response
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error: any) {
     console.error('PUT property settings error:', error);
     return NextResponse.json(

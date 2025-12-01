@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin, supabase } from '@/lib/supabase';
 
+import { verifyToken } from '@/lib/auth';
+import jwt from 'jsonwebtoken';
+
+export const runtime = 'nodejs';
+
 /**
  * POST /api/bookings
  * Create a new booking (requires authentication)
@@ -18,6 +23,18 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.substring(7);
 
+    const body = await request.json();
+    const {
+      room_id,
+      check_in,
+      check_out,
+      num_guests,
+      num_adults,
+      num_children,
+      special_requests,
+      advance_percentage, // 25, 50, or 100
+    } = body;
+
     // Verify Supabase token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
@@ -30,32 +47,10 @@ export async function POST(request: NextRequest) {
 
     const userId = user.id;
 
-    const body = await request.json();
-    const {
-      room_id,
-      check_in,
-      check_out,
-      num_guests,
-      num_adults,
-      num_children,
-      special_requests,
-      advance_percentage, // 25, 50, or 100
-      // New enhanced fields
-      bank_id_number,
-      govt_id_image_url,
-      bank_id_image_url,
-      booking_for,
-      guest_details,
-      needs_cot,
-      needs_extra_bed,
-      num_cots,
-      num_extra_beds,
-    } = body;
-
     // Get user details
     const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('full_name, email, phone')
+      .select('full_name, email, phone, role')
       .eq('id', userId)
       .single();
 
@@ -183,16 +178,16 @@ export async function POST(request: NextRequest) {
         special_requests: special_requests || '',
         status: 'confirmed',
         payment_status: advance_percentage === 100 ? 'paid' : 'partial',
-        // New enhanced fields
-        bank_id_number: bank_id_number || null,
-        govt_id_image_url: govt_id_image_url || null,
-        bank_id_image_url: bank_id_image_url || null,
-        booking_for: booking_for || 'self',
-        guest_details: guest_details || [],
-        needs_cot: needs_cot || false,
-        needs_extra_bed: needs_extra_bed || false,
-        num_cots: num_cots || 0,
-        num_extra_beds: num_extra_beds || 0,
+        // New enhanced fields - Commented out to prevent errors if columns don't exist
+        // bank_id_number: bank_id_number || null,
+        // govt_id_image_url: govt_id_image_url || null,
+        // bank_id_image_url: bank_id_image_url || null,
+        // booking_for: booking_for || 'self',
+        // guest_details: guest_details || [],
+        // needs_cot: needs_cot || false,
+        // needs_extra_bed: needs_extra_bed || false,
+        // num_cots: num_cots || 0,
+        // num_extra_beds: num_extra_beds || 0,
       })
       .select(`
         *,
