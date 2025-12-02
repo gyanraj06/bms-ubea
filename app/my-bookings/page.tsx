@@ -109,6 +109,7 @@ export default function MyBookingsPage() {
       case "pending":
         return <Clock size={20} weight="fill" className="text-yellow-600" />;
       case "cancelled":
+      case "failed":
         return <XCircle size={20} weight="fill" className="text-red-600" />;
       case "completed":
         return <CheckCircle size={20} weight="fill" className="text-blue-600" />;
@@ -124,6 +125,7 @@ export default function MyBookingsPage() {
       case "pending":
         return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "cancelled":
+      case "failed":
         return "bg-red-100 text-red-800 border-red-200";
       case "completed":
         return "bg-blue-100 text-blue-800 border-blue-200";
@@ -245,11 +247,11 @@ export default function MyBookingsPage() {
                           </h3>
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                              booking.status
-                            )}`}
+                            booking.payment_status === 'failed' ? 'failed' : booking.status
+                          )}`}
                           >
-                            {getStatusIcon(booking.status)}
-                            {booking.status.toUpperCase()}
+                            {getStatusIcon(booking.payment_status === 'failed' ? 'failed' : booking.status)}
+                            {(booking.payment_status === 'failed' ? 'failed' : booking.status).toUpperCase()}
                           </span>
                         </div>
                         <p className="text-sm text-gray-500">

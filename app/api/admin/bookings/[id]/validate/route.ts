@@ -57,9 +57,7 @@ export async function POST(
         } else {
             updateData = {
                 payment_status: 'failed',
-                // status: 'cancelled', // Optional: do we cancel the booking or just fail payment?
-                // Let's keep status as pending or maybe cancelled if payment fails?
-                // For now, let's just mark payment failed, user might retry.
+                status: 'failed',
                 updated_at: new Date().toISOString(),
             };
         }

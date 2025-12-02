@@ -1,0 +1,6 @@
+-- Drop the existing constraint
+ALTER TABLE bookings DROP CONSTRAINT IF EXISTS bookings_payment_status_check;
+
+-- Add the new constraint including 'failed'
+ALTER TABLE bookings ADD CONSTRAINT bookings_payment_status_check 
+CHECK (payment_status IN ('pending', 'paid', 'verification_pending', 'failed'));
