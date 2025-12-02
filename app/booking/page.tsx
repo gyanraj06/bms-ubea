@@ -26,6 +26,8 @@ import {
   Minus,
   ShoppingCart,
   Eye,
+  Trash,
+  CaretUp,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -46,6 +48,7 @@ function BookingContent() {
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [hasSearched, setHasSearched] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   
   // Use persistent cart hook
   const { cart, updateCart, totalItems, subtotal } = useCart();
@@ -95,6 +98,7 @@ function BookingContent() {
         if (data.success) {
           setAvailableRooms(data.rooms || []);
           setAvailabilityMessage(data.message || 'Search completed');
+          setLastUpdated(new Date());
         } else {
           setAvailableRooms([]);
           setAvailabilityMessage(data.message || 'No rooms available for selected dates');
@@ -109,6 +113,11 @@ function BookingContent() {
     };
 
     fetchRooms();
+    
+    // Auto-refresh availability every 30 seconds to prevent stale data
+    const refreshInterval = setInterval(fetchRooms, 30000);
+    
+    return () => clearInterval(refreshInterval);
   }, [checkInDate, checkOutDate]); // Re-fetch when dates change
 
   // Pre-fill dates from URL parameters
@@ -215,7 +224,7 @@ function BookingContent() {
     updateCart(roomId, delta, roomDetails);
   };
 
-  const proceedToCheckout = () => {
+  const proceedToCheckout = async () => {
     if (!checkInDate || !checkOutDate) {
       toast.error("Please select dates first");
       return;
@@ -227,19 +236,79 @@ function BookingContent() {
       return;
     }
 
-    // Build selection string: id1:qty,id2:qty
-    const selection = Object.entries(cart)
-      .map(([id, item]) => `${id}:${item.quantity}`)
-      .join(',');
+    // Revalidate availability before proceeding
+    toast.loading("Verifying room availability...", { id: "availability-check" });
+    
+    try {
+      const response = await fetch('/api/rooms/check-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          check_in: checkInDate.toISOString().split('T')[0],
+          check_out: checkOutDate.toISOString().split('T')[0],
+          num_guests: guests,
+        }),
+      });
 
-    const params = new URLSearchParams({
-      checkIn: checkInDate.toISOString(),
-      checkOut: checkOutDate.toISOString(),
-      guests: guests.toString(),
-      selection,
-    });
+      const data = await response.json();
+      
+      if (!data.success || !data.available_rooms) {
+        toast.error("No rooms available for selected dates", { id: "availability-check" });
+        // Refresh the room list
+        setAvailableRooms([]);
+        setAvailabilityMessage(data.message || 'No rooms available');
+        return;
+      }
 
-    router.push(`/booking/checkout?${params.toString()}`);
+      // Check if all rooms in cart are still available
+      const availableRoomIds = data.available_rooms.map((r: any) => r.id);
+      const unavailableRooms: string[] = [];
+      
+      for (const [roomId, item] of Object.entries(cart)) {
+        // Count how many of this room type are available
+        const room = availableRooms.find(r => r.id === roomId);
+        if (!room) continue;
+        
+        const availableOfType = data.available_rooms.filter(
+          (r: any) => r.room_type === room.room_type
+        );
+        
+        if (availableOfType.length < item.quantity) {
+          unavailableRooms.push(
+            `${room.room_type} (requested: ${item.quantity}, available: ${availableOfType.length})`
+          );
+        }
+      }
+
+      if (unavailableRooms.length > 0) {
+        toast.error(
+          `Some rooms are no longer available:\n${unavailableRooms.join('\n')}`,
+          { id: "availability-check", duration: 5000 }
+        );
+        // Update available rooms to reflect current state
+        setAvailableRooms(data.available_rooms);
+        return;
+      }
+
+      toast.success("All rooms are available!", { id: "availability-check" });
+
+      // Build selection string: id1:qty,id2:qty
+      const selection = Object.entries(cart)
+        .map(([id, item]) => `${id}:${item.quantity}`)
+        .join(',');
+
+      const params = new URLSearchParams({
+        checkIn: checkInDate.toISOString(),
+        checkOut: checkOutDate.toISOString(),
+        guests: guests.toString(),
+        selection,
+      });
+
+      router.push(`/booking/checkout?${params.toString()}`);
+    } catch (error) {
+      console.error('Availability check error:', error);
+      toast.error("Failed to verify availability. Please try again.", { id: "availability-check" });
+    }
   };
 
   const isDateDisabled = (date: Date) => {
@@ -519,6 +588,12 @@ function BookingContent() {
           <p className="text-lg text-gray-600">
             Select your preferred room type for a comfortable stay
           </p>
+          {lastUpdated && (
+            <p className="text-sm text-gray-500 mt-2">
+              Last updated: {format(lastUpdated, "h:mm:ss a")}
+              <span className="ml-2 text-xs text-gray-400">(Auto-refreshes every 30s)</span>
+            </p>
+          )}
         </div>
 
         {/* Availability Message */}
@@ -720,18 +795,112 @@ function BookingContent() {
             className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] z-40 p-4"
           >
             <div className="container mx-auto flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="bg-brown-dark text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg">
-                  {totalItems}
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Total for {nights} night{nights !== 1 ? 's' : ''}</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    ₹{(totalPriceWithTax * nights).toLocaleString()}
-                    <span className="text-xs font-normal text-gray-500 ml-1">(incl. taxes)</span>
-                  </p>
-                </div>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-4 hover:bg-gray-50 p-2 rounded-lg transition-all text-left group border border-transparent hover:border-gray-200 relative">
+                    <div className="relative">
+                      <div className="bg-brown-dark text-white w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl shadow-lg group-hover:scale-105 transition-transform z-10 relative">
+                        {totalItems}
+                      </div>
+                      <div className="absolute inset-0 bg-brown-dark/30 rounded-full animate-ping z-0"></div>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-brown-dark uppercase tracking-wide">View Cart</p>
+                        <CaretUp size={16} weight="bold" className="text-brown-dark group-hover:-translate-y-1 transition-transform" />
+                      </div>
+                      <p className="text-xl font-bold text-gray-900">
+                        ₹{(totalPriceWithTax * nights).toLocaleString()}
+                        <span className="text-xs font-normal text-gray-500 ml-1">(incl. taxes)</span>
+                      </p>
+                    </div>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-96 p-0 shadow-xl border-gray-100" align="start" side="top" sideOffset={20}>
+                  <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                    <h4 className="font-serif font-bold text-gray-900 flex items-center gap-2">
+                      <ShoppingCart size={18} className="text-brown-dark" />
+                      Your Selection
+                    </h4>
+                  </div>
+                  <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4">
+                    {Object.values(cart).map((item) => (
+                      <div key={item.roomId} className="flex items-start justify-between gap-4 bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
+                        <div className="flex-1">
+                          <p className="font-bold text-gray-900">{item.roomType}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-sm text-gray-500">
+                              ₹{item.price.toLocaleString()} x {item.quantity}
+                            </span>
+                            <span className="text-xs text-gray-300">|</span>
+                            <span className="text-sm font-medium text-brown-dark">
+                              ₹{(item.price * item.quantity).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="flex items-center bg-gray-50 rounded-lg border border-gray-200 p-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateCart(item.roomId, -1);
+                              }}
+                              className="w-6 h-6 flex items-center justify-center rounded hover:bg-white hover:shadow-sm text-gray-600 transition-all"
+                            >
+                              <Minus size={12} weight="bold" />
+                            </button>
+                            <span className="text-sm font-bold w-6 text-center text-gray-900">{item.quantity}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpdateCart(item.roomId, 1, {
+                                  roomType: item.roomType,
+                                  price: item.price,
+                                  maxGuests: item.maxGuests,
+                                  maxAvailable: item.maxAvailable
+                                });
+                              }}
+                              disabled={item.quantity >= item.maxAvailable}
+                              className="w-6 h-6 flex items-center justify-center rounded hover:bg-white hover:shadow-sm text-gray-600 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:shadow-none"
+                            >
+                              <Plus size={12} weight="bold" />
+                            </button>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpdateCart(item.roomId, -item.quantity);
+                            }}
+                            className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors ml-1"
+                            title="Remove item"
+                          >
+                            <Trash size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="p-4 bg-gray-50 border-t border-gray-100">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-sm text-gray-600">Subtotal (per night)</span>
+                      <span className="font-bold text-gray-900">₹{subtotal.toLocaleString()}</span>
+                    </div>
+                    {nights > 1 && (
+                      <div className="flex justify-between items-center mb-1 text-sm">
+                        <span className="text-gray-500">Total Nights</span>
+                        <span className="font-medium text-gray-900">{nights}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-200">
+                      <span className="font-bold text-gray-900">Total Estimate</span>
+                      <span className="font-bold text-xl text-brown-dark">₹{(totalPriceWithTax * nights).toLocaleString()}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2 text-center">
+                      Final tax calculation will be done at checkout
+                    </p>
+                  </div>
+                </PopoverContent>
+              </Popover>
               <button
                 onClick={proceedToCheckout}
                 className="px-8 py-3 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors shadow-md flex items-center gap-2"

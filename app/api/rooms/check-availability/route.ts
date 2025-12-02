@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       .select('room_id')
       .lt('check_in', check_out) // booking starts before requested check-out
       .gt('check_out', check_in) // booking ends after requested check-in
-      .in('status', ['Confirmed', 'Pending']); // Only consider active bookings
+      .in('status', ['Confirmed', 'Pending', 'confirmed', 'pending', 'verification_pending']); // Only consider active bookings
 
     if (bookingError) {
       console.error('Error fetching bookings:', bookingError);

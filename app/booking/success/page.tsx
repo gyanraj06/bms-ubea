@@ -50,10 +50,10 @@ export default function BookingSuccessPage() {
             </motion.div>
 
             <h1 className="font-serif text-4xl font-bold text-gray-900 mb-3">
-              {bookingIds ? "Bookings Confirmed!" : "Booking Confirmed!"}
+              {bookingIds ? "Booking Created!" : "Booking Confirmed!"}
             </h1>
             <p className="text-xl text-gray-600 mb-2">
-              Thank you for choosing Happy Holidays
+              You will be intimated within 24-48 hours. Feel free to contact us in case of any queries
             </p>
             {bookingNumber && (
               <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
@@ -64,7 +64,7 @@ export default function BookingSuccessPage() {
             {bookingIds && !bookingNumber && (
                <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
                 <p className="text-sm text-gray-600 mb-1">Bookings Created</p>
-                <p className="text-xl font-bold text-primary-700">{bookingIds.split(',').length} Rooms Booked</p>
+                <p className="text-xl font-bold text-primary-700">{bookingIds.split(',').length} Rooms</p>
               </div>
             )}
           </div>
@@ -74,10 +74,10 @@ export default function BookingSuccessPage() {
             <div className="text-center mb-6">
               <CalendarCheck size={48} weight="fill" className="text-primary-600 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-gray-900 mb-2">
-                Your booking has been confirmed
+                Your booking has been Created
               </h2>
               <p className="text-gray-600">
-                A confirmation email has been sent to your registered email address
+                A confirmation email will be sent to your registered email address once your payment is verified
               </p>
             </div>
 

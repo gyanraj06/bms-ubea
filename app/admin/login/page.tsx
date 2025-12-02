@@ -92,13 +92,25 @@ export default function AdminLoginPage() {
       // Clear old permissions from localStorage to force fresh fetch
       localStorage.removeItem('adminPermissions');
 
-      // Store token and user data
+      // Store token and user data (legacy format for compatibility)
       localStorage.setItem('adminToken', data.token);
       localStorage.setItem('adminUser', JSON.stringify({
         id: data.user.id,
         email: data.user.email,
         full_name: data.user.full_name,
         role: data.user.role,
+        loginTime: new Date().toISOString(),
+      }));
+
+      // Store adminSession in the format expected by the payments dashboard
+      localStorage.setItem('adminSession', JSON.stringify({
+        token: data.token,
+        user: {
+          id: data.user.id,
+          email: data.user.email,
+          full_name: data.user.full_name,
+          role: data.user.role,
+        },
         loginTime: new Date().toISOString(),
       }));
 

@@ -31,12 +31,13 @@ export async function GET(request: NextRequest) {
       }
 
       // Find overlapping bookings
+      // IMPORTANT: Check all status variations (both capitalized and lowercase)
       const { data: overlappingBookings, error: bookingError } = await supabaseAdmin
         .from('bookings')
         .select('room_id')
         .lt('check_in', check_out)
         .gt('check_out', check_in)
-        .in('status', ['Confirmed', 'Pending']);
+        .in('status', ['Confirmed', 'Pending', 'confirmed', 'pending', 'verification_pending']);
 
       if (bookingError) {
         console.error('Error fetching bookings:', bookingError);

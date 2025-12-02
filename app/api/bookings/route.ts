@@ -3,6 +3,7 @@ import { supabaseAdmin, supabase } from '@/lib/supabase';
 
 import { verifyToken } from '@/lib/auth';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 
 export const runtime = 'nodejs';
 
@@ -50,13 +51,57 @@ export async function POST(request: NextRequest) {
     const userId = user.id;
 
     // Get user details
-    const { data: userData, error: userError } = await supabaseAdmin
+    let { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('full_name, email, phone, role')
+      .select('full_name, email, phone')
       .eq('id', userId)
       .single();
 
-    if (userError || !userData) {
+    console.log('User lookup result:', { userId, userData, userError, errorCode: userError?.code });
+
+    // If user profile doesn't exist, create it
+    if (!userData) {
+      console.log(`User profile missing for ${userId}, creating now...`);
+      console.log('Auth user data:', { email: user.email, metadata: user.user_metadata });
+
+      const password_hash = await bcrypt.hash('external_auth_placeholder', 10);
+
+      const { data: newUser, error: createError } = await supabaseAdmin
+        .from('users')
+        .insert({
+          id: userId,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Guest',
+          phone: user.user_metadata?.phone || null,
+          is_verified: true,
+          is_active: true,
+          password_hash,
+          created_at: new Date().toISOString()
+        })
+        .select('full_name, email, phone')
+        .single();
+
+      console.log('User creation result:', { newUser, createError });
+
+      if (createError) {
+        console.error('Failed to create user profile:', {
+          code: createError.code,
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint
+        });
+        return NextResponse.json(
+          { success: false, error: 'User profile creation failed', details: createError.message },
+          { status: 500 }
+        );
+      }
+
+      userData = newUser;
+      userError = null;
+    }
+
+    if (!userData) {
+      console.error('User data still null after creation attempt');
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
@@ -126,7 +171,12 @@ export async function POST(request: NextRequest) {
         .eq('room_type', targetRoom.room_type)
         .eq('is_available', true);
 
+      console.log(`[BOOKING DEBUG] Room type: ${targetRoom.room_type}`);
+      console.log(`[BOOKING DEBUG] All rooms of this type:`, allRoomsOfType?.length || 0);
+      console.log(`[BOOKING DEBUG] Rooms:`, allRoomsOfType?.map(r => ({ id: r.id, number: r.room_number })));
+
       if (typeError || !allRoomsOfType) {
+        console.error(`[BOOKING DEBUG] Error finding rooms:`, typeError);
         errors.push(`Failed to find rooms of type ${targetRoom.room_type}`);
         continue;
       }
@@ -137,19 +187,42 @@ export async function POST(request: NextRequest) {
       for (const room of allRoomsOfType) {
         const { data: overlaps } = await supabaseAdmin
           .from('bookings')
-          .select('id')
+          .select('id, check_in, check_out, status, booking_number')
           .eq('room_id', room.id)
           .lt('check_in', check_out)
           .gt('check_out', check_in)
-          .in('status', ['Confirmed', 'Pending']);
+          .in('status', ['Confirmed', 'Pending', 'confirmed', 'pending', 'verification_pending']);
+
+        console.log(`[BOOKING DEBUG] Room ${room.room_number} (${room.id}):`, {
+          has_overlaps: overlaps && overlaps.length > 0,
+          overlap_count: overlaps?.length || 0,
+          overlaps: overlaps?.map(o => ({
+            booking: o.booking_number,
+            check_in: o.check_in,
+            check_out: o.check_out,
+            status: o.status
+          }))
+        });
 
         if (!overlaps || overlaps.length === 0) {
           availableRoomIds.push(room);
         }
       }
 
+      console.log(`[BOOKING DEBUG] Available rooms after check:`, availableRoomIds.length);
+      console.log(`[BOOKING DEBUG] Available room IDs:`, availableRoomIds.map(r => r.id));
+
       if (availableRoomIds.length < quantity) {
-        errors.push(`Not enough available rooms of type ${targetRoom.room_type}. Requested: ${quantity}, Available: ${availableRoomIds.length}`);
+        const errorMsg = `Not enough available rooms of type "${targetRoom.room_type}". Requested: ${quantity}, Available: ${availableRoomIds.length}`;
+        console.error(errorMsg, {
+          room_type: targetRoom.room_type,
+          requested: quantity,
+          available: availableRoomIds.length,
+          check_in,
+          check_out,
+          all_rooms_of_type: allRoomsOfType?.length || 0
+        });
+        errors.push(errorMsg);
         continue;
       }
 
@@ -186,8 +259,8 @@ export async function POST(request: NextRequest) {
             advance_paid: advancePaid,
             balance_amount: balanceAmount,
             special_requests: special_requests || '',
-            status: 'confirmed',
-            payment_status: 'paid', // Assuming full payment for now
+            status: 'pending',
+            payment_status: 'pending', // Initial state, waiting for user to pay
             booking_for: booking_for || 'self',
             guest_details: guest_details || [], // Attach all guest details to all bookings for now? Or just first?
           })

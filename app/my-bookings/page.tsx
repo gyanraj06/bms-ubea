@@ -139,6 +139,8 @@ export default function MyBookingsPage() {
       case "partial":
         return "bg-yellow-100 text-yellow-800";
       case "pending":
+        return "bg-red-100 text-red-800";
+      case "verification_pending":
         return "bg-orange-100 text-orange-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -388,6 +390,18 @@ export default function MyBookingsPage() {
                           </div>
                         )}
                       </div>
+                      
+                      {/* Pay Now Button */}
+                      {booking.payment_status === 'pending' && (
+                        <div className="mt-4">
+                          <Button
+                            onClick={() => router.push(`/booking/payment/${booking.id}`)}
+                            className="w-full bg-brown-dark hover:bg-brown-medium text-white"
+                          >
+                            Pay Now
+                          </Button>
+                        </div>
+                      )}
                     </div>
 
                     {/* Special Requests */}

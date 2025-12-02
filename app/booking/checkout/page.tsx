@@ -20,6 +20,8 @@ import {
   IdentificationCard,
   MapPin,
   ShoppingCart,
+  Plus,
+  Minus,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -35,10 +37,11 @@ function CheckoutContent() {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [user, setUser] = useState<any>(null);
   
   // Cart Hook
-  const { cart, totalItems, clearCart, isLoaded } = useCart();
+  const { cart, updateCart, totalItems, clearCart, isLoaded } = useCart();
   const selectedRooms = Object.values(cart);
 
   // Form Data
@@ -264,9 +267,12 @@ function CheckoutContent() {
       const data = await response.json();
 
       if (data.success) {
-        toast.success("Booking confirmed!");
+        setIsSuccess(true);
+        toast.success("Booking initiated! Please complete payment.");
         clearCart(); // Clear cart after successful booking
-        router.push(`/booking/success?bookingIds=${data.booking_ids.join(',')}`);
+        // Redirect to payment page for the first booking (or handle multiple)
+        // For now, we assume one booking flow or redirect to the first one
+        router.push(`/booking/payment/${data.booking_ids[0]}`);
       } else {
         toast.error(data.error || "Booking failed");
       }
@@ -283,6 +289,16 @@ function CheckoutContent() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark"></div>
       </div>
+    );
+  }
+
+  if (isSuccess) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brown-dark mb-6"></div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Booking Initiated!</h2>
+        <p className="text-gray-600">Redirecting to payment...</p>
+      </main>
     );
   }
 
@@ -585,9 +601,46 @@ function CheckoutContent() {
               <div className="border-t border-gray-200 py-4 space-y-3">
                 <h3 className="font-semibold text-sm text-gray-900">Selected Rooms</h3>
                 {selectedRooms.map((room, idx) => (
-                  <div key={idx} className="flex justify-between text-sm">
-                    <span className="text-gray-600">{room.quantity} x {room.roomType}</span>
-                    <span className="font-medium">₹{(room.price * room.quantity * nights).toLocaleString()}</span>
+                  <div key={idx} className="flex flex-col gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="flex justify-between text-sm">
+                      <span className="font-medium text-gray-900">{room.roomType}</span>
+                      <span className="font-medium">₹{(room.price * room.quantity * nights).toLocaleString()}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => updateCart(room.roomId, -1)}
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-50 text-gray-600 transition-all"
+                        >
+                          <Minus size={12} weight="bold" />
+                        </button>
+                        <span className="text-sm font-bold w-8 text-center text-gray-900">{room.quantity}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateCart(room.roomId, 1, {
+                            roomType: room.roomType,
+                            price: room.price,
+                            maxGuests: room.maxGuests,
+                            maxAvailable: room.maxAvailable
+                          })}
+                          disabled={room.quantity >= room.maxAvailable}
+                          className="w-6 h-6 flex items-center justify-center rounded hover:bg-gray-50 text-gray-600 transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+                        >
+                          <Plus size={12} weight="bold" />
+                        </button>
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => updateCart(room.roomId, -room.quantity)}
+                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-md transition-colors"
+                        title="Remove room"
+                      >
+                        <Trash size={16} />
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -613,7 +666,7 @@ function CheckoutContent() {
                 disabled={isProcessing || !user}
                 className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isProcessing ? "Processing..." : user ? "Confirm Booking" : "Login to Book"}
+                {isProcessing ? "Processing..." : user ? "Proceed to QR Payment" : "Login to Book"}
               </button>
             </motion.div>
           </div>
