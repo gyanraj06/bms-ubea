@@ -282,12 +282,6 @@ export default function AdminLoginPage() {
               </a>
             </div>
           </motion.div>
-
-          {/* Additional Security Info */}
-          <div className="mt-6 text-center text-sm text-white/80">
-            <p>This is a secure area. Unauthorized access is prohibited.</p>
-            <p className="mt-1">IP addresses and login attempts are monitored for security.</p>
-          </div>
         </div>
       </div>
     </main>

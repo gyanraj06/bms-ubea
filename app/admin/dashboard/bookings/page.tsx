@@ -65,7 +65,6 @@ export default function BookingsPage() {
   // Edit form state
   const [editForm, setEditForm] = useState({
     status: "",
-    payment_status: "",
     notes: "",
   });
 
@@ -135,7 +134,6 @@ export default function BookingsPage() {
     setSelectedBooking(booking);
     setEditForm({
       status: booking.status,
-      payment_status: booking.payment_status,
       notes: "",
     });
     setShowEditModal(true);
@@ -162,7 +160,6 @@ export default function BookingsPage() {
         body: JSON.stringify({
           id: selectedBooking.id,
           booking_status: editForm.status,
-          payment_status: editForm.payment_status,
           notes: editForm.notes,
         }),
       });
@@ -558,22 +555,7 @@ export default function BookingsPage() {
                 </select>
               </div>
 
-              <div>
-                <Label htmlFor="payment_status">Payment Status</Label>
-                <select
-                  id="payment_status"
-                  value={editForm.payment_status}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, payment_status: e.target.value })
-                  }
-                  className="flex h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="partial">Partial</option>
-                  <option value="paid">Paid</option>
-                  <option value="refunded">Refunded</option>
-                </select>
-              </div>
+
 
               <div>
                 <Label htmlFor="notes">Notes (Optional)</Label>
