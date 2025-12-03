@@ -79,6 +79,14 @@ const DEFAULT_PERMISSIONS: Permission[] = [
     href: "/admin/dashboard/settings",
     roles: ["Owner"],
   },
+  {
+    id: "P008",
+    name: "Newsletter",
+    description: "Manage newsletters and broadcasts",
+    key: "newsletter",
+    href: "/admin/dashboard/newsletter",
+    roles: ["Owner", "Manager"],
+  },
 ];
 
 export function PermissionProvider({ children }: { children: ReactNode }) {

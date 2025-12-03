@@ -43,6 +43,8 @@
     "react-day-picker": "^9.11.1",
     "react-dom": "^18.3.0",
     "react-hook-form": "^7.51.0",
+    "react-pdf": "7.7.1",
+    "pdfjs-dist": "3.11.174",
     "react-phone-number-input": "^3.4.14",
     "recharts": "^3.4.1",
     "sonner": "^1.4.0",

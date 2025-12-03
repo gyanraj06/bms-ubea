@@ -17,6 +17,7 @@ import {
   X,
   WarningCircle,
   WhatsappLogo,
+  NewspaperClipping,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -65,6 +66,12 @@ const menuItems: MenuItem[] = [
     href: "/admin/dashboard/reports",
     icon: ChartBar,
     permissionKey: "reports",
+  },
+  {
+    name: "Newsletter",
+    href: "/admin/dashboard/newsletter",
+    icon: NewspaperClipping,
+    permissionKey: "newsletter",
   },
   {
     name: "Settings",
@@ -298,7 +305,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -311,7 +318,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
                   className="w-full min-h-[120px] p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brown-dark focus:border-transparent outline-none resize-none text-sm"
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={() => setIsIssueModalOpen(false)}

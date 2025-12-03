@@ -1,0 +1,90 @@
+-- Create newsletters table
+CREATE TABLE IF NOT EXISTS public.newsletters (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT,
+    type TEXT NOT NULL CHECK (type IN ('report', 'news', 'pdf', 'broadcast', 'calendar')),
+    file_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    is_published BOOLEAN DEFAULT true
+);
+
+-- Enable RLS
+ALTER TABLE public.newsletters ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Enable read access for all users" ON public.newsletters
+    FOR SELECT USING (true);
+
+CREATE POLICY "Enable insert for admins only" ON public.newsletters
+    FOR INSERT WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'owner')
+        )
+    );
+
+CREATE POLICY "Enable update for admins only" ON public.newsletters
+    FOR UPDATE USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'owner')
+        )
+    );
+
+CREATE POLICY "Enable delete for admins only" ON public.newsletters
+    FOR DELETE USING (
+        EXISTS (
+            SELECT 1 FROM public.users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'owner')
+        )
+    );
+
+-- Create storage bucket for newsletter files
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('newsletter-files', 'newsletter-files', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies
+CREATE POLICY "Give public access to newsletter files" ON storage.objects
+    FOR SELECT USING (bucket_id = 'newsletter-files');
+
+CREATE POLICY "Enable upload for admins only" ON storage.objects
+    FOR INSERT WITH CHECK (
+        bucket_id = 'newsletter-files' 
+        AND (
+            EXISTS (
+                SELECT 1 FROM public.users 
+                WHERE users.id = auth.uid() 
+                AND users.role IN ('admin', 'owner')
+            )
+        )
+    );
+
+CREATE POLICY "Enable update for admins only" ON storage.objects
+    FOR UPDATE USING (
+        bucket_id = 'newsletter-files' 
+        AND (
+            EXISTS (
+                SELECT 1 FROM public.users 
+                WHERE users.id = auth.uid() 
+                AND users.role IN ('admin', 'owner')
+            )
+        )
+    );
+
+CREATE POLICY "Enable delete for admins only" ON storage.objects
+    FOR DELETE USING (
+        bucket_id = 'newsletter-files' 
+        AND (
+            EXISTS (
+                SELECT 1 FROM public.users 
+                WHERE users.id = auth.uid() 
+                AND users.role IN ('admin', 'owner')
+            )
+        )
+    );

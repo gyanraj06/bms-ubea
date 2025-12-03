@@ -12,6 +12,7 @@ import { toast } from "sonner";
 const navigation = [
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
+  { name: "Newsletter", href: "/newsletter" },
   { name: "Book Now", href: "/booking", highlight: true },
 ];
 
@@ -134,12 +135,12 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                   item.highlight
                     ? "px-6 py-2.5 bg-brown-dark text-white rounded-full hover:bg-brown-medium"
                     : pathname === item.href
-                    ? shouldShowLight
-                      ? "text-brown-dark"
-                      : "text-white font-semibold"
-                    : shouldShowLight
-                    ? "text-gray-600 hover:text-brown-dark"
-                    : "text-white/80 hover:text-white"
+                      ? shouldShowLight
+                        ? "text-brown-dark"
+                        : "text-white font-semibold"
+                      : shouldShowLight
+                        ? "text-gray-600 hover:text-brown-dark"
+                        : "text-white/80 hover:text-white"
                 )}
               >
                 {item.name}
@@ -229,70 +230,70 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                 </Link>
 
                 <div className="relative" data-user-menu>
-                <button
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                  className={cn(
-                    "flex items-center gap-2 p-2 rounded-full transition-all",
-                    shouldShowLight
-                      ? "text-brown-dark hover:bg-gray-100"
-                      : "text-white hover:bg-white/10"
-                  )}
-                  aria-label="User menu"
-                >
-                  <UserCircle size={28} weight="fill" />
-                  <span className="text-sm font-medium hidden lg:block">
-                    {user.full_name.split(" ")[0]}
-                  </span>
-                </button>
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className={cn(
+                      "flex items-center gap-2 p-2 rounded-full transition-all",
+                      shouldShowLight
+                        ? "text-brown-dark hover:bg-gray-100"
+                        : "text-white hover:bg-white/10"
+                    )}
+                    aria-label="User menu"
+                  >
+                    <UserCircle size={28} weight="fill" />
+                    <span className="text-sm font-medium hidden lg:block">
+                      {user.full_name.split(" ")[0]}
+                    </span>
+                  </button>
 
-                {/* Dropdown Menu */}
-                <AnimatePresence mode="wait">
-                  {showUserMenu && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      transition={{ duration: 0.15 }}
-                      className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
-                    >
-                      <div className="px-4 py-3 border-b border-gray-200">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {user.full_name}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {user.email}
-                        </p>
-                      </div>
-                      <div className="py-2">
-                        <Link
-                          href="/profile"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <User size={18} />
-                          <span>My Profile</span>
-                        </Link>
-                        <Link
-                          href="/my-bookings"
-                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                          onClick={() => setShowUserMenu(false)}
-                        >
-                          <UserCircle size={18} />
-                          <span>My Bookings</span>
-                        </Link>
-                        <button
-                          onClick={handleSignOut}
-                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-                        >
-                          <SignOut size={18} />
-                          <span>Sign Out</span>
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+                  {/* Dropdown Menu */}
+                  <AnimatePresence mode="wait">
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-50"
+                      >
+                        <div className="px-4 py-3 border-b border-gray-200">
+                          <p className="text-sm font-semibold text-gray-900">
+                            {user.full_name}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        <div className="py-2">
+                          <Link
+                            href="/profile"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            <User size={18} />
+                            <span>My Profile</span>
+                          </Link>
+                          <Link
+                            href="/my-bookings"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            <UserCircle size={18} />
+                            <span>My Bookings</span>
+                          </Link>
+                          <button
+                            onClick={handleSignOut}
+                            className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                          >
+                            <SignOut size={18} />
+                            <span>Sign Out</span>
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
-            </div>
             )}
 
             {/* Login Button (when logged out) */}
@@ -306,8 +307,8 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                       ? "bg-brown-dark text-white"
                       : "bg-white text-brown-dark"
                     : shouldShowLight
-                    ? "text-gray-600 hover:text-brown-dark hover:bg-gray-100"
-                    : "text-white/80 hover:text-white hover:bg-white/10"
+                      ? "text-gray-600 hover:text-brown-dark hover:bg-gray-100"
+                      : "text-white/80 hover:text-white hover:bg-white/10"
                 )}
                 aria-label="Login"
               >
@@ -363,8 +364,8 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                       item.highlight
                         ? "px-6 py-3 bg-brown-dark text-white rounded-full text-center"
                         : pathname === item.href
-                        ? "text-brown-dark font-semibold"
-                        : "text-gray-600 hover:text-brown-dark"
+                          ? "text-brown-dark font-semibold"
+                          : "text-gray-600 hover:text-brown-dark"
                     )}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >

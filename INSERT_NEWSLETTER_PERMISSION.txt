@@ -1,0 +1,15 @@
+-- Insert Newsletter permission if it doesn't exist
+INSERT INTO public.permissions (name, description, permission_key, href, roles)
+VALUES (
+    'Newsletter',
+    'Manage newsletters and broadcasts',
+    'newsletter',
+    '/admin/dashboard/newsletter',
+    ARRAY['Owner', 'Manager']
+)
+ON CONFLICT (permission_key) DO UPDATE 
+SET 
+    name = EXCLUDED.name,
+    description = EXCLUDED.description,
+    href = EXCLUDED.href,
+    roles = EXCLUDED.roles;
