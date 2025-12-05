@@ -106,7 +106,7 @@ export function CTASection() {
                 </Link>
               </Button>
               <Button variant="outline" size="xl" asChild>
-                <Link href="/contact">Contact Us</Link>
+                <Link href="/about">Contact Us</Link>
               </Button>
             </div>
           </motion.div>

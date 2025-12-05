@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const navigation = [
   { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
+  { name: "Event Hall", href: "/event-hall" },
   { name: "Newsletter", href: "/newsletter" },
   { name: "Book Now", href: "/booking", highlight: true },
 ];

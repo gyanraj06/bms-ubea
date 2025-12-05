@@ -119,7 +119,7 @@ export function Footer() {
               {[
                 { name: "Home", href: "/" },
                 { name: "About Us", href: "/about" },
-                { name: "Contact", href: "/contact" },
+                { name: "Event Hall", href: "/event-hall" },
               ].map((link) => (
                 <li key={link.name}>
                   <Link

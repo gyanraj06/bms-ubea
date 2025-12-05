@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 
 const navigation = [
   { name: "About", href: "/about" },
-  { name: "Contact", href: "/contact" },
+  { name: "Event Hall", href: "/event-hall" },
 ];
 
 export function Header() {
@@ -64,8 +64,8 @@ export function Header() {
                       ? "text-primary-700"
                       : "text-white"
                     : isScrolled
-                    ? "text-gray-700 hover:text-primary-600"
-                    : "text-white/90 hover:text-white"
+                      ? "text-gray-700 hover:text-primary-600"
+                      : "text-white/90 hover:text-white"
                 )}
               >
                 {item.name}
