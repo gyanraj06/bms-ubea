@@ -4,59 +4,59 @@ import { MapPin } from '@phosphor-icons/react'
 
 const attractions = [
   {
-    name: 'Upper Lake',
-    distance: '3 km',
+    name: 'Bhojpur',
+    distance: '32 km',
     detail: 'from property',
-    image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Beautiful lake view',
+    image: '/bhojpur.jpg',
+    attribution: 'Bhojpur Temple',
     size: 'large',
   },
   {
-    name: 'Van Vihar National Park',
-    distance: '5 km',
+    name: 'Maheshwar',
+    distance: '279 km',
     detail: 'from property',
-    image: 'https://images.unsplash.com/photo-1549366021-9f761d450615?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Wildlife sanctuary',
+    image: '/maheshwar.jpg',
+    attribution: 'Maheshwar Ghats',
     size: 'small',
   },
   {
-    name: 'Sanchi Stupa',
-    distance: '46 km',
-    detail: 'UNESCO World Heritage',
-    image: 'https://images.unsplash.com/photo-1587474260584-136574528ed5?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Ancient Buddhist monument',
-    size: 'medium',
-  },
-  {
-    name: 'Bhimbetka Rock Shelters',
-    distance: '45 km',
-    detail: 'UNESCO World Heritage',
-    image: 'https://images.unsplash.com/photo-1620857520284-02ac92bc2ce1?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Prehistoric cave paintings',
-    size: 'medium',
-  },
-  {
-    name: 'Taj-ul-Masajid',
-    distance: '4 km',
+    name: 'Narmadapuram',
+    distance: '75 km',
     detail: 'from property',
-    image: 'https://images.unsplash.com/photo-1609137144813-7d9921338f24?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Historic mosque',
+    image: '/narmadapuram.jpg',
+    attribution: 'Hoshangabad',
     size: 'medium',
   },
   {
-    name: 'Regional Science Centre',
-    distance: '6 km',
+    name: 'Omkareshwar',
+    distance: '257 km',
     detail: 'from property',
-    image: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Educational attraction',
+    image: '/omkareshwar.jpg',
+    attribution: 'Omkareshwar Temple',
+    size: 'medium',
+  },
+  {
+    name: 'Sanchi',
+    distance: '49 km',
+    detail: 'from property',
+    image: '/sanchi.jpg',
+    attribution: 'Sanchi Stupa',
+    size: 'medium',
+  },
+  {
+    name: 'Ujjain',
+    distance: '192 km',
+    detail: 'from property',
+    image: '/ujjain.jpg',
+    attribution: 'Mahakaleshwar Temple',
     size: 'tall',
   },
   {
-    name: 'Boat Club',
-    distance: '3 km',
+    name: 'Mandu',
+    distance: '286 km',
     detail: 'from property',
-    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&auto=format&fit=crop&q=80',
-    attribution: 'Boating experience',
+    image: '/mandu.png',
+    attribution: 'Mandu Fort',
     size: 'small',
   },
 ]
@@ -156,7 +156,7 @@ export function AttractionsSlider() {
   return (
     <section className="relative py-20 md:py-28 bg-[#f5f1ed] overflow-hidden">
       <DecorativeDots />
-      
+
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
         <div className="text-center mb-14 max-w-3xl mx-auto">
