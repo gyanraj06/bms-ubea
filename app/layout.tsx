@@ -20,7 +20,7 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: "Happy Holidays - Book Your Perfect Stay",
   description:
-    "Experience unparalleled luxury and comfort at our premium hotel. Book your perfect room or event hall today.",
+    "Experience unparalleled Service and comfort at our premium hotel. Book your perfect room or event hall today.",
   keywords: [
     "Happy Holidays",
     "premium accommodation",
@@ -42,10 +42,10 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Providers>
           {children}
-          <Toaster 
-            position="top-right" 
-            richColors 
-            closeButton 
+          <Toaster
+            position="top-right"
+            richColors
+            closeButton
             toastOptions={{
               classNames: {
                 closeButton: "!bg-white !text-gray-600 !border-gray-200 !w-8 !h-8 !p-2 hover:!bg-gray-100"

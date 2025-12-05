@@ -77,39 +77,17 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {/* Column 1: Brand */}
           <div>
-            <h2 className="font-serif text-2xl font-bold mb-4">
-              Happy Holidays
-            </h2>
+            <div className="mb-4">
+              <img
+                src="/logo.png"
+                alt="Happy Holidays"
+                className="h-20 w-auto object-contain"
+              />
+            </div>
             <p className="text-gray-400 text-sm mb-4">
-              Experience unparalleled luxury and comfort. Your perfect stay
+              Experience unparalleled Service and comfort. Your perfect stay
               awaits.
             </p>
-            <div className="flex space-x-3">
-              <a
-                href="https://facebook.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-              >
-                <FacebookLogo size={20} weight="fill" />
-              </a>
-              <a
-                href="https://instagram.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-              >
-                <InstagramLogo size={20} weight="fill" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-primary-600 transition-colors"
-              >
-                <TwitterLogo size={20} weight="fill" />
-              </a>
-            </div>
           </div>
 
           {/* Column 2: Quick Links */}

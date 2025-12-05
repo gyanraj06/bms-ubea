@@ -35,7 +35,7 @@ export function HeroSection() {
             transition={{ duration: 0.8 }}
             className="font-serif text-5xl md:text-7xl font-bold text-white text-balance"
           >
-            Experience Luxury
+            Experience Service
             <br />
             <span className="bg-gradient-to-r from-accent-400 to-accent-600 bg-clip-text text-transparent">
               Beyond Compare

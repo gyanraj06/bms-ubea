@@ -114,14 +114,11 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center">
-            <span
-              className={cn(
-                "font-serif text-2xl font-semibold transition-colors",
-                shouldShowLight ? "text-brown-dark" : "text-white"
-              )}
-            >
-              Happy Holidays
-            </span>
+            <img
+              src="/logo.png"
+              alt="Happy Holidays"
+              className="h-16 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation - Minimal Text Links */}

@@ -42,7 +42,7 @@ export default function GalleryPage() {
             Gallery
           </h1>
           <p className="text-lg text-white/90">
-            A visual journey through our luxury property
+            A visual journey through our Service property
           </p>
         </div>
       </div>
@@ -54,11 +54,10 @@ export default function GalleryPage() {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2.5 rounded-full font-medium transition-all ${
-                selectedCategory === category
+              className={`px-6 py-2.5 rounded-full font-medium transition-all ${selectedCategory === category
                   ? "bg-primary-600 text-white shadow-lg"
                   : "bg-white text-gray-700 hover:bg-gray-100"
-              }`}
+                }`}
             >
               {category}
             </button>

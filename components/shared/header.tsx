@@ -38,17 +38,11 @@ export function Header() {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-primary-800 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">L</span>
-            </div>
-            <span
-              className={cn(
-                "font-serif text-2xl font-bold transition-colors",
-                isScrolled ? "text-gray-900" : "text-white"
-              )}
-            >
-              Happy Holidays
-            </span>
+            <img
+              src="/logo.png"
+              alt="Happy Holidays"
+              className="h-16 w-auto object-contain"
+            />
           </Link>
 
           {/* Desktop Navigation */}

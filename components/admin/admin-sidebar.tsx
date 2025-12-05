@@ -127,9 +127,11 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
         {/* Logo */}
         <div className="h-20 flex items-center justify-center border-b border-gray-200">
           <Link href="/admin/dashboard" className="flex items-center">
-            <span className="font-serif text-2xl font-semibold text-brown-dark">
-              Happy Holidays
-            </span>
+            <img
+              src="/logo.png"
+              alt="Happy Holidays"
+              className="h-16 w-auto object-contain"
+            />
           </Link>
         </div>
 
@@ -206,9 +208,11 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
           {/* Logo */}
           <div className="h-20 flex items-center justify-center border-b border-gray-200">
             <Link href="/admin/dashboard" className="flex items-center">
-              <span className="font-serif text-xl font-semibold text-brown-dark">
-                Happy Holidays
-              </span>
+              <img
+                src="/logo.png"
+                alt="Happy Holidays"
+                className="h-16 w-auto object-contain"
+              />
             </Link>
           </div>
 

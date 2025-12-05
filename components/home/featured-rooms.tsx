@@ -74,7 +74,7 @@ export function FeaturedRooms() {
               Featured Rooms
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Discover our handpicked selection of luxury accommodations designed for your comfort
+              Discover our handpicked selection of Service accommodations designed for your comfort
             </p>
           </motion.div>
         </div>

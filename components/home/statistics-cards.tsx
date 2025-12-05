@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 
 const stats = [
-  { number: '250+', label: 'Luxury Rooms' },
+  { number: '250+', label: 'Service Rooms' },
   { number: '98%', label: 'Guest Satisfaction' },
   { number: '50K+', label: 'Happy Guests' },
   { number: '25+', label: 'Years Experience' },

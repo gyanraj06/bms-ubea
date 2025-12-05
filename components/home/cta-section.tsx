@@ -64,7 +64,7 @@ export function CTASection() {
           >
             <h2 className="font-serif text-4xl md:text-5xl font-bold text-gray-900 text-balance">
               Ready to Experience
-              <span className="text-primary-700"> Luxury</span>?
+              <span className="text-primary-700"> Service</span>?
             </h2>
 
             <p className="text-lg text-gray-600 leading-relaxed">

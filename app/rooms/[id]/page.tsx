@@ -18,7 +18,7 @@ const roomDetails = {
   price: 25000,
   capacity: 4,
   size: 850,
-  description: "Experience the pinnacle of luxury in our Presidential Suite. This expansive accommodation features elegant furnishings, breathtaking views, and exclusive amenities designed for the most discerning guests.",
+  description: "Experience the pinnacle of Service in our Presidential Suite. This expansive accommodation features elegant furnishings, breathtaking views, and exclusive amenities designed for the most discerning guests.",
   amenities: [
     "Ocean View",
     "Private Balcony",
