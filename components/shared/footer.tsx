@@ -192,19 +192,6 @@ export function Footer() {
                   </div>
                 </div>
               </li>
-              {settings.gst_number && (
-                <li className="flex items-start space-x-3 text-sm">
-                  <IdentificationCard
-                    size={20}
-                    className="text-primary-400 mt-0.5 flex-shrink-0"
-                    weight="fill"
-                  />
-                  <div>
-                    <div className="font-semibold text-white">GST No.</div>
-                    <div className="text-gray-400">{settings.gst_number}</div>
-                  </div>
-                </li>
-              )}
             </ul>
           </div>
         </div>

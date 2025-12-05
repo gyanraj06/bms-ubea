@@ -49,12 +49,7 @@ const menuItems: MenuItem[] = [
     icon: CurrencyCircleDollar,
     permissionKey: "payments",
   },
-  {
-    name: "Communication",
-    href: "/admin/dashboard/communication",
-    icon: ChatCircleText,
-    permissionKey: "communication",
-  },
+
   {
     name: "Property & Media",
     href: "/admin/dashboard/media",

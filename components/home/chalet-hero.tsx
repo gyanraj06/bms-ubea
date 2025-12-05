@@ -36,7 +36,7 @@ export function ChaletHero() {
         >
           {/* Main Heading */}
           <h1 className="font-serif text-4xl md:text-6xl lg:text-7xl font-normal text-white mb-6 leading-tight">
-            Welcome to Union Awaas Holiday Home
+            Welcome to Union Awaas Bank Holiday Home
           </h1>
 
           {/* Subtitle */}
