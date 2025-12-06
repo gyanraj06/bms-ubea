@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const { user, loading, refreshUser } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
@@ -122,175 +122,166 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
-      <ChaletHeader forceLight={true} />
-      <div className="h-20" />
+    <div className="min-h-screen bg-gray-50">
+      <ChaletHeader />
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="bg-white rounded-2xl shadow-xl p-8"
-          >
-            {/* Header */}
-            <div className="text-center mb-8">
-              <h1 className="font-serif text-3xl font-bold text-gray-900 mb-2">
-                Welcome Back
-              </h1>
-              <p className="text-gray-600">
-                Sign in to continue to Happy Holidays
-              </p>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="min-h-screen pt-32 pb-16 px-4 flex items-center justify-center"
+      >
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8">
+          <div className="text-center mb-8">
+            <h1 className="font-playfair text-3xl text-brown-dark mb-2">
+              Welcome Back
+            </h1>
+            <p className="text-gray-600">Please sign in to your account</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <div className="relative">
+                <EnvelopeSimple
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  className="pl-10"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email */}
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email Address
-                </Label>
-                <div className="relative">
-                  <EnvelopeSimple
-                    size={20}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="pl-10 h-11"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Password */}
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
-                </Label>
-                <div className="relative">
-                  <LockKey
-                    size={20}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    className="pl-10 pr-10 h-11"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Forgot Password */}
-              <div className="flex items-center justify-end">
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-brown-dark hover:text-brown-medium font-medium transition-colors"
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <LockKey
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  className="pl-10 pr-10"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  Forgot Password?
-                </Link>
-              </div>
-
-              {/* Submit Button */}
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-11 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                    <span>Signing in...</span>
-                  </div>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-            </form>
-
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">OR CONTINUE WITH</span>
+                  {showPassword ? <EyeSlash size={20} /> : <Eye size={20} />}
+                </button>
               </div>
             </div>
 
-            {/* Google SSO Button */}
+            <div className="flex items-center justify-end">
+              <Link
+                href="/forgot-password"
+                className="text-sm font-medium text-brown-dark hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+
             <Button
-              type="button"
-              onClick={handleGoogleLogin}
-              disabled={isGoogleLoading}
-              variant="outline"
-              className="w-full h-11 border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              type="submit"
+              className="w-full bg-brown-dark hover:bg-brown-medium h-12 text-lg"
+              disabled={isLoading}
             >
-              {isGoogleLoading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
-                  <span>Connecting...</span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-3">
-                  <GoogleLogo size={20} weight="bold" />
-                  <span>Sign in with Google</span>
-                </div>
-              )}
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
 
-            {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <span className="w-full border-t border-gray-200" />
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">OR</span>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">
+                  Or continue with
+                </span>
               </div>
             </div>
 
-            {/* Admin Login Button */}
-            <Link href="/admin/login">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-11 border-2 border-brown-dark text-brown-dark hover:bg-brown-dark hover:text-white rounded-lg font-semibold transition-colors"
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-12"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading}
+            >
+              {isGoogleLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-brown-dark border-t-transparent mr-2" />
+              ) : (
+                <GoogleLogo size={20} weight="bold" className="mr-2" />
+              )}
+              Google
+            </Button>
+          </form>
+
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">OR</span>
+            </div>
+          </div>
+
+          {/* Admin Login Button */}
+          <Link href="/admin/login">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-11 border-2 border-brown-dark text-brown-dark hover:bg-brown-dark hover:text-white rounded-lg font-semibold transition-colors"
+            >
+              Login as Property Administrator
+            </Button>
+          </Link>
+
+          {/* Sign Up Link */}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{" "}
+              <Link
+                href={`/signup?next=${encodeURIComponent(next)}`}
+                className="text-brown-dark hover:text-brown-medium font-semibold transition-colors"
               >
-                Login as Property Administrator
-              </Button>
-            </Link>
+                Sign Up
+              </Link>
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
 
-            {/* Sign Up Link */}
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-600">
-                Don't have an account?{" "}
-                <Link
-                  href={`/signup?next=${encodeURIComponent(next)}`}
-                  className="text-brown-dark hover:text-brown-medium font-semibold transition-colors"
-                >
-                  Sign Up
-                </Link>
-              </p>
-            </div>
-          </motion.div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen pt-32 pb-16 px-4 bg-gray-50 flex items-center justify-center">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center">
+          <div className="h-10 w-10 border-4 border-brown-dark border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-gray-500">Loading...</p>
         </div>
       </div>
-    </main>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

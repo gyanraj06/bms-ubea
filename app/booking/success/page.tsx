@@ -8,7 +8,9 @@ import { Footer } from "@/components/shared/footer";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, CalendarCheck } from "@phosphor-icons/react";
 
-export default function BookingSuccessPage() {
+import { Suspense } from "react";
+
+function BookingSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const bookingId = searchParams.get("bookingId");
@@ -62,7 +64,7 @@ export default function BookingSuccessPage() {
               </div>
             )}
             {bookingIds && !bookingNumber && (
-               <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
+              <div className="inline-block bg-primary-50 px-6 py-3 rounded-lg mt-4">
                 <p className="text-sm text-gray-600 mb-1">Bookings Created</p>
                 <p className="text-xl font-bold text-primary-700">{bookingIds.split(',').length} Rooms</p>
               </div>
@@ -125,5 +127,20 @@ export default function BookingSuccessPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function BookingSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark mb-4"></div>
+          <p className="text-gray-600 font-medium">Finalizing booking...</p>
+        </div>
+      </div>
+    }>
+      <BookingSuccessContent />
+    </Suspense>
   );
 }
