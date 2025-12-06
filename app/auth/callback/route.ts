@@ -17,15 +17,15 @@ export async function GET(request: NextRequest) {
     // Exchange the code for a session
     const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error && session?.user) {
+    if (error) {
+      console.error('Auth callback error:', error);
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=${encodeURIComponent(error.message)}`);
+    }
+
+    if (session?.user) {
       const user = session.user;
       
       // Sync user to public.users table
-      // We use the supabase client which has the user's session, 
-      // but RLS might block insertion if not configured correctly.
-      // Ideally, public.users should allow verified authenticated users to insert themselves.
-      // Based on schema: "Anyone can create user account" ON users FOR INSERT WITH CHECK (true);
-      
       const { data: existingUser } = await supabase
         .from('users')
         .select('id')
@@ -47,9 +47,6 @@ export async function GET(request: NextRequest) {
         await supabase.from('users').update({
           google_id: user.user_metadata?.sub,
           is_verified: true,
-          // We don't overwrite name/email to respect user changes, 
-          // unless we strictly want to sync with Google. 
-          // For now, simple linking is safer.
         }).eq('id', user.id);
       }
     }

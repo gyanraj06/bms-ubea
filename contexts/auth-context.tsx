@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const toastId = toast.loading("Verifying account creation...");
           let foundSession = null;
           let attempts = 0;
-          const maxAttempts = 30;
+          const maxAttempts = 10; // Reduced from 30 to 10 (5 seconds)
 
           while (!foundSession && attempts < maxAttempts) {
             await new Promise(r => setTimeout(r, 500));
@@ -147,11 +147,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             window.location.href = newUrl.toString();
             return;
           } else {
-            toast.error("Verification timed out. Please try logging in.");
+            // If failed, HARD redirect to clear params and reset state
+            toast.error("Authentication verification timeout. Please try again.");
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.delete('auth_callback');
             newUrl.searchParams.delete('retried');
-            window.history.replaceState({}, '', newUrl.toString());
+            // Force a full reload to the clean URL to reset app state
+            window.location.href = newUrl.toString();
           }
         }
       }
