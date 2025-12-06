@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { X, Download, Eye } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import { format } from "date-fns";
+
 import { cn, formatDateTime } from "@/lib/utils";
 import type { GuestDetail } from "@/types";
 

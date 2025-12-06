@@ -6,12 +6,23 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'
 const STORAGE_BUCKET = 'booking-documents';
 
 export async function POST(request: NextRequest) {
+  console.log('[Upload API] Request received');
   try {
     const formData = await request.formData();
+    console.log('[Upload API] FormData parsed');
+
     const file = formData.get('file') as File;
     const documentType = formData.get('documentType') as string; // 'govt_id' or 'bank_id'
 
+    console.log('[Upload API] Details:', { 
+      fileName: file?.name, 
+      fileSize: file?.size, 
+      fileType: file?.type, 
+      documentType 
+    });
+
     if (!file) {
+      console.log('[Upload API] Error: No file provided');
       return NextResponse.json(
         { success: false, error: 'No file provided' },
         { status: 400 }
@@ -19,6 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!documentType || !['govt_id', 'bank_id'].includes(documentType)) {
+      console.log('[Upload API] Error: Invalid document type');
       return NextResponse.json(
         { success: false, error: 'Invalid document type. Must be govt_id or bank_id' },
         { status: 400 }
@@ -27,6 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file type
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      console.log('[Upload API] Error: Invalid file type');
       return NextResponse.json(
         {
           success: false,
@@ -38,6 +51,7 @@ export async function POST(request: NextRequest) {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
+      console.log('[Upload API] Error: File too large');
       return NextResponse.json(
         {
           success: false,
@@ -54,9 +68,13 @@ export async function POST(request: NextRequest) {
     const fileName = `${documentType}_${timestamp}_${randomString}.${fileExt}`;
     const filePath = `${documentType}/${fileName}`;
 
+    console.log('[Upload API] Prepared filePath:', filePath);
+
     // Convert File to ArrayBuffer then to Buffer for upload
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    console.log('[Upload API] Buffer created, size:', buffer.length);
 
     // Upload file to Supabase Storage
     const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
@@ -68,7 +86,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
+      console.error('[Upload API] Supabase upload error:', uploadError);
       return NextResponse.json(
         {
           success: false,
@@ -77,6 +95,8 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    console.log('[Upload API] Upload successful');
 
     // Get public URL (even though bucket is private, we need the URL structure)
     const { data: urlData } = supabaseAdmin.storage
@@ -100,7 +120,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('[Upload API] Catch block error:', error);
     return NextResponse.json(
       {
         success: false,

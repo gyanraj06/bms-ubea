@@ -9,6 +9,7 @@ export default function DebugPage() {
     const [loading, setLoading] = useState(true);
     const [envInfo, setEnvInfo] = useState<any>({});
     const [cookieString, setCookieString] = useState("");
+    const [rooms, setRooms] = useState<any[]>([]);
 
     // Create client outside effect
     const supabase = createClientComponentClient();
@@ -28,12 +29,8 @@ export default function DebugPage() {
             let manualSession = null;
 
             try {
-                console.log("Checking session...");
-
                 // 1. Manual Cookie Parse Check
-                // Attempt to find the auth cookie manually
                 const cookieName = getSupabaseAuthCookieName();
-                // Safe cookie parsing
                 const cookies: Record<string, string> = {};
                 if (document.cookie) {
                     document.cookie.split('; ').forEach(row => {
@@ -47,8 +44,6 @@ export default function DebugPage() {
                 if (cookies[cookieName]) {
                     try {
                         const decoded = decodeURIComponent(cookies[cookieName]);
-                        // It usually comes as: ["base64-header.payload.sig", "refresh-token", ...] or similar
-                        // We attempt to parse it
                         const parsed = JSON.parse(decoded);
                         const token = Array.isArray(parsed) ? parsed[0] : parsed.access_token;
 
@@ -72,7 +67,6 @@ export default function DebugPage() {
                 );
 
                 const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-                console.log("Session data:", data);
 
                 // Merge manual info if relevant
                 if (!data.session && manualSession) {
@@ -92,7 +86,22 @@ export default function DebugPage() {
             }
         };
 
+        const fetchRooms = async () => {
+            try {
+                const res = await fetch("/api/rooms");
+                const data = await res.json();
+                if (data.success) {
+                    setRooms(data.rooms);
+                } else {
+                    setRooms([{ error: "API returned success: false", msg: data.error }]);
+                }
+            } catch (e: any) {
+                setRooms([{ error: "Fetch failed", details: e.message }]);
+            }
+        };
+
         checkSession();
+        fetchRooms();
     }, [supabase]);
 
     return (
@@ -111,7 +120,7 @@ export default function DebugPage() {
                 </div>
             </div>
 
-            <div className="p-4 bg-gray-100 rounded">
+            <div className="p-4 bg-gray-100 rounded mb-8">
                 <h2 className="font-bold mb-2">Supabase Session Status</h2>
                 {loading ? (
                     <p className="animate-pulse">Loading...</p>
@@ -120,6 +129,13 @@ export default function DebugPage() {
                         {session ? JSON.stringify(session, null, 2) : "Null (No Session)"}
                     </pre>
                 )}
+            </div>
+
+            <div className="p-4 bg-gray-100 rounded">
+                <h2 className="font-bold mb-2">All Rooms (API)</h2>
+                <pre className="whitespace-pre-wrap bg-white p-2 border overflow-auto max-h-96">
+                    {rooms.length > 0 ? JSON.stringify(rooms, null, 2) : "No rooms found or loading..."}
+                </pre>
             </div>
         </div>
     );

@@ -33,10 +33,27 @@ export async function POST(request: NextRequest) {
       guest_details,
       special_requests,
       booking_for,
+      // New Comprehensive Fields
+      bank_id_number,
+      govt_id_image_url,
+      bank_id_image_url,
+      needs_cot,
+      num_cots,
+      needs_extra_bed,
+      num_extra_beds,
       // Legacy support
       room_id,
       num_guests,
     } = body;
+
+    console.log('[API/Bookings] Received request body:', JSON.stringify(body, null, 2));
+    console.log('[API/Bookings] Numeric fields:', {
+      num_guests,
+      num_cots,
+      num_extra_beds,
+      needs_cot,
+      needs_extra_bed
+    });
 
     // Verify Supabase token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -252,17 +269,25 @@ export async function POST(request: NextRequest) {
             check_in: checkInDate.toISOString(),
             check_out: checkOutDate.toISOString(),
             total_nights: totalNights,
-            num_guests: Math.ceil((num_guests || 1) / bookingsToCreate.length), // Distribute guests roughly
+            num_guests: Math.ceil((parseInt(num_guests) || 1) / bookingsToCreate.length), // Distribute guests roughly
             room_charges: roomCharges,
             gst_amount: gstAmount,
             total_amount: totalAmount,
             advance_paid: advancePaid,
             balance_amount: balanceAmount,
+            // Enhanced Fields
             special_requests: special_requests || '',
             status: 'pending',
-            payment_status: 'pending', // Initial state, waiting for user to pay
+            payment_status: 'pending',
             booking_for: booking_for || 'self',
-            guest_details: guest_details || [], // Attach all guest details to all bookings for now? Or just first?
+            guest_details: guest_details || [],
+            bank_id_number: bank_id_number || null,
+            govt_id_image_url: govt_id_image_url || null,
+            bank_id_image_url: bank_id_image_url || null,
+            needs_cot: !!needs_cot,
+            num_cots: parseInt(num_cots) || 0,
+            needs_extra_bed: !!needs_extra_bed,
+            num_extra_beds: parseInt(num_extra_beds) || 0,
           })
           .select()
           .single();
