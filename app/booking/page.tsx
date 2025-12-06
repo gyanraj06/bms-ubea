@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
+import { useAuth } from "@/contexts/auth-context";
 
 function BookingContent() {
   const searchParams = useSearchParams();
@@ -47,34 +48,15 @@ function BookingContent() {
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [availabilityMessage, setAvailabilityMessage] = useState<string>("");
   const [hasSearched, setHasSearched] = useState(false);
-  const [user, setUser] = useState<any>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
+
   // Use persistent cart hook
   const { cart, updateCart, totalItems, subtotal } = useCart();
 
   // Check user login
-  useEffect(() => {
-    const checkUser = () => {
-      const userDataStr = localStorage.getItem("userData");
-      const sessionStr = localStorage.getItem("userSession");
-
-      if (userDataStr && sessionStr && userDataStr !== "null" && sessionStr !== "null") {
-        try {
-          const userData = JSON.parse(userDataStr);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error parsing user:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    };
-    checkUser();
-    window.addEventListener("storage", checkUser);
-    return () => window.removeEventListener("storage", checkUser);
-  }, []);
+  const { user } = useAuth();
+  // We used to have local state 'user' here, but now we use the one from useAuth directly.
+  // To match the existing code's expectation of 'user' variable, we just use the one from useAuth.
 
   // Fetch available rooms from database with date filtering
   useEffect(() => {
@@ -113,12 +95,12 @@ function BookingContent() {
     };
 
     fetchRooms();
-    
+
     // Auto-refresh availability every 30 seconds to prevent stale data
     const refreshInterval = setInterval(fetchRooms, 30000);
-    
+
     return () => clearInterval(refreshInterval);
-  }, [checkInDate, checkOutDate]); // Re-fetch when dates change
+  }, [checkInDate, checkOutDate]);
 
   // Pre-fill dates from URL parameters
   useEffect(() => {
@@ -185,7 +167,6 @@ function BookingContent() {
           check_in: checkInDate.toISOString().split('T')[0],
           check_out: checkOutDate.toISOString().split('T')[0],
           num_guests: guests,
-          // We don't send num_rooms here as we want to see all options
         }),
       });
 
@@ -207,13 +188,13 @@ function BookingContent() {
   };
 
   const handleUpdateCart = (
-    roomId: string, 
-    delta: number, 
-    roomDetails?: { 
-      roomType: string; 
-      price: number; 
-      maxGuests: number; 
-      maxAvailable: number; 
+    roomId: string,
+    delta: number,
+    roomDetails?: {
+      roomType: string;
+      price: number;
+      maxGuests: number;
+      maxAvailable: number;
     }
   ) => {
     if (!user) {
@@ -238,7 +219,7 @@ function BookingContent() {
 
     // Revalidate availability before proceeding
     toast.loading("Verifying room availability...", { id: "availability-check" });
-    
+
     try {
       const response = await fetch('/api/rooms/check-availability', {
         method: 'POST',
@@ -251,7 +232,7 @@ function BookingContent() {
       });
 
       const data = await response.json();
-      
+
       if (!data.success || !data.available_rooms) {
         toast.error("No rooms available for selected dates", { id: "availability-check" });
         // Refresh the room list
@@ -263,16 +244,16 @@ function BookingContent() {
       // Check if all rooms in cart are still available
       const availableRoomIds = data.available_rooms.map((r: any) => r.id);
       const unavailableRooms: string[] = [];
-      
+
       for (const [roomId, item] of Object.entries(cart)) {
         // Count how many of this room type are available
         const room = availableRooms.find(r => r.id === roomId);
         if (!room) continue;
-        
+
         const availableOfType = data.available_rooms.filter(
           (r: any) => r.room_type === room.room_type
         );
-        
+
         if (availableOfType.length < item.quantity) {
           unavailableRooms.push(
             `${room.room_type} (requested: ${item.quantity}, available: ${availableOfType.length})`
@@ -333,7 +314,7 @@ function BookingContent() {
   }, {});
 
   const roomTypes = Object.values(groupedRooms);
-  
+
   // Calculate total price (including taxes)
   const calculateTotalWithTax = () => {
     return Object.values(cart).reduce((total, item) => {
@@ -349,8 +330,8 @@ function BookingContent() {
 
   const totalPriceWithTax = calculateTotalWithTax();
 
-  const nights = checkInDate && checkOutDate 
-    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) 
+  const nights = checkInDate && checkOutDate
+    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
   const navigateToRoomDetails = (roomId: string) => {
@@ -358,7 +339,7 @@ function BookingContent() {
     if (checkInDate) params.set('checkIn', checkInDate.toISOString());
     if (checkOutDate) params.set('checkOut', checkOutDate.toISOString());
     params.set('guests', guests.toString());
-    
+
     router.push(`/booking/${roomId}?${params.toString()}`);
   };
 
@@ -629,7 +610,7 @@ function BookingContent() {
               {roomTypes.map((room: any, index: number) => {
                 const hasImage = room.images && room.images.length > 0;
                 const roomImage = hasImage ? room.images[0] : null;
-                
+
                 const representativeId = room.id;
                 const quantityInCart = cart[representativeId]?.quantity || 0;
                 const maxAvailable = room.count;
@@ -728,7 +709,7 @@ function BookingContent() {
                               </div>
                               <p className="text-sm text-gray-500 mt-1">+ taxes & fees</p>
                             </div>
-                            
+
                             <div className="flex items-center gap-4">
                               <button
                                 onClick={() => navigateToRoomDetails(room.id)}
@@ -736,7 +717,7 @@ function BookingContent() {
                               >
                                 View Details
                               </button>
-                              
+
                               {quantityInCart > 0 ? (
                                 <div className="flex items-center gap-3 bg-gray-100 rounded-lg p-1">
                                   <button

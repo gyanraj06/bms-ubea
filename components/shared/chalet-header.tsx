@@ -304,7 +304,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
             {/* Login Button (when logged out) */}
             {!loading && !adminUser && !user && (
               <Link
-                href="/login"
+                href={`/login?next=${encodeURIComponent(pathname)}`}
                 className={cn(
                   "p-2 rounded-full transition-all",
                   pathname === "/login"
@@ -461,7 +461,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                     </>
                   ) : (
                     <Link
-                      href="/login"
+                      href={`/login?next=${encodeURIComponent(pathname)}`}
                       className={cn(
                         "flex items-center gap-2 text-base font-medium py-2 transition-colors",
                         pathname === "/login"

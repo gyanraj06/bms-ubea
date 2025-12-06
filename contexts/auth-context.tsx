@@ -2,7 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -34,124 +35,187 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Load user from localStorage and verify session on mount
-  useEffect(() => {
-    loadUserFromStorage();
-  }, []);
+  // Create a Supabase client optimized for Next.js Client Components
+  const supabase = createClientComponentClient();
 
-  // Listen to Supabase auth state changes
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, supabaseSession) => {
-        if (event === 'SIGNED_IN' && supabaseSession) {
-          await updateUserFromSession(supabaseSession);
-        } else if (event === 'SIGNED_OUT') {
-          clearUser();
-        } else if (event === 'TOKEN_REFRESHED' && supabaseSession) {
-          await updateUserFromSession(supabaseSession);
-        }
-      }
-    );
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  const loadUserFromStorage = async () => {
+  // Helper to sync Supabase session to our app state
+  const syncSessionToState = async (session: any) => {
     try {
-      const storedUser = localStorage.getItem('userData');
-      const storedSession = localStorage.getItem('userSession');
+      if (!session?.user) {
+        setUser(null);
+        setSession(null);
+        return;
+      }
 
-      if (storedUser && storedSession) {
-        const userData = JSON.parse(storedUser);
-        const sessionData = JSON.parse(storedSession);
+      // 1. Set Session
+      setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_at: session.expires_at || 0,
+      });
 
-        // Check if session is still valid
-        if (sessionData.expires_at && sessionData.expires_at > Date.now() / 1000) {
-          setUser(userData);
-          setSession(sessionData);
-        } else {
-          // Try to refresh the session
-          const { data, error } = await supabase.auth.refreshSession({
-            refresh_token: sessionData.refresh_token,
-          });
+      // 2. Fetch User Profile
+      // We check the DB for the latest profile data
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
 
-          if (error || !data.session) {
-            clearUser();
+      if (profile) {
+        setUser({
+          id: profile.id,
+          email: profile.email,
+          full_name: profile.full_name,
+          phone: profile.phone,
+          is_verified: profile.is_verified,
+        });
+      } else {
+        // Fallback to metadata
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          full_name: session.user.user_metadata?.full_name || '',
+          phone: session.user.user_metadata?.phone || '',
+          is_verified: true,
+        });
+      }
+    } catch (error) {
+      console.error("Error syncing session:", error);
+      // If error, we might leave user as null or stale, better to be safe
+    }
+  };
+
+  useEffect(() => {
+    // 1. Initial Load
+    // 1. Initial Load
+    const init = async () => {
+      setLoading(true);
+
+      const params = new URLSearchParams(window.location.search);
+      const isAuthCallback = params.get('auth_callback') === 'true';
+      const isLoginSuccess = params.get('login_success') === 'true';
+
+      // 1. Handle Post-Login Success State
+      if (isLoginSuccess) {
+        toast.success("Successfully logged in with Google");
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete('login_success');
+        window.history.replaceState({}, '', newUrl.toString());
+      }
+
+      // 2. Initial Session Check
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
+
+      // 3. Post-Redirect Handling
+      // If we have an auth callback, we force at least ONE reload to ensure cookies are fresh.
+      // This solves the "stuck" issue or "profile icon missing" issue.
+      if (isAuthCallback) {
+        const isRetried = params.get('retried') === 'true';
+
+        if (!isRetried) {
+          console.log("[Auth] Callback detected. Forcing immediate cleanup reload.");
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('retried', 'true');
+          window.location.href = newUrl.toString();
+          return;
+        }
+
+        // If we see 'retried=true', we know we just reloaded.
+        // Now we check session and poll if needed.
+        if (!initialSession) {
+          const toastId = toast.loading("Verifying account creation...");
+          let foundSession = null;
+          let attempts = 0;
+          const maxAttempts = 30;
+
+          while (!foundSession && attempts < maxAttempts) {
+            await new Promise(r => setTimeout(r, 500));
+            const { data } = await supabase.auth.getSession();
+            foundSession = data.session;
+            attempts++;
+          }
+          toast.dismiss(toastId);
+
+          if (foundSession) {
+            // Success logic below handled by syncSessionToState call or reload
+            // We can just proceed to clean up
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('auth_callback');
+            newUrl.searchParams.delete('retried');
+            newUrl.searchParams.set('login_success', 'true');
+            window.location.href = newUrl.toString();
+            return;
           } else {
-            await updateUserFromSession(data.session);
+            toast.error("Verification timed out. Please try logging in.");
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('auth_callback');
+            newUrl.searchParams.delete('retried');
+            window.history.replaceState({}, '', newUrl.toString());
           }
         }
       }
-    } catch (error) {
-      console.error('Error loading user from storage:', error);
-      clearUser();
-    } finally {
+
+      // Normal sync
+      if (initialSession) {
+        await syncSessionToState(initialSession);
+      }
       setLoading(false);
-    }
-  };
+    };
+    init();
 
-  const updateUserFromSession = async (supabaseSession: any) => {
-    try {
-      const userData: User = {
-        id: supabaseSession.user.id,
-        email: supabaseSession.user.email || '',
-        full_name: supabaseSession.user.user_metadata?.full_name || '',
-        phone: supabaseSession.user.user_metadata?.phone || '',
-        is_verified: true,
-      };
+    // 2. Real-time Listener
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      if (currentSession) {
+        await syncSessionToState(currentSession);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setSession(null);
+      }
+      // Ensure loading is false after any state change if we aren't in the middle of init
+      // We rely on init to set loading false initially, but this is a backup
+    });
 
-      const sessionData: Session = {
-        access_token: supabaseSession.access_token,
-        refresh_token: supabaseSession.refresh_token,
-        expires_at: supabaseSession.expires_at || 0,
-      };
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
-      setUser(userData);
-      setSession(sessionData);
-
-      localStorage.setItem('userData', JSON.stringify(userData));
-      localStorage.setItem('userSession', JSON.stringify(sessionData));
-    } catch (error) {
-      console.error('Error updating user from session:', error);
-    }
-  };
-
-  const clearUser = () => {
-    setUser(null);
-    setSession(null);
-    localStorage.removeItem('userData');
-    localStorage.removeItem('userSession');
-  };
+  // ... (keeping signOut and refreshUser same) ...
 
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      clearUser();
+      await fetch('/auth/signout', { method: 'POST' });
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('userData');
+      setUser(null);
+      setSession(null);
       router.push('/');
+      router.refresh();
+      toast.success("Signed out successfully");
     } catch (error) {
       console.error('Error signing out:', error);
+      toast.error('Error signing out');
     }
   };
 
   const refreshUser = async () => {
-    await loadUserFromStorage();
+    const { data: { session: currentSession } } = await supabase.auth.getSession();
+    await syncSessionToState(currentSession);
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        loading,
-        signOut,
-        refreshUser,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    session,
+    user,
+    signOut,
+    loading,
+    refreshUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {

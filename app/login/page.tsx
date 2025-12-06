@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeSlash, EnvelopeSimple, LockKey, GoogleLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,12 +24,24 @@ export default function LoginPage() {
     password: "",
   });
 
+  // Use the import from @/lib/supabase or create a new client component client
+  // Since this is a client component, we should import from aut-helpers or similar
+  // Looking at imports, we don't have createClientComponentClient imported yet.
+  // But wait, existing code imports from @/contexts/auth-context which uses @/lib/supabase
+  // Let's check imports.
+  // Better to use createClientComponentClient for proper cookie handling in client components
+  const supabase = createClientComponentClient();
+
+  // Get next param
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
+
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      router.push("/");
+      router.push(next);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,41 +54,44 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Call user login API
-      const response = await fetch('/api/auth/user-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          type: 'email',
-        }),
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        toast.error(data.error || 'Invalid email or password');
-        setIsLoading(false);
-        return;
+      if (error) {
+        throw error;
       }
 
-      // Store session data
-      if (data.session) {
-        localStorage.setItem('userSession', JSON.stringify(data.session));
-      }
-      localStorage.setItem('userData', JSON.stringify(data.user));
+      // Check if user exists in public table, if not try to sync
+      // We do this silently as a background task
+      const { error: profileError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', data.user.id)
+        .single();
 
-      // Refresh auth context
+      if (profileError) {
+        // If profile missing, create it
+        await supabase.from('users').insert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: data.user.email?.split('@')[0] || 'User',
+          is_verified: true,
+          is_active: true
+        });
+      }
+
+      // Force update of AuthContext
       await refreshUser();
 
-      toast.success('Login successful!');
-      router.push('/');
+      toast.success("Login successful");
+      router.push(next);
+      router.refresh();
+
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error('Login failed. Please try again.');
+      toast.error(error.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -85,32 +101,22 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
 
     try {
-      // For now, show a message that Google SSO is coming soon
-      // Full implementation requires Google OAuth configuration in Supabase
-      toast.info('Google Sign-In will be available soon!');
-
-      // Uncomment below when Google OAuth is configured in Supabase:
-      /*
-      const response = await fetch('/api/auth/user-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // We pass next as a query param to callback
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
-        body: JSON.stringify({
-          type: 'google',
-        }),
       });
 
-      const data = await response.json();
-
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
+      if (error) {
+        throw error;
       }
-      */
+
+      // Supabase handles the redirect
     } catch (error: any) {
       console.error('Google login error:', error);
-      toast.error('Google login failed. Please try again.');
-    } finally {
+      toast.error(error.message || 'Google login failed. Please try again.');
       setIsGoogleLoading(false);
     }
   };
@@ -275,7 +281,7 @@ export default function LoginPage() {
               <p className="text-sm text-gray-600">
                 Don't have an account?{" "}
                 <Link
-                  href="/signup"
+                  href={`/signup?next=${encodeURIComponent(next)}`}
                   className="text-brown-dark hover:text-brown-medium font-semibold transition-colors"
                 >
                   Sign Up

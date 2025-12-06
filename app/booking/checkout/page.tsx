@@ -31,15 +31,21 @@ import { isValidPhoneNumber } from "libphonenumber-js";
 import PhoneVerificationModal from "@/components/booking/PhoneVerificationModal";
 import { useCart } from "@/hooks/use-cart";
 
+import { useAuth } from "@/contexts/auth-context";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+const supabase = createClientComponentClient();
+
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  
+
+  const { user } = useAuth();
+
   // Cart Hook
   const { cart, updateCart, totalItems, clearCart, isLoaded } = useCart();
   const selectedRooms = Object.values(cart);
@@ -62,7 +68,7 @@ function CheckoutContent() {
 
   // Guest Details
   const [guestDetails, setGuestDetails] = useState<Array<{ name: string; age: string }>>([]);
-  
+
   // Phone Verification
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
   const [verifiedPhone, setVerifiedPhone] = useState<string>("");
@@ -76,44 +82,23 @@ function CheckoutContent() {
   const checkInDate = checkIn ? new Date(checkIn) : undefined;
   const checkOutDate = checkOut ? new Date(checkOut) : undefined;
 
-  // Check user login
+  // Check user login and pre-fill data
   useEffect(() => {
-    const checkUser = () => {
-      const userDataStr = localStorage.getItem("userData");
-      const sessionStr = localStorage.getItem("userSession");
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.full_name?.split(' ')[0] || prev.firstName,
+        lastName: user.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone,
+      }));
 
-      if (userDataStr && sessionStr && userDataStr !== "null" && sessionStr !== "null") {
-        try {
-          const userData = JSON.parse(userDataStr);
-          const session = JSON.parse(sessionStr);
-          setUser({ ...userData, token: session.access_token });
-          
-          // Pre-fill form if user data available
-          setFormData(prev => ({
-            ...prev,
-            firstName: userData.first_name || prev.firstName,
-            lastName: userData.last_name || prev.lastName,
-            email: userData.email || prev.email,
-            phone: userData.phone || prev.phone,
-          }));
-          
-          if (userData.phone) {
-             setIsPhoneVerified(true);
-             setVerifiedPhone(userData.phone);
-          }
-
-        } catch (error) {
-          console.error("Error parsing user:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
+      if (user.phone) {
+        setIsPhoneVerified(true);
+        setVerifiedPhone(user.phone);
       }
-    };
-    checkUser();
-    window.addEventListener("storage", checkUser);
-    return () => window.removeEventListener("storage", checkUser);
-  }, []);
+    }
+  }, [user]);
 
   // Initialize guest details
   useEffect(() => {
@@ -121,7 +106,7 @@ function CheckoutContent() {
       setGuestDetails([{ name: "", age: "" }]);
       setIsLoading(false);
     } else if (isLoaded && selectedRooms.length === 0) {
-       setIsLoading(false);
+      setIsLoading(false);
     }
   }, [isLoaded, selectedRooms.length]);
 
@@ -131,7 +116,7 @@ function CheckoutContent() {
       return { nights: 0, subtotal: 0, tax: 0, grandTotal: 0 };
 
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-    
+
     let subtotal = 0;
     let tax = 0;
 
@@ -140,7 +125,7 @@ function CheckoutContent() {
       subtotal += roomTotal;
       // Assume 12% tax if not available in cart item (which it isn't currently)
       // In a real app, we'd fetch fresh room details here or store tax info in cart
-      const gstPercentage = 12; 
+      const gstPercentage = 12;
       tax += roomTotal * (gstPercentage / 100);
     });
 
@@ -176,7 +161,7 @@ function CheckoutContent() {
   const addGuest = () => {
     // Calculate total capacity
     const totalCapacity = selectedRooms.reduce((acc, room) => acc + (room.maxGuests * room.quantity), 0);
-    
+
     if (guestDetails.length >= totalCapacity) {
       toast.error(`Maximum capacity reached (${totalCapacity} guests)`);
       return;
@@ -226,12 +211,16 @@ function CheckoutContent() {
 
     setIsProcessing(true);
 
-    try {
-      const sessionStr = localStorage.getItem("userSession");
-      if (!sessionStr) throw new Error("No session");
-      const session = JSON.parse(sessionStr);
-      const token = session.access_token;
+    // Get session for API call
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
 
+    if (!token) {
+      toast.error("Session expired, please login again");
+      return;
+    }
+
+    try {
       // Prepare bookings payload
       const bookingsPayload = selectedRooms.map(room => ({
         room_id: room.roomId,
@@ -252,9 +241,7 @@ function CheckoutContent() {
           special_requests: formData.specialRequests,
           booking_for: formData.bookingFor,
           num_guests: guestDetails.length,
-          // Add extra fields to payload if API supports them, otherwise they might be ignored or need schema update
-          // Assuming API can handle these or we pack them into special_requests or similar if needed
-          // For now sending as top level fields, assuming API update or flexible schema
+          // Add extra fields to payload
           address: formData.address,
           city: formData.city,
           state: formData.state,
@@ -270,8 +257,6 @@ function CheckoutContent() {
         setIsSuccess(true);
         toast.success("Booking initiated! Please complete payment.");
         clearCart(); // Clear cart after successful booking
-        // Redirect to payment page for the first booking (or handle multiple)
-        // For now, we assume one booking flow or redirect to the first one
         router.push(`/booking/payment/${data.booking_ids[0]}`);
       } else {
         toast.error(data.error || "Booking failed");
@@ -346,7 +331,7 @@ function CheckoutContent() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Guest Information</h2>
               <form id="booking-form" onSubmit={handleSubmit} className="space-y-6">
-                
+
                 {/* Booking For */}
                 <div className="flex gap-6 mb-4">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -582,7 +567,7 @@ function CheckoutContent() {
           <div className="lg:col-span-1">
             <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Booking Summary</h2>
-              
+
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Check-in</span>
@@ -606,7 +591,7 @@ function CheckoutContent() {
                       <span className="font-medium text-gray-900">{room.roomType}</span>
                       <span className="font-medium">₹{(room.price * room.quantity * nights).toLocaleString()}</span>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-1">
                       <div className="flex items-center bg-white rounded-lg border border-gray-200 p-1 shadow-sm">
                         <button
@@ -631,7 +616,7 @@ function CheckoutContent() {
                           <Plus size={12} weight="bold" />
                         </button>
                       </div>
-                      
+
                       <button
                         type="button"
                         onClick={() => updateCart(room.roomId, -room.quantity)}

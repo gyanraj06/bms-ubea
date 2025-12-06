@@ -28,6 +28,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
 
+import { useAuth } from "@/contexts/auth-context";
+
 function BookingDetailContent() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -38,7 +40,8 @@ function BookingDetailContent() {
   const [isLoadingRoom, setIsLoadingRoom] = useState(true);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [showImageModal, setShowImageModal] = useState(false);
-  const [user, setUser] = useState<any>(null);
+
+  const { user } = useAuth();
 
   // Cart Hook
   const { cart, updateCart, totalItems, subtotal } = useCart();
@@ -50,29 +53,6 @@ function BookingDetailContent() {
 
   const checkInDate = checkIn ? new Date(checkIn) : undefined;
   const checkOutDate = checkOut ? new Date(checkOut) : undefined;
-
-  // Check user login
-  useEffect(() => {
-    const checkUser = () => {
-      const userDataStr = localStorage.getItem("userData");
-      const sessionStr = localStorage.getItem("userSession");
-
-      if (userDataStr && sessionStr && userDataStr !== "null" && sessionStr !== "null") {
-        try {
-          const userData = JSON.parse(userDataStr);
-          setUser(userData);
-        } catch (error) {
-          console.error("Error parsing user:", error);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-    };
-    checkUser();
-    window.addEventListener("storage", checkUser);
-    return () => window.removeEventListener("storage", checkUser);
-  }, []);
 
   // Fetch room details from API
   useEffect(() => {
@@ -141,18 +121,18 @@ function BookingDetailContent() {
 
   const totalPriceWithTax = calculateTotalWithTax();
 
-  const nights = checkInDate && checkOutDate 
-    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)) 
+  const nights = checkInDate && checkOutDate
+    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
     : 0;
 
   const handleUpdateCart = (
-    id: string, 
-    delta: number, 
-    roomDetails?: { 
-      roomType: string; 
-      price: number; 
-      maxGuests: number; 
-      maxAvailable: number; 
+    id: string,
+    delta: number,
+    roomDetails?: {
+      roomType: string;
+      price: number;
+      maxGuests: number;
+      maxAvailable: number;
     }
   ) => {
     if (!user) {

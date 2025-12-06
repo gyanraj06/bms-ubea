@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeSlash, EnvelopeSimple, LockKey, User, Phone, GoogleLogo } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -28,12 +29,18 @@ export default function SignupPage() {
     confirmPassword: "",
   });
 
+  const supabase = createClientComponentClient();
+
+  // Get next param
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/";
+
   // Redirect if already logged in
   useEffect(() => {
     if (!loading && user) {
-      router.push("/");
+      router.push(next);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, next]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,45 +64,48 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      // Call registration API
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // 1. Sign up with Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: `${formData.firstName} ${formData.lastName}`,
+            phone: formData.phone,
+          },
         },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password,
-          full_name: `${formData.firstName} ${formData.lastName}`,
-          phone: formData.phone,
-        }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        toast.error(data.error || 'Registration failed');
-        setIsLoading(false);
-        return;
+      if (error) {
+        throw error;
       }
 
-      // Store session data if provided
-      if (data.session) {
-        localStorage.setItem('userSession', JSON.stringify(data.session));
-      }
       if (data.user) {
-        localStorage.setItem('userData', JSON.stringify(data.user));
+        // 2. Create profile in public.users
+        // Using upsert to be safe, though insert is standard for new users
+        const { error: profileError } = await supabase.from('users').upsert({
+          id: data.user.id,
+          email: formData.email,
+          full_name: `${formData.firstName} ${formData.lastName}`,
+          phone: formData.phone,
+          is_verified: false, // Email confirmation usually required
+          is_active: true
+        });
+
+        if (profileError) {
+          console.error("Profile creation error", profileError);
+          // We don't fail the whole signup if profile creation fails, 
+          // but we might want to log it or alert.
+        }
       }
 
-      // Refresh auth context
-      await refreshUser();
+      toast.success("Account created! Please check your email for confirmation.");
+      // Redirect to Login page, but preserve the next parameter
+      router.push(`/login?next=${encodeURIComponent(next)}`);
 
-      toast.success(data.message || 'Account created successfully!');
-      // User is already logged in, redirect to home
-      router.push('/');
     } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error('Registration failed. Please try again.');
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -105,32 +115,22 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
 
     try {
-      // For now, show a message that Google SSO is coming soon
-      // Full implementation requires Google OAuth configuration in Supabase
-      toast.info('Google Sign-Up will be available soon!');
-
-      // Uncomment below when Google OAuth is configured in Supabase:
-      /*
-      const response = await fetch('/api/auth/user-login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // Pass next param to callback
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         },
-        body: JSON.stringify({
-          type: 'google',
-        }),
       });
 
-      const data = await response.json();
-
-      if (data.authUrl) {
-        window.location.href = data.authUrl;
+      if (error) {
+        throw error;
       }
-      */
+
+      // No need to do anything else, Supabase handles the redirect
     } catch (error: any) {
       console.error('Google signup error:', error);
-      toast.error('Google signup failed. Please try again.');
-    } finally {
+      toast.error(error.message || 'Google signup failed. Please try again.');
       setIsGoogleLoading(false);
     }
   };
@@ -381,7 +381,7 @@ export default function SignupPage() {
               <p className="text-sm text-gray-600">
                 Already have an account?{" "}
                 <Link
-                  href="/login"
+                  href={`/login?next=${encodeURIComponent(next)}`}
                   className="text-brown-dark hover:text-brown-medium font-semibold transition-colors"
                 >
                   Sign In

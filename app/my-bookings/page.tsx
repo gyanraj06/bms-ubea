@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Footer } from "@/components/shared/footer";
+import { useAuth } from "@/contexts/auth-context";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; // Add Import
 import { Button } from "@/components/ui/button";
+
+const supabase = createClientComponentClient();
 import {
   Calendar,
   Users,
@@ -49,39 +53,40 @@ interface Booking {
 
 export default function MyBookingsPage() {
   const router = useRouter();
+  const { user, loading: authLoading, session } = useAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   useEffect(() => {
-    const sessionStr = localStorage.getItem("userSession");
-    const userDataStr = localStorage.getItem("userData");
+    // Wait for auth check to complete
+    if (authLoading) return;
 
-    if (!sessionStr || !userDataStr) {
-      toast.error("Please login to view your bookings");
-      router.push("/login");
+    if (!user) {
+      // Fallback: Check session directly one last time before kicking them out
+      const checkSession = async () => {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          toast.error("Please login to view your bookings");
+          router.push(`/login?next=${encodeURIComponent("/my-bookings")}`);
+        }
+        // If session exists, AuthContext will eventually update via listener or we can force it
+        // But preventing the immediate redirect is key
+      };
+      checkSession();
       return;
     }
 
     fetchBookings();
-  }, [router]);
+  }, [user, authLoading, router]);
 
   const fetchBookings = async () => {
     try {
-      const sessionStr = localStorage.getItem("userSession");
-      const userDataStr = localStorage.getItem("userData");
-
-      if (!sessionStr || !userDataStr) {
-        router.push("/login");
-        return;
-      }
-
-      const session = JSON.parse(sessionStr);
-      const token = session.access_token;
+      if (!session?.access_token) return;
 
       const response = await fetch("/api/user/bookings", {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
 
@@ -196,11 +201,10 @@ export default function MyBookingsPage() {
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors border ${
-                  selectedStatus === status
-                    ? "bg-brown-dark text-white border-brown-dark"
-                    : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-                }`}
+                className={`px-4 py-2 rounded-lg font-medium transition-colors border ${selectedStatus === status
+                  ? "bg-brown-dark text-white border-brown-dark"
+                  : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                  }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
                 {status === "all" && ` (${bookings.length})`}
@@ -247,8 +251,8 @@ export default function MyBookingsPage() {
                           </h3>
                           <span
                             className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(
-                            booking.payment_status === 'failed' ? 'failed' : booking.status
-                          )}`}
+                              booking.payment_status === 'failed' ? 'failed' : booking.status
+                            )}`}
                           >
                             {getStatusIcon(booking.payment_status === 'failed' ? 'failed' : booking.status)}
                             {(booking.payment_status === 'failed' ? 'failed' : booking.status).toUpperCase()}
@@ -392,7 +396,7 @@ export default function MyBookingsPage() {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Pay Now Button */}
                       {booking.payment_status === 'pending' && (
                         <div className="mt-4">

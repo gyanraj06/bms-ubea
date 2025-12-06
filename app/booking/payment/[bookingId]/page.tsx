@@ -15,6 +15,9 @@ import {
 import { toast } from "sonner";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+
+const supabase = createClientComponentClient();
 
 export default function PaymentPage() {
   const params = useParams();
@@ -37,19 +40,15 @@ export default function PaymentPage() {
   const fetchBookingDetails = async () => {
     try {
       setIsLoading(true);
-      const sessionStr = localStorage.getItem("userSession");
-      if (!sessionStr) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        toast.error("Session expired");
         router.push("/login");
         return;
       }
-      const session = JSON.parse(sessionStr);
-      const token = session.access_token;
 
-      // We need an endpoint to get single booking details. 
-      // Assuming GET /api/user/bookings returns all, we can filter or use a new endpoint.
-      // For now, let's fetch all and find (not efficient but works with current APIs)
-      // Ideally: GET /api/bookings/[id]
-      
       const response = await fetch("/api/user/bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -60,9 +59,9 @@ export default function PaymentPage() {
         if (found) {
           setBooking(found);
           if (found.payment_status === 'paid' || found.payment_status === 'verification_pending') {
-             // Already paid or pending verification
-             // redirect to success or status page?
-             // For now stay here but show status
+            // Already paid or pending verification
+            // redirect to success or status page?
+            // For now stay here but show status
           }
         } else {
           toast.error("Booking not found");
@@ -93,10 +92,9 @@ export default function PaymentPage() {
   const handlePaymentComplete = async () => {
     try {
       setIsSubmitting(true);
-      const sessionStr = localStorage.getItem("userSession");
-      if (!sessionStr) return;
-      const session = JSON.parse(sessionStr);
-      const token = session.access_token;
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) return;
 
       const response = await fetch(`/api/bookings/${bookingId}/payment`, {
         method: "POST",
@@ -187,17 +185,17 @@ export default function PaymentPage() {
 
                 {/* Enlarged QR Modal */}
                 {isEnlarged && (
-                  <div 
+                  <div
                     className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
                     onClick={() => setIsEnlarged(false)}
                   >
-                    <motion.div 
+                    <motion.div
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       className="bg-white p-4 rounded-2xl max-w-sm w-full relative"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button 
+                      <button
                         onClick={() => setIsEnlarged(false)}
                         className="absolute -top-12 right-0 text-white hover:text-gray-200"
                       >
@@ -217,7 +215,7 @@ export default function PaymentPage() {
                     </motion.div>
                   </div>
                 )}
-                
+
                 <div className="flex items-center gap-3 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
                   <span className="font-mono font-medium text-gray-700">{UPI_ID}</span>
                   <button
@@ -228,8 +226,8 @@ export default function PaymentPage() {
                     <Copy size={20} />
                   </button>
                 </div>
-                
-                <a 
+
+                <a
                   href={`upi://pay?pa=${UPI_ID}&pn=Union%20Bank%20Emp%20Asso&am=${booking.total_amount}&cu=INR&tn=Payment`}
                   className="text-sm text-blue-600 hover:underline"
                 >
