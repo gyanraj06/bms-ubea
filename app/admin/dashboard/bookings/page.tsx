@@ -18,7 +18,7 @@ import { BookingDetailsModal } from "@/components/admin/booking-details-modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Booking {
@@ -336,11 +336,10 @@ export default function BookingsPage() {
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                  selectedStatus === status
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${selectedStatus === status
                     ? "bg-brown-dark text-white"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {status === "all" ? "All" : status.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
               </button>
@@ -424,7 +423,7 @@ export default function BookingsPage() {
                     <Calendar size={18} className="text-brown-dark mt-1" weight="bold" />
                     <div>
                       <p className="text-sm text-gray-500">Check-in</p>
-                      <p className="font-medium text-sm">{formatDate(new Date(booking.check_in))}</p>
+                      <p className="font-medium text-sm">{formatDateTime(new Date(booking.check_in))}</p>
                     </div>
                   </div>
 
@@ -432,7 +431,7 @@ export default function BookingsPage() {
                     <Calendar size={18} className="text-brown-dark mt-1" weight="bold" />
                     <div>
                       <p className="text-sm text-gray-500">Check-out</p>
-                      <p className="font-medium text-sm">{formatDate(new Date(booking.check_out))}</p>
+                      <p className="font-medium text-sm">{formatDateTime(new Date(booking.check_out))}</p>
                     </div>
                   </div>
 

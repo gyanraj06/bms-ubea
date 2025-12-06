@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { X, Download, Eye } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { cn, formatDateTime } from "@/lib/utils";
 import type { GuestDetail } from "@/types";
 
 interface BookingDetailsModalProps {
@@ -190,8 +191,8 @@ export function BookingDetailsModal({
                           Check-in / Check-out
                         </p>
                         <p className="font-medium text-gray-900">
-                          {format(new Date(booking.check_in), "dd MMM yyyy")} -{" "}
-                          {format(new Date(booking.check_out), "dd MMM yyyy")}
+                          {formatDateTime(new Date(booking.check_in))} -{" "}
+                          {formatDateTime(new Date(booking.check_out))}
                         </p>
                       </div>
                       <div>

@@ -28,9 +28,10 @@ import {
   Eye,
   Trash,
   CaretUp,
+  Clock,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getFullDateTime } from "@/lib/utils";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/contexts/auth-context";
 
@@ -39,6 +40,7 @@ function BookingContent() {
   const router = useRouter();
   const [checkInDate, setCheckInDate] = useState<Date | undefined>(undefined);
   const [checkOutDate, setCheckOutDate] = useState<Date | undefined>(undefined);
+  const [checkInTime, setCheckInTime] = useState<string>("12:00");
   const [guests, setGuests] = useState(2);
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [checkOutOpen, setCheckOutOpen] = useState(false);
@@ -50,13 +52,23 @@ function BookingContent() {
   const [hasSearched, setHasSearched] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
+  // Generate time options (24-hour format)
+  const timeOptions = Array.from({ length: 24 }, (_, i) => {
+    const hour = i;
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const displayHour = hour % 12 || 12;
+    const value = `${hour.toString().padStart(2, '0')}:00`;
+    const label = `${displayHour}:00 ${ampm}`;
+    return { value, label };
+  });
+
   // Use persistent cart hook
   const { cart, updateCart, totalItems, subtotal } = useCart();
 
   // Check user login
   const { user } = useAuth();
-  // We used to have local state 'user' here, but now we use the one from useAuth directly.
-  // To match the existing code's expectation of 'user' variable, we just use the one from useAuth.
+
+
 
   // Fetch available rooms from database with date filtering
   useEffect(() => {
@@ -70,8 +82,11 @@ function BookingContent() {
       try {
         setIsLoadingRooms(true);
 
-        const checkIn = checkInDate.toISOString().split('T')[0];
-        const checkOut = checkOutDate.toISOString().split('T')[0];
+        const checkIn = getFullDateTime(checkInDate, checkInTime)?.toISOString();
+        const checkOut = getFullDateTime(checkOutDate, checkInTime)?.toISOString(); // Checkout time matches Checkin time
+
+        if (!checkIn || !checkOut) return;
+
         const url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}`;
 
         const response = await fetch(url);
@@ -100,14 +115,23 @@ function BookingContent() {
     const refreshInterval = setInterval(fetchRooms, 30000);
 
     return () => clearInterval(refreshInterval);
-  }, [checkInDate, checkOutDate]);
+  }, [checkInDate, checkOutDate, checkInTime]);
 
   // Pre-fill dates from URL parameters
   useEffect(() => {
     const checkIn = searchParams.get('checkIn');
     const checkOut = searchParams.get('checkOut');
 
-    if (checkIn) setCheckInDate(new Date(checkIn));
+    // Attempt to parse time from checkIn param if it contains time
+    if (checkIn) {
+      const date = new Date(checkIn);
+      setCheckInDate(date);
+      // Extract time
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      setCheckInTime(`${hours}:${minutes}`);
+    }
+
     if (checkOut) setCheckOutDate(new Date(checkOut));
   }, [searchParams]);
 
@@ -159,13 +183,18 @@ function BookingContent() {
     setHasSearched(true);
 
     try {
+      const checkIn = getFullDateTime(checkInDate, checkInTime);
+      const checkOut = getFullDateTime(checkOutDate, checkInTime);
+
+      if (!checkIn || !checkOut) return;
+
       // Call availability check API
       const response = await fetch('/api/rooms/check-availability', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          check_in: checkInDate.toISOString().split('T')[0],
-          check_out: checkOutDate.toISOString().split('T')[0],
+          check_in: checkIn.toISOString(),
+          check_out: checkOut.toISOString(),
           num_guests: guests,
         }),
       });
@@ -221,12 +250,17 @@ function BookingContent() {
     toast.loading("Verifying room availability...", { id: "availability-check" });
 
     try {
+      const checkIn = getFullDateTime(checkInDate, checkInTime);
+      const checkOut = getFullDateTime(checkOutDate, checkInTime);
+
+      if (!checkIn || !checkOut) return;
+
       const response = await fetch('/api/rooms/check-availability', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          check_in: checkInDate.toISOString().split('T')[0],
-          check_out: checkOutDate.toISOString().split('T')[0],
+          check_in: checkIn.toISOString(),
+          check_out: checkOut.toISOString(),
           num_guests: guests,
         }),
       });
@@ -279,8 +313,8 @@ function BookingContent() {
         .join(',');
 
       const params = new URLSearchParams({
-        checkIn: checkInDate.toISOString(),
-        checkOut: checkOutDate.toISOString(),
+        checkIn: checkIn.toISOString(),
+        checkOut: checkOut.toISOString(),
         guests: guests.toString(),
         selection,
       });
@@ -330,14 +364,20 @@ function BookingContent() {
 
   const totalPriceWithTax = calculateTotalWithTax();
 
-  const nights = checkInDate && checkOutDate
-    ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
-    : 0;
+  const nights = (() => {
+    const start = getFullDateTime(checkInDate, checkInTime);
+    const end = getFullDateTime(checkOutDate, checkInTime);
+    if (!start || !end) return 0;
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+  })();
 
   const navigateToRoomDetails = (roomId: string) => {
     const params = new URLSearchParams();
-    if (checkInDate) params.set('checkIn', checkInDate.toISOString());
-    if (checkOutDate) params.set('checkOut', checkOutDate.toISOString());
+    const checkIn = getFullDateTime(checkInDate, checkInTime);
+    const checkOut = getFullDateTime(checkOutDate, checkInTime);
+
+    if (checkIn) params.set('checkIn', checkIn.toISOString());
+    if (checkOut) params.set('checkOut', checkOut.toISOString());
     params.set('guests', guests.toString());
 
     router.push(`/booking/${roomId}?${params.toString()}`);
@@ -377,14 +417,14 @@ function BookingContent() {
           transition={{ duration: 0.3 }}
           className="bg-white rounded-2xl shadow-2xl p-6"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Check-in Date */}
             <div className="space-y-2">
               <Label className={cn(
                 "text-sm font-medium transition-colors",
                 checkInOpen ? "text-brown-dark" : "text-gray-700"
               )}>
-                Check-in
+                Check-in Date
               </Label>
               <Popover open={checkInOpen} onOpenChange={setCheckInOpen}>
                 <PopoverTrigger asChild>
@@ -421,14 +461,48 @@ function BookingContent() {
               </Popover>
             </div>
 
+            {/* Check-in Time */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">
+                Check-in Time
+              </Label>
+              <div className="relative">
+                <Clock
+                  size={20}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+                <select
+                  value={checkInTime}
+                  onChange={(e) => setCheckInTime(e.target.value)}
+                  className="flex h-11 w-full items-center rounded-lg border-2 border-gray-300 bg-white pl-10 pr-4 py-2 text-sm font-medium transition-all hover:border-gray-400 focus:border-brown-dark focus:ring-2 focus:ring-brown-dark/20 outline-none appearance-none cursor-pointer"
+                >
+                  {timeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <CaretUp
+                  size={12}
+                  weight="fill"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 rotate-180 pointer-events-none"
+                />
+              </div>
+            </div>
+
             {/* Check-out Date */}
             <div className="space-y-2">
-              <Label className={cn(
-                "text-sm font-medium transition-colors",
-                checkOutOpen ? "text-brown-dark" : "text-gray-700"
-              )}>
-                Check-out
-              </Label>
+              <div className="flex justify-between items-center">
+                <Label className={cn(
+                  "text-sm font-medium transition-colors",
+                  checkOutOpen ? "text-brown-dark" : "text-gray-700"
+                )}>
+                  Check-out Date
+                </Label>
+                <span className="text-xs text-brown-dark font-semibold">
+                  {checkInTime && timeOptions.find(t => t.value === checkInTime)?.label.split(' ')[0]} {timeOptions.find(t => t.value === checkInTime)?.label.split(' ')[1]}
+                </span>
+              </div>
               <Popover open={checkOutOpen} onOpenChange={setCheckOutOpen}>
                 <PopoverTrigger asChild>
                   <button

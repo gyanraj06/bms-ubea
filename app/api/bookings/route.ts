@@ -189,8 +189,8 @@ export async function POST(request: NextRequest) {
           .from('bookings')
           .select('id, check_in, check_out, status, booking_number')
           .eq('room_id', room.id)
-          .lt('check_in', check_out)
-          .gt('check_out', check_in)
+          .lt('check_in', checkOutDate.toISOString())
+          .gt('check_out', checkInDate.toISOString())
           .in('status', ['Confirmed', 'Pending', 'confirmed', 'pending', 'verification_pending']);
 
         console.log(`[BOOKING DEBUG] Room ${room.room_number} (${room.id}):`, {
@@ -249,8 +249,8 @@ export async function POST(request: NextRequest) {
             guest_name: userData.full_name,
             guest_email: userData.email,
             guest_phone: userData.phone,
-            check_in: checkInDate.toISOString().split('T')[0],
-            check_out: checkOutDate.toISOString().split('T')[0],
+            check_in: checkInDate.toISOString(),
+            check_out: checkOutDate.toISOString(),
             total_nights: totalNights,
             num_guests: Math.ceil((num_guests || 1) / bookingsToCreate.length), // Distribute guests roughly
             room_charges: roomCharges,

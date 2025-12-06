@@ -24,7 +24,7 @@ import {
   Minus,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatDateTime } from "@/lib/utils";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 import { isValidPhoneNumber } from "libphonenumber-js";
@@ -115,7 +115,9 @@ function CheckoutContent() {
     if (!checkInDate || !checkOutDate || selectedRooms.length === 0)
       return { nights: 0, subtotal: 0, tax: 0, grandTotal: 0 };
 
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    // Calculate nights as 24-hour slots
+    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
     let subtotal = 0;
     let tax = 0;
@@ -234,8 +236,8 @@ function CheckoutContent() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          check_in: checkInDate?.toISOString().split("T")[0],
-          check_out: checkOutDate?.toISOString().split("T")[0],
+          check_in: checkInDate?.toISOString(),
+          check_out: checkOutDate?.toISOString(),
           bookings: bookingsPayload,
           guest_details: guestDetails.map(g => ({ name: g.name, age: parseInt(g.age) })),
           special_requests: formData.specialRequests,
@@ -571,11 +573,11 @@ function CheckoutContent() {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Check-in</span>
-                  <span className="font-medium">{checkInDate ? format(checkInDate, "dd MMM yyyy") : "-"}</span>
+                  <span className="font-medium">{checkInDate ? formatDateTime(checkInDate) : "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Check-out</span>
-                  <span className="font-medium">{checkOutDate ? format(checkOutDate, "dd MMM yyyy") : "-"}</span>
+                  <span className="font-medium">{checkOutDate ? formatDateTime(checkOutDate) : "-"}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Nights</span>

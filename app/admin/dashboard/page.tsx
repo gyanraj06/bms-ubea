@@ -21,9 +21,10 @@ import {
   Files,
   Plus,
   Star,
+  Trash,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
 
 interface StatCard {
   title: string;
@@ -144,7 +145,7 @@ export default function AdminDashboardPage() {
           .filter((b: Booking) => {
             const checkIn = new Date(b.check_in);
             return checkIn.getMonth() === currentMonth &&
-                   checkIn.getFullYear() === currentYear;
+              checkIn.getFullYear() === currentYear;
           })
           .reduce((sum: number, b: Booking) => sum + (b.total_amount || 0), 0);
 
@@ -180,7 +181,7 @@ export default function AdminDashboardPage() {
             const checkOutDate = new Date(b.check_out).toISOString().split('T')[0];
             // Count if: scheduled to check out today (checked-in or checked-out status)
             return checkOutDate === today &&
-                   (b.status === 'checked-in' || b.status === 'checked-out');
+              (b.status === 'checked-in' || b.status === 'checked-out');
           }
         ).length;
 
@@ -276,6 +277,40 @@ export default function AdminDashboardPage() {
 
 
 
+
+  const handleClearExpired = async () => {
+    try {
+      setIsLoading(true);
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        toast.error("Unauthorized");
+        return;
+      }
+
+      const response = await fetch('/api/admin/clear-expired-bookings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        // Refresh dashboard data
+        fetchDashboardData();
+      } else {
+        toast.error(data.error || "Failed to clear bookings");
+      }
+    } catch (error) {
+      console.error("Error clearing bookings:", error);
+      toast.error("An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -294,13 +329,24 @@ export default function AdminDashboardPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
-        <h1 className="text-3xl font-bold text-gray-900">
-          Welcome back, {userRole}!
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Here's what's happening with your property today.
-        </p>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {userRole}!
+          </h1>
+          <p className="text-gray-600 mt-1">
+            Here's what's happening with your property today.
+          </p>
+        </div>
+
+        <button
+          onClick={handleClearExpired}
+          className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+        >
+          <Trash size={20} />
+          Clear Expired Bookings
+        </button>
       </motion.div>
 
       {/* Stats Grid */}
@@ -433,6 +479,9 @@ export default function AdminDashboardPage() {
                     Check-in
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Check-out
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -453,7 +502,10 @@ export default function AdminDashboardPage() {
                       {booking.rooms?.room_type || 'N/A'} - {booking.rooms?.room_number || 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                      {formatDate(new Date(booking.check_in))}
+                      {formatDateTime(new Date(booking.check_in))}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {formatDateTime(new Date(booking.check_out))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       {formatCurrency(booking.total_amount)}
