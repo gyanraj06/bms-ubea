@@ -140,14 +140,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
               if (accessToken) {
                 console.log("[Auth] Manual cookie found. Hydrating state.");
-                // We construct a partial session object sufficient to show the UI
-                // Real verification happens when an API call is made or Listener wakes up.
-                // We decode JWT simply to get ID/Email if needed, but for now we just need 'session exists'
-                // actually syncSessionToState needs session.user.id
 
                 // Basic JWT decode (payload is 2nd part)
                 const payload = JSON.parse(atob(accessToken.split('.')[1]));
 
+                // CRITICAL: Set session and user state IMMEDIATELY from JWT
+                // This ensures the UI renders with user data right away
+                setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                  expires_at: payload.exp || 0,
+                });
+
+                // Set user from JWT metadata immediately
+                setUser({
+                  id: payload.sub,
+                  email: payload.email || payload.user_metadata?.email || '',
+                  full_name: payload.user_metadata?.full_name || payload.user_metadata?.name || '',
+                  phone: payload.user_metadata?.phone || '',
+                  is_verified: payload.user_metadata?.email_verified || true,
+                });
+
+                // Then fetch full profile from DB in background (non-blocking)
+                // This will update with latest data but won't block the UI
                 const manualSession = {
                   access_token: accessToken,
                   refresh_token: refreshToken,
@@ -159,7 +174,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     app_metadata: payload.app_metadata || {}
                   }
                 };
-                await syncSessionToState(manualSession);
+
+                // Fire and forget - this will update user with DB data when ready
+                syncSessionToState(manualSession).catch(err => {
+                  console.error("[Auth] Background profile fetch failed:", err);
+                });
               }
             }
           }
