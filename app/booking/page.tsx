@@ -87,7 +87,7 @@ function BookingContent() {
 
         if (!checkIn || !checkOut) return;
 
-        const url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}`;
+        const url = `/api/rooms?check_in=${checkIn}&check_out=${checkOut}&num_guests=${guests}`;
 
         const response = await fetch(url);
         const data = await response.json();
@@ -115,7 +115,7 @@ function BookingContent() {
     const refreshInterval = setInterval(fetchRooms, 30000);
 
     return () => clearInterval(refreshInterval);
-  }, [checkInDate, checkOutDate, checkInTime]);
+  }, [checkInDate, checkOutDate, checkInTime, guests]);
 
   // Pre-fill dates from URL parameters
   useEffect(() => {

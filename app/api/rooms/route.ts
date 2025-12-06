@@ -76,9 +76,14 @@ export async function GET(request: NextRequest) {
         );
       }
 
+      // Note: We intentionally do NOT filter by num_guests here anymore.
+      // Users may want to book multiple rooms if their group is large.
+      // Frontend will handle warnings/suggestions.
+      const filteredRooms = rooms || [];
+
       return NextResponse.json({
         success: true,
-        rooms: rooms || [],
+        rooms: filteredRooms,
         filtered_by_dates: true,
         check_in,
         check_out,

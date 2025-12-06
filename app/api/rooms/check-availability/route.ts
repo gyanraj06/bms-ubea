@@ -143,13 +143,13 @@ export async function POST(request: NextRequest) {
     const nights = Math.ceil(timeDiff / (1000 * 3600 * 24));
 
     // Check guest capacity if num_guests provided
+    // Check guest capacity if num_guests provided
+    // We want to return ALL rooms to allow multi-room booking, but we'll calculate
+    // strictly matching rooms to generate appropriate headers/warnings.
+    const strictMatchingRooms = availableRooms?.filter(room => (room.max_guests * (num_rooms || 1)) >= (num_guests || 0)) || [];
+    
+    // Always return all available rooms so users can book multiple
     let roomsMatchingGuestCapacity = availableRooms || [];
-    if (num_guests && num_guests > 0) {
-      // Calculate total capacity based on requested rooms
-      // If user requests 2 rooms, total capacity is room.max_guests * 2
-      const requestedRoomsCount = num_rooms || 1;
-      roomsMatchingGuestCapacity = availableRooms?.filter(room => (room.max_guests * requestedRoomsCount) >= num_guests) || [];
-    }
 
     // Check if we need multiple rooms
     const requestedRooms = num_rooms || 1;
@@ -160,11 +160,11 @@ export async function POST(request: NextRequest) {
     let warning = '';
 
 
-    if (roomsMatchingGuestCapacity.length === 0 && availableRooms && availableRooms.length > 0) {
-      // Rooms available but none fit the guest count
+    if (strictMatchingRooms.length === 0 && availableRooms && availableRooms.length > 0) {
+      // Rooms available but none fit the guest count individually
       const maxCapacity = Math.max(...availableRooms.map(r => r.max_guests));
-      message = `No rooms available for ${num_guests} guest${num_guests === 1 ? '' : 's'}`;
-      warning = `We have ${availableRooms.length} room${availableRooms.length === 1 ? '' : 's'} available, but they can accommodate maximum ${maxCapacity} guest${maxCapacity === 1 ? '' : 's'} each. Please reduce the number of guests or book multiple rooms.`;
+      message = `${availableRooms.length} room${availableRooms.length === 1 ? '' : 's'} available`;
+      warning = `Note: Each room accommodates up to ${maxCapacity} guests. For ${num_guests} guests, please book multiple rooms.`;
     } else if (!hasEnoughRooms && requestedRooms > 1) {
       // Not enough rooms for the requested quantity
       message = `Only ${roomsMatchingGuestCapacity.length} room${roomsMatchingGuestCapacity.length === 1 ? '' : 's'} available`;
