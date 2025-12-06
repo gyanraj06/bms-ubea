@@ -43,6 +43,14 @@ export function Header() {
               alt="Happy Holidays"
               className="h-16 w-auto object-contain"
             />
+            <span
+              className={cn(
+                "font-serif text-2xl font-bold transition-colors ml-2",
+                isScrolled ? "text-gray-900" : "text-white"
+              )}
+            >
+              Happy Holidays
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

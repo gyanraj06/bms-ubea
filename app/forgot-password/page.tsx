@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,8 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
 
+  const supabase = createClientComponentClient();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -25,14 +28,24 @@ export default function ForgotPasswordPage() {
 
     setIsLoading(true);
 
-    // Simulate API call - replace with actual backend call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/reset-password`,
+      });
 
-    // Mock successful email sent
-    setEmailSent(true);
-    toast.success("Password reset email sent!");
+      if (error) {
+        throw error;
+      }
 
-    setIsLoading(false);
+      // Mock successful email sent
+      setEmailSent(true);
+      toast.success("Password reset email sent!");
+    } catch (error: any) {
+      console.error("Error sending reset email:", error);
+      toast.error(error.message || "Failed to send reset email");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

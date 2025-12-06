@@ -119,6 +119,14 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
               alt="Happy Holidays"
               className="h-16 w-auto object-contain"
             />
+            <span
+              className={cn(
+                "font-serif text-2xl font-semibold transition-colors ml-2",
+                shouldShowLight ? "text-brown-dark" : "text-white"
+              )}
+            >
+              Happy Holidays
+            </span>
           </Link>
 
           {/* Desktop Navigation - Minimal Text Links */}
