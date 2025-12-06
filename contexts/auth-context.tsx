@@ -103,9 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.history.replaceState({}, '', newUrl.toString());
       }
 
-      // 2. Initial Session Check (with Safety Timeout)
+      // 2. Initial Session Check (with Safety Timeout & Manual Fallback)
       // We rely on onAuthStateChange for the robust update, but we need this for initial state.
-      // We timeout after 2s to prevent UI from freezing if the SDK hangs (e.g. lock contention).
+      // We timeout after 2s to prevent UI from freezing.
       try {
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) =>
@@ -117,7 +117,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await syncSessionToState(data.session);
         }
       } catch (error) {
-        console.warn("[Auth] Initial session check timed out or failed. Relying on listener.");
+        console.warn("[Auth] Initial session check timed out. Attempting manual cookie read.");
+        // Manual Fallback: If SDK hangs, check if we have a valid cookie and force-hydrate.
+        try {
+          const cookieName = 'sb-hgqyhqoieppwidrpkkvn-auth-token';
+          // Note: Project Ref ID 'hgqyhqoieppwidrpkkvn' found from previous debug logs.
+          // In future, ideally this ID is dynamic or env var, but for this fix we use what works.
+
+          if (typeof document !== 'undefined') {
+            const cookies = document.cookie.split('; ').reduce((acc, current) => {
+              const [name, value] = current.split('=');
+              acc[name] = value;
+              return acc;
+            }, {} as any);
+
+            if (cookies[cookieName]) {
+              const decoded = decodeURIComponent(cookies[cookieName]);
+              const parsed = JSON.parse(decoded);
+              // Access token is usually the first item in array [token, refresh, ...]
+              const accessToken = Array.isArray(parsed) ? parsed[0] : parsed.access_token;
+              const refreshToken = Array.isArray(parsed) ? parsed[1] : parsed.refresh_token;
+
+              if (accessToken) {
+                console.log("[Auth] Manual cookie found. Hydrating state.");
+                // We construct a partial session object sufficient to show the UI
+                // Real verification happens when an API call is made or Listener wakes up.
+                // We decode JWT simply to get ID/Email if needed, but for now we just need 'session exists'
+                // actually syncSessionToState needs session.user.id
+
+                // Basic JWT decode (payload is 2nd part)
+                const payload = JSON.parse(atob(accessToken.split('.')[1]));
+
+                const manualSession = {
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                  expires_at: payload.exp || 0,
+                  user: {
+                    id: payload.sub,
+                    email: payload.email,
+                    user_metadata: payload.user_metadata || {},
+                    app_metadata: payload.app_metadata || {}
+                  }
+                };
+                await syncSessionToState(manualSession);
+              }
+            }
+          }
+        } catch (manualError) {
+          console.error("[Auth] Manual fallback failed:", manualError);
+        }
       }
 
       // 3. Post-Redirect Handling
