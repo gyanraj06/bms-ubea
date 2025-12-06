@@ -2,6 +2,7 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useEffect, useState } from "react";
+import { getSupabaseAuthCookieName } from "@/lib/supabase-cookie";
 
 export default function DebugPage() {
     const [session, setSession] = useState<any>(null);
@@ -31,7 +32,7 @@ export default function DebugPage() {
 
                 // 1. Manual Cookie Parse Check
                 // Attempt to find the auth cookie manually
-                const cookieName = 'sb-hgqyhqoieppwidrpkkvn-auth-token';
+                const cookieName = getSupabaseAuthCookieName();
                 // Safe cookie parsing
                 const cookies: Record<string, string> = {};
                 if (document.cookie) {

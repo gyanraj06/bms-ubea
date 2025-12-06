@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
+import { getSupabaseAuthCookieName } from "@/lib/supabase-cookie";
 
 interface User {
   id: string;
@@ -107,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         console.warn("[Auth] Initial session check timed out. Attempting manual cookie read.");
         try {
-          const cookieName = 'sb-hgqyhqoieppwidrpkkvn-auth-token';
+          const cookieName = getSupabaseAuthCookieName();
 
           if (typeof document !== 'undefined') {
             const cookies = document.cookie.split('; ').reduce((acc, current) => {
@@ -210,7 +211,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch (timeoutError) {
         console.warn("[Auth] signOut timed out, manually clearing state");
         // If SDK hangs, manually clear the cookie
-        document.cookie = 'sb-hgqyhqoieppwidrpkkvn-auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        const cookieName = getSupabaseAuthCookieName();
+        document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
       }
 
       // Always clear local state regardless
