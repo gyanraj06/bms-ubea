@@ -38,17 +38,8 @@ export function FloatingAnnouncement() {
 
         fetchLatest();
 
-        const handleScroll = () => {
-            // Show after scrolling 100px
-            if (window.scrollY > 100) {
-                setIsVisible(true);
-            } else {
-                setIsVisible(false);
-            }
-        };
-
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
+        // Always visible
+        setIsVisible(true);
     }, []);
 
     if (!latest || isDismissed) return null;
