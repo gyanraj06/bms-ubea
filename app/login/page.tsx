@@ -123,7 +123,7 @@ function LoginContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ChaletHeader />
+      <ChaletHeader forceLight={true} />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

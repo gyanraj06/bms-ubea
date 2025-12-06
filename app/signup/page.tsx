@@ -137,7 +137,7 @@ function SignupContent() {
 
   return (
     <>
-      <ChaletHeader />
+      <ChaletHeader forceLight={true} />
 
       <motion.main
         initial={{ opacity: 0, y: 20 }}

@@ -46,14 +46,7 @@ export async function POST(request: NextRequest) {
       num_guests,
     } = body;
 
-    console.log('[API/Bookings] Received request body:', JSON.stringify(body, null, 2));
-    console.log('[API/Bookings] Numeric fields:', {
-      num_guests,
-      num_cots,
-      num_extra_beds,
-      needs_cot,
-      needs_extra_bed
-    });
+
 
     // Verify Supabase token
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
