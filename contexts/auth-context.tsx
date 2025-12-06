@@ -35,10 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Create a Supabase client optimized for Next.js Client Components
   const supabase = createClientComponentClient();
 
-  // Helper to sync Supabase session to our app state
   const syncSessionToState = async (session: any) => {
     try {
       if (!session?.user) {
@@ -47,15 +45,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // 1. Set Session
       setSession({
         access_token: session.access_token,
         refresh_token: session.refresh_token,
         expires_at: session.expires_at || 0,
       });
 
-      // 2. Fetch User Profile
-      // We check the DB for the latest profile data
       const { data: profile } = await supabase
         .from('users')
         .select('*')
@@ -71,7 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           is_verified: profile.is_verified,
         });
       } else {
-        // Fallback to metadata
         setUser({
           id: session.user.id,
           email: session.user.email || '',
@@ -82,12 +76,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Error syncing session:", error);
-      // If error, we might leave user as null or stale, better to be safe
     }
   };
 
   useEffect(() => {
-    // 1. Initial Load
     const init = async () => {
       setLoading(true);
 
@@ -95,7 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isAuthCallback = params.get('auth_callback') === 'true';
       const isLoginSuccess = params.get('login_success') === 'true';
 
-      // 1. Handle Post-Login Success State
       if (isLoginSuccess) {
         toast.success("Successfully logged in with Google");
         const newUrl = new URL(window.location.href);
@@ -103,9 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.history.replaceState({}, '', newUrl.toString());
       }
 
-      // 2. Initial Session Check (with Safety Timeout & Manual Fallback)
-      // We rely on onAuthStateChange for the robust update, but we need this for initial state.
-      // We timeout after 2s to prevent UI from freezing.
       try {
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) =>
@@ -118,11 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.warn("[Auth] Initial session check timed out. Attempting manual cookie read.");
-        // Manual Fallback: If SDK hangs, check if we have a valid cookie and force-hydrate.
         try {
           const cookieName = 'sb-hgqyhqoieppwidrpkkvn-auth-token';
-          // Note: Project Ref ID 'hgqyhqoieppwidrpkkvn' found from previous debug logs.
-          // In future, ideally this ID is dynamic or env var, but for this fix we use what works.
 
           if (typeof document !== 'undefined') {
             const cookies = document.cookie.split('; ').reduce((acc, current) => {
@@ -134,25 +119,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (cookies[cookieName]) {
               const decoded = decodeURIComponent(cookies[cookieName]);
               const parsed = JSON.parse(decoded);
-              // Access token is usually the first item in array [token, refresh, ...]
               const accessToken = Array.isArray(parsed) ? parsed[0] : parsed.access_token;
               const refreshToken = Array.isArray(parsed) ? parsed[1] : parsed.refresh_token;
 
               if (accessToken) {
                 console.log("[Auth] Manual cookie found. Hydrating state.");
 
-                // Basic JWT decode (payload is 2nd part)
                 const payload = JSON.parse(atob(accessToken.split('.')[1]));
 
-                // CRITICAL: Set session and user state IMMEDIATELY from JWT
-                // This ensures the UI renders with user data right away
                 setSession({
                   access_token: accessToken,
                   refresh_token: refreshToken,
                   expires_at: payload.exp || 0,
                 });
 
-                // Set user from JWT metadata immediately
                 setUser({
                   id: payload.sub,
                   email: payload.email || payload.user_metadata?.email || '',
@@ -161,8 +141,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   is_verified: payload.user_metadata?.email_verified || true,
                 });
 
-                // Then fetch full profile from DB in background (non-blocking)
-                // This will update with latest data but won't block the UI
                 const manualSession = {
                   access_token: accessToken,
                   refresh_token: refreshToken,
@@ -175,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   }
                 };
 
-                // Fire and forget - this will update user with DB data when ready
                 syncSessionToState(manualSession).catch(err => {
                   console.error("[Auth] Background profile fetch failed:", err);
                 });
@@ -187,9 +164,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 3. Post-Redirect Handling
-      // If we have an auth callback, we force at least ONE reload to ensure cookies are fresh.
-      // This solves the "stuck" issue or "profile icon missing" issue.
       if (isAuthCallback) {
         const isRetried = params.get('retried') === 'true';
 
@@ -200,38 +174,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           window.location.href = newUrl.toString();
           return;
         }
-
-        // If we see 'retried=true', we know we just reloaded.
-        // Logic handled largely by onAuthStateChange above, but we ensure cleanup here.
-        // We do minimal work here to avoid race conditions.
-
-        // Check session state directly from hook if available, or just check supabase again quickly
-        // But since we had a timeout above, we might be here without session.
-        // Let's assume onAuthStateChange will catch it if it exists.
-
-        // Clean up URL if we think we are done (but risk: cleaner runs before session found?)
-        // Safer: Only clean up if we actually HAVE a session in state.
-        // For now, let's leave the params until next reload or successful sync.
-        // Actually, previous logic polled. Let's rely on Listener.
       }
 
-      // Simplify: Just finish loading. The Listener will handle the actual user set.
       setLoading(false);
     };
     init();
 
-    // 2. Real-time Listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
-      // If we get a session update, sync it.
       if (currentSession) {
         await syncSessionToState(currentSession);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setSession(null);
       }
-      // Ensure loading is false after any state change
       setLoading(false);
     });
 
@@ -242,18 +199,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
-      // Remove backend call - we trust Supabase client to handle session clearing
-      // await fetch('/auth/signout', { method: 'POST' });
+      // Race signOut against timeout (same issue as getSession)
+      const signOutPromise = supabase.auth.signOut();
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 2000)
+      );
 
-      // Remove legacy Manual Storage
-      // localStorage.removeItem('userSession');
-      // localStorage.removeItem('userData');
+      try {
+        await Promise.race([signOutPromise, timeoutPromise]);
+      } catch (timeoutError) {
+        console.warn("[Auth] signOut timed out, manually clearing state");
+        // If SDK hangs, manually clear the cookie
+        document.cookie = 'sb-hgqyhqoieppwidrpkkvn-auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      }
 
+      // Always clear local state regardless
       setUser(null);
       setSession(null);
       router.push('/');
-      router.refresh(); // Refresh server components
+      router.refresh();
       toast.success("Signed out successfully");
     } catch (error) {
       console.error('Error signing out:', error);
