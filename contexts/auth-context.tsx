@@ -190,13 +190,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
-      await fetch('/auth/signout', { method: 'POST' });
-      localStorage.removeItem('userSession');
-      localStorage.removeItem('userData');
+      // Remove backend call - we trust Supabase client to handle session clearing
+      // await fetch('/auth/signout', { method: 'POST' });
+
+      // Remove legacy Manual Storage
+      // localStorage.removeItem('userSession');
+      // localStorage.removeItem('userData');
+
       setUser(null);
       setSession(null);
       router.push('/');
-      router.refresh();
+      router.refresh(); // Refresh server components
       toast.success("Signed out successfully");
     } catch (error) {
       console.error('Error signing out:', error);

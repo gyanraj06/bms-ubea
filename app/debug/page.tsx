@@ -7,22 +7,38 @@ export default function DebugPage() {
     const [session, setSession] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [envInfo, setEnvInfo] = useState<any>({});
+    const [cookieString, setCookieString] = useState("");
     const supabase = createClientComponentClient();
 
     useEffect(() => {
+        // 1. Show Env & Cookies Immediately
+        setCookieString(document.cookie);
+        setEnvInfo({
+            url: process.env.NEXT_PUBLIC_SUPABASE_URL ? "Defined" : "Missing",
+            anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Defined" : "Missing",
+            origin: window.location.origin,
+            hostname: window.location.hostname,
+            protocol: window.location.protocol,
+        });
+
         const checkSession = async () => {
-            const { data } = await supabase.auth.getSession();
-            setSession(data.session);
+            try {
+                console.log("Checking session...");
+                // 2. Race getSession against a 5s timeout
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Timeout: getSession took too long")), 5000)
+                );
 
-            setEnvInfo({
-                url: process.env.NEXT_PUBLIC_SUPABASE_URL ? "Defined" : "Missing",
-                anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "Defined" : "Missing",
-                origin: window.location.origin,
-                hostname: window.location.hostname,
-                protocol: window.location.protocol,
-            });
-
-            setLoading(false);
+                const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                console.log("Session data:", data);
+                setSession(data.session);
+            } catch (e: any) {
+                console.error("Debug Error:", e);
+                setSession({ error: e.message || String(e) });
+            } finally {
+                setLoading(false);
+            }
         };
 
         checkSession();
@@ -39,7 +55,7 @@ export default function DebugPage() {
 
             <div className="mb-8 p-4 bg-gray-100 rounded">
                 <h2 className="font-bold mb-2">Cookies</h2>
-                <pre className="break-all">{typeof document !== 'undefined' ? document.cookie : 'N/A'}</pre>
+                <pre className="break-all">{cookieString || 'Loading or Empty'}</pre>
             </div>
 
             <div className="p-4 bg-gray-100 rounded">
