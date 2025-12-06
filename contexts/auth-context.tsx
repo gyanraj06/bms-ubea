@@ -88,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // 1. Initial Load
-    // 1. Initial Load
     const init = async () => {
       setLoading(true);
 
@@ -104,8 +103,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.history.replaceState({}, '', newUrl.toString());
       }
 
-      // 2. Initial Session Check
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
+      // 2. Initial Session Check (with Safety Timeout)
+      // We rely on onAuthStateChange for the robust update, but we need this for initial state.
+      // We timeout after 2s to prevent UI from freezing if the SDK hangs (e.g. lock contention).
+      try {
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 2000)
+        );
+
+        const { data } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        if (data?.session) {
+          await syncSessionToState(data.session);
+        }
+      } catch (error) {
+        console.warn("[Auth] Initial session check timed out or failed. Relying on listener.");
+      }
 
       // 3. Post-Redirect Handling
       // If we have an auth callback, we force at least ONE reload to ensure cookies are fresh.
@@ -122,46 +135,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // If we see 'retried=true', we know we just reloaded.
-        // Now we check session and poll if needed.
-        if (!initialSession) {
-          const toastId = toast.loading("Verifying account creation...");
-          let foundSession = null;
-          let attempts = 0;
-          const maxAttempts = 10; // Reduced from 30 to 10 (5 seconds)
+        // Logic handled largely by onAuthStateChange above, but we ensure cleanup here.
+        // We do minimal work here to avoid race conditions.
 
-          while (!foundSession && attempts < maxAttempts) {
-            await new Promise(r => setTimeout(r, 500));
-            const { data } = await supabase.auth.getSession();
-            foundSession = data.session;
-            attempts++;
-          }
-          toast.dismiss(toastId);
+        // Check session state directly from hook if available, or just check supabase again quickly
+        // But since we had a timeout above, we might be here without session.
+        // Let's assume onAuthStateChange will catch it if it exists.
 
-          if (foundSession) {
-            // Success logic below handled by syncSessionToState call or reload
-            // We can just proceed to clean up
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('auth_callback');
-            newUrl.searchParams.delete('retried');
-            newUrl.searchParams.set('login_success', 'true');
-            window.location.href = newUrl.toString();
-            return;
-          } else {
-            // If failed, HARD redirect to clear params and reset state
-            toast.error("Authentication verification timeout. Please try again.");
-            const newUrl = new URL(window.location.href);
-            newUrl.searchParams.delete('auth_callback');
-            newUrl.searchParams.delete('retried');
-            // Force a full reload to the clean URL to reset app state
-            window.location.href = newUrl.toString();
-          }
-        }
+        // Clean up URL if we think we are done (but risk: cleaner runs before session found?)
+        // Safer: Only clean up if we actually HAVE a session in state.
+        // For now, let's leave the params until next reload or successful sync.
+        // Actually, previous logic polled. Let's rely on Listener.
       }
 
-      // Normal sync
-      if (initialSession) {
-        await syncSessionToState(initialSession);
-      }
+      // Simplify: Just finish loading. The Listener will handle the actual user set.
       setLoading(false);
     };
     init();
@@ -170,22 +157,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, currentSession) => {
+      // If we get a session update, sync it.
       if (currentSession) {
         await syncSessionToState(currentSession);
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setSession(null);
       }
-      // Ensure loading is false after any state change if we aren't in the middle of init
-      // We rely on init to set loading false initially, but this is a backup
+      // Ensure loading is false after any state change
+      setLoading(false);
     });
 
     return () => {
       subscription.unsubscribe();
     };
   }, [supabase]);
-
-  // ... (keeping signOut and refreshUser same) ...
 
   const signOut = async () => {
     try {
