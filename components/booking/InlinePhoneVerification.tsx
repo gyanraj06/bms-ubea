@@ -23,6 +23,7 @@ declare global {
     }
 }
 
+// Version: 2.0 (Force Rebuild)
 export default function InlinePhoneVerification({
     value,
     onChange,
@@ -46,37 +47,48 @@ export default function InlinePhoneVerification({
             setOtp("");
             setConfirmationResult(null);
         }
+        console.log("DEBUG: InlinePhoneVerification V2.0 Loaded");
     };
 
     const setupRecaptcha = () => {
-        if (!window.recaptchaVerifier) {
-            // Safety: Clear any stale reCAPTCHA elements from the container
-            const container = document.getElementById('recaptcha-container');
-            if (container) {
-                container.innerHTML = '';
+        // ALWAYS clear existing recaptcha to prevent stale state and v2 fallback
+        if (window.recaptchaVerifier) {
+            try {
+                window.recaptchaVerifier.clear();
+            } catch (e) {
+                console.warn("Error clearing existing recaptcha:", e);
             }
+            window.recaptchaVerifier = undefined;
+        }
 
-            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-                'size': 'invisible',
-                'callback': () => {
-                    // reCAPTCHA solved, allow signInWithPhoneNumber.
-                },
-                'expired-callback': () => {
-                    // Response expired. Ask user to solve reCAPTCHA again.
-                    toast.error("Session expired, please try verifying again.");
-                    setIsLoading(false);
-                    // Reset verification
-                    if (window.recaptchaVerifier) {
-                        try {
-                            window.recaptchaVerifier.clear();
-                            window.recaptchaVerifier = undefined;
-                        } catch (e) {
-                            console.error("Error clearing expired recaptcha", e);
-                        }
+        // Clear any stale reCAPTCHA elements from the container
+        const container = document.getElementById('recaptcha-container');
+        if (container) {
+            container.innerHTML = '';
+        }
+
+        // Create a fresh RecaptchaVerifier for this attempt
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+            'size': 'invisible',
+            'callback': () => {
+                // reCAPTCHA solved, allow signInWithPhoneNumber.
+                console.log("DEBUG: reCAPTCHA solved successfully");
+            },
+            'expired-callback': () => {
+                // Response expired. Ask user to solve reCAPTCHA again.
+                toast.error("Session expired, please try verifying again.");
+                setIsLoading(false);
+                // Reset verification
+                if (window.recaptchaVerifier) {
+                    try {
+                        window.recaptchaVerifier.clear();
+                        window.recaptchaVerifier = undefined;
+                    } catch (e) {
+                        console.error("Error clearing expired recaptcha", e);
                     }
                 }
-            });
-        }
+            }
+        });
     };
 
     const handleSendOtp = async () => {
