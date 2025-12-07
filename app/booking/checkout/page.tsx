@@ -25,10 +25,9 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn, formatDateTime } from "@/lib/utils";
-import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+
 import { isValidPhoneNumber } from "libphonenumber-js";
-import PhoneVerificationModal from "@/components/booking/PhoneVerificationModal";
+import InlinePhoneVerification from "@/components/booking/InlinePhoneVerification";
 import { useCart } from "@/hooks/use-cart";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -75,8 +74,6 @@ function CheckoutContent() {
 
   // Phone Verification
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
-  const [verifiedPhone, setVerifiedPhone] = useState<string>("");
-  const [showPhoneVerificationModal, setShowPhoneVerificationModal] = useState(false);
 
   // Extended Room Details (Images, etc.)
   const [roomDetailsMap, setRoomDetailsMap] = useState<Record<string, any>>({});
@@ -192,7 +189,6 @@ function CheckoutContent() {
 
       if (currentUser.phone) {
         setIsPhoneVerified(true);
-        setVerifiedPhone(currentUser.phone);
       }
     }
   }, [user]);
@@ -242,20 +238,8 @@ function CheckoutContent() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePhoneVerified = (phone: string) => {
-    setVerifiedPhone(phone);
-    setIsPhoneVerified(true);
-    setFormData({ ...formData, phone: phone.replace("+91", "") });
-    toast.success("Phone verified!");
-  };
-
-  const handlePhoneChange = (value: string | undefined) => {
-    const newPhone = value || "";
-    setFormData({ ...formData, phone: newPhone });
-    if (isPhoneVerified && newPhone !== verifiedPhone.replace("+91", "")) {
-      setIsPhoneVerified(false);
-      setVerifiedPhone("");
-    }
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone: value }));
   };
 
   // Guest Management
@@ -535,29 +519,11 @@ function CheckoutContent() {
                     />
                   </div>
                   <div>
-                    <Label className="flex justify-between">
-                      <span>Phone Number *</span>
-                      {isPhoneVerified && <span className="text-green-600 text-xs">Verified</span>}
-                    </Label>
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <PhoneInput
-                          defaultCountry="IN"
-                          value={formData.phone.startsWith("+") ? formData.phone : `+91${formData.phone}`}
-                          onChange={handlePhoneChange}
-                          disabled={isPhoneVerified}
-                          className="w-full"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowPhoneVerificationModal(true)}
-                        disabled={isPhoneVerified || !formData.phone}
-                        className={cn("px-3 py-2 rounded-lg text-sm font-medium", isPhoneVerified ? "bg-green-100 text-green-700" : "bg-brown-dark text-white")}
-                      >
-                        {isPhoneVerified ? "✓" : "Verify"}
-                      </button>
-                    </div>
+                    <InlinePhoneVerification
+                      value={formData.phone}
+                      onChange={(val) => handlePhoneChange(val)}
+                      onVerifiedChange={(isVerified) => setIsPhoneVerified(isVerified)}
+                    />
                   </div>
                 </div>
 
@@ -945,12 +911,7 @@ function CheckoutContent() {
         </div>
       </div>
 
-      <PhoneVerificationModal
-        isOpen={showPhoneVerificationModal}
-        onClose={() => setShowPhoneVerificationModal(false)}
-        onVerified={handlePhoneVerified}
-        initialPhone={formData.phone}
-      />
+
       <Footer />
     </main>
   );
