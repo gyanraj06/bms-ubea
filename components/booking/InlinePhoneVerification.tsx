@@ -35,6 +35,7 @@ export default function InlinePhoneVerification({
     const [otp, setOtp] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+    const [recaptchaContainerId, setRecaptchaContainerId] = useState(`recaptcha-container-${Date.now()}`);
 
     const handlePhoneChange = (newValue: string | undefined) => {
         const phone = newValue || "";
@@ -50,44 +51,54 @@ export default function InlinePhoneVerification({
         console.log("DEBUG: InlinePhoneVerification V2.0 Loaded");
     };
 
-    const setupRecaptcha = () => {
-        // ALWAYS clear existing recaptcha to prevent stale state and v2 fallback
-        if (window.recaptchaVerifier) {
-            try {
-                window.recaptchaVerifier.clear();
-            } catch (e) {
-                console.warn("Error clearing existing recaptcha:", e);
-            }
-            window.recaptchaVerifier = undefined;
-        }
-
-        // Clear any stale reCAPTCHA elements from the container
-        const container = document.getElementById('recaptcha-container');
-        if (container) {
-            container.innerHTML = '';
-        }
-
-        // Create a fresh RecaptchaVerifier for this attempt
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-            'size': 'invisible',
-            'callback': () => {
-                // reCAPTCHA solved, allow signInWithPhoneNumber.
-                console.log("DEBUG: reCAPTCHA solved successfully");
-            },
-            'expired-callback': () => {
-                // Response expired. Ask user to solve reCAPTCHA again.
-                toast.error("Session expired, please try verifying again.");
-                setIsLoading(false);
-                // Reset verification
-                if (window.recaptchaVerifier) {
-                    try {
-                        window.recaptchaVerifier.clear();
-                        window.recaptchaVerifier = undefined;
-                    } catch (e) {
-                        console.error("Error clearing expired recaptcha", e);
-                    }
+    const setupRecaptcha = (): Promise<void> => {
+        return new Promise((resolve) => {
+            // ALWAYS clear existing recaptcha to prevent stale state and v2 fallback
+            if (window.recaptchaVerifier) {
+                try {
+                    window.recaptchaVerifier.clear();
+                } catch (e) {
+                    console.warn("Error clearing existing recaptcha:", e);
                 }
+                window.recaptchaVerifier = undefined;
             }
+
+            // Generate a NEW container ID to completely bypass 'already rendered' error
+            const newContainerId = `recaptcha-container-${Date.now()}`;
+            setRecaptchaContainerId(newContainerId);
+
+            // We need to wait for React to render the new container
+            // Using setTimeout to defer to next tick after state update
+            setTimeout(() => {
+                const container = document.getElementById(newContainerId);
+                if (!container) {
+                    console.error("reCAPTCHA container not found:", newContainerId);
+                    return;
+                }
+
+                // Create a fresh RecaptchaVerifier for this attempt
+                window.recaptchaVerifier = new RecaptchaVerifier(auth, newContainerId, {
+                    'size': 'invisible',
+                    'callback': () => {
+                        // reCAPTCHA solved, allow signInWithPhoneNumber.
+                        console.log("DEBUG: reCAPTCHA solved successfully");
+                    },
+                    'expired-callback': () => {
+                        // Response expired. Ask user to solve reCAPTCHA again.
+                        toast.error("Session expired, please try verifying again.");
+                        setIsLoading(false);
+                        if (window.recaptchaVerifier) {
+                            try {
+                                window.recaptchaVerifier.clear();
+                                window.recaptchaVerifier = undefined;
+                            } catch (e) {
+                                console.error("Error clearing expired recaptcha", e);
+                            }
+                        }
+                    }
+                });
+                resolve();
+            }, 0);
         });
     };
 
@@ -99,8 +110,15 @@ export default function InlinePhoneVerification({
 
         setIsLoading(true);
         try {
-            setupRecaptcha();
-            const appVerifier = window.recaptchaVerifier!;
+            await setupRecaptcha();
+
+            // Small delay to ensure verifier is ready
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+            if (!window.recaptchaVerifier) {
+                throw new Error("reCAPTCHA verifier not initialized");
+            }
+            const appVerifier = window.recaptchaVerifier;
 
             // Format: Value likely comes in as +91..., which is correct for Firebase
             const result = await signInWithPhoneNumber(auth, value, appVerifier);
@@ -177,8 +195,8 @@ export default function InlinePhoneVerification({
 
     return (
         <div className={cn("space-y-3", className)}>
-            {/* Hidden div for invisible reCAPTCHA */}
-            <div id="recaptcha-container"></div>
+            {/* Hidden div for invisible reCAPTCHA - uses dynamic ID */}
+            <div id={recaptchaContainerId}></div>
 
             <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium flex items-center justify-between">
