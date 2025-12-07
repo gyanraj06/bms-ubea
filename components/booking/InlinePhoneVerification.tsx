@@ -52,7 +52,7 @@ export default function InlinePhoneVerification({
     };
 
     const setupRecaptcha = (): Promise<void> => {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             // ALWAYS clear existing recaptcha to prevent stale state and v2 fallback
             if (window.recaptchaVerifier) {
                 try {
@@ -63,28 +63,38 @@ export default function InlinePhoneVerification({
                 window.recaptchaVerifier = undefined;
             }
 
-            // Generate a NEW container ID to completely bypass 'already rendered' error
-            const newContainerId = `recaptcha-container-${Date.now()}`;
-            setRecaptchaContainerId(newContainerId);
-
-            // We need to wait for React to render the new container
-            // Using setTimeout to defer to next tick after state update
-            setTimeout(() => {
-                const container = document.getElementById(newContainerId);
-                if (!container) {
-                    console.error("reCAPTCHA container not found:", newContainerId);
-                    return;
+            // Also try to reset grecaptcha if available (global Google reCAPTCHA object)
+            if (typeof window !== 'undefined' && (window as any).grecaptcha) {
+                try {
+                    (window as any).grecaptcha.reset();
+                } catch (e) {
+                    console.warn("Error resetting grecaptcha:", e);
                 }
+            }
 
+            // PURE DOM APPROACH: Remove all old containers and create a fresh one
+            const existingContainers = document.querySelectorAll('[id^="recaptcha-container-"]');
+            existingContainers.forEach(el => el.remove());
+
+            // Also remove any lingering grecaptcha iframes
+            const grecaptchaIframes = document.querySelectorAll('iframe[src*="recaptcha"]');
+            grecaptchaIframes.forEach(el => el.remove());
+
+            // Create a brand new container with unique ID
+            const newContainerId = `recaptcha-container-${Date.now()}`;
+            const newContainer = document.createElement('div');
+            newContainer.id = newContainerId;
+            newContainer.style.display = 'none';
+            document.body.appendChild(newContainer);
+
+            try {
                 // Create a fresh RecaptchaVerifier for this attempt
                 window.recaptchaVerifier = new RecaptchaVerifier(auth, newContainerId, {
                     'size': 'invisible',
                     'callback': () => {
-                        // reCAPTCHA solved, allow signInWithPhoneNumber.
                         console.log("DEBUG: reCAPTCHA solved successfully");
                     },
                     'expired-callback': () => {
-                        // Response expired. Ask user to solve reCAPTCHA again.
                         toast.error("Session expired, please try verifying again.");
                         setIsLoading(false);
                         if (window.recaptchaVerifier) {
@@ -98,7 +108,10 @@ export default function InlinePhoneVerification({
                     }
                 });
                 resolve();
-            }, 0);
+            } catch (e) {
+                console.error("Error creating RecaptchaVerifier:", e);
+                reject(e);
+            }
         });
     };
 
