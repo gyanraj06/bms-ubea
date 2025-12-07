@@ -76,9 +76,7 @@ export default function InlinePhoneVerification({
             const existingContainers = document.querySelectorAll('[id^="recaptcha-container-"]');
             existingContainers.forEach(el => el.remove());
 
-            // Also remove any lingering grecaptcha iframes
-            const grecaptchaIframes = document.querySelectorAll('iframe[src*="recaptcha"]');
-            grecaptchaIframes.forEach(el => el.remove());
+            // NOTE: Do NOT remove grecaptcha iframes - it breaks Google's internal state
 
             // Create a brand new container with unique ID
             const newContainerId = `recaptcha-container-${Date.now()}`;
