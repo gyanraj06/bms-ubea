@@ -36,6 +36,15 @@ export default function InlinePhoneVerification({
     const [isLoading, setIsLoading] = useState(false);
     const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
     const [recaptchaContainerId, setRecaptchaContainerId] = useState(`recaptcha-container-${Date.now()}`);
+    const [resendCountdown, setResendCountdown] = useState(0);
+
+    // Countdown timer effect for resend OTP
+    useEffect(() => {
+        if (resendCountdown > 0) {
+            const timer = setTimeout(() => setResendCountdown(resendCountdown - 1), 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [resendCountdown]);
 
     const handlePhoneChange = (newValue: string | undefined) => {
         const phone = newValue || "";
@@ -136,6 +145,7 @@ export default function InlinePhoneVerification({
 
             setConfirmationResult(result);
             setShowOtpInput(true);
+            setResendCountdown(60); // Start 60-second cooldown for resend
             toast.success("OTP sent! Please check your messages.");
         } catch (error: any) {
             console.error("Error sending OTP:", error);
@@ -267,12 +277,25 @@ export default function InlinePhoneVerification({
                     <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center">
                             <label className="text-xs font-medium text-gray-500">Enter OTP sent to your number</label>
-                            <button
-                                onClick={handleChangeNumber}
-                                className="text-xs text-brown-dark hover:underline"
-                            >
-                                Change Number
-                            </button>
+                            <div className="flex items-center gap-3">
+                                {resendCountdown > 0 ? (
+                                    <span className="text-xs text-gray-400">Resend in {resendCountdown}s</span>
+                                ) : (
+                                    <button
+                                        onClick={handleSendOtp}
+                                        disabled={isLoading}
+                                        className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+                                    >
+                                        {isLoading ? "Sending..." : "Resend OTP"}
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleChangeNumber}
+                                    className="text-xs text-brown-dark hover:underline"
+                                >
+                                    Change Number
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex gap-2">
