@@ -50,6 +50,12 @@ export default function InlinePhoneVerification({
 
     const setupRecaptcha = () => {
         if (!window.recaptchaVerifier) {
+            // Safety: Clear any stale reCAPTCHA elements from the container
+            const container = document.getElementById('recaptcha-container');
+            if (container) {
+                container.innerHTML = '';
+            }
+
             window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
                 'size': 'invisible',
                 'callback': () => {
@@ -59,6 +65,15 @@ export default function InlinePhoneVerification({
                     // Response expired. Ask user to solve reCAPTCHA again.
                     toast.error("Session expired, please try verifying again.");
                     setIsLoading(false);
+                    // Reset verification
+                    if (window.recaptchaVerifier) {
+                        try {
+                            window.recaptchaVerifier.clear();
+                            window.recaptchaVerifier = undefined;
+                        } catch (e) {
+                            console.error("Error clearing expired recaptcha", e);
+                        }
+                    }
                 }
             });
         }
