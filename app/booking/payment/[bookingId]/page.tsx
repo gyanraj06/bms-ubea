@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering on Vercel
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -15,14 +18,13 @@ import {
 import { toast } from "sonner";
 import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-
-const supabase = createClientComponentClient();
+import { useAuth } from "@/contexts/auth-context";
 
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params.bookingId as string;
+  const { session } = useAuth();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,13 +36,18 @@ export default function PaymentPage() {
   const WHATSAPP_NUMBER = "917649048059";
 
   useEffect(() => {
-    fetchBookingDetails();
-  }, [bookingId]);
+    if (session?.access_token) {
+      fetchBookingDetails();
+    } else if (session === null) {
+      // Session is confirmed null (not just loading)
+      toast.error("Please login to view this page");
+      router.push("/login");
+    }
+  }, [bookingId, session]);
 
   const fetchBookingDetails = async () => {
     try {
       setIsLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
       if (!token) {
@@ -49,6 +56,7 @@ export default function PaymentPage() {
         return;
       }
 
+      console.log("[Payment] Fetching booking details...");
       const response = await fetch("/api/user/bookings", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -58,11 +66,7 @@ export default function PaymentPage() {
         const found = data.bookings.find((b: any) => b.id === bookingId);
         if (found) {
           setBooking(found);
-          if (found.payment_status === 'paid' || found.payment_status === 'verification_pending') {
-            // Already paid or pending verification
-            // redirect to success or status page?
-            // For now stay here but show status
-          }
+          console.log("[Payment] Booking loaded:", found.booking_number);
         } else {
           toast.error("Booking not found");
           router.push("/my-bookings");
@@ -71,7 +75,7 @@ export default function PaymentPage() {
         toast.error("Failed to load booking details");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("[Payment] Error:", error);
       toast.error("Something went wrong");
     } finally {
       setIsLoading(false);
@@ -90,21 +94,21 @@ export default function PaymentPage() {
   };
 
   const handlePaymentComplete = async () => {
-    console.log("Debug: Processing Payment Confirmation...");
+    console.log("[Payment] Processing Payment Confirmation...");
     try {
       setIsSubmitting(true);
-      const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
 
-      console.log(`Debug: Session Token = ${token ? "Present" : "MISSING"}`, token);
+      console.log(`[Payment] Token from context: ${token ? "Present" : "MISSING"}`);
 
       if (!token) {
-        console.error("Error: No Authentication Token found.");
+        console.error("[Payment] Error: No Authentication Token found.");
         toast.error("Session expired. Please login.");
+        router.push("/login");
         return;
       }
 
-      console.log("Debug: Calling Payment API...");
+      console.log("[Payment] Calling Payment API...");
 
       const response = await fetch(`/api/bookings/${bookingId}/payment`, {
         method: "POST",
@@ -117,21 +121,20 @@ export default function PaymentPage() {
         }),
       });
 
-      console.log(`Debug: API Response Status = ${response.status}`);
+      console.log(`[Payment] API Response Status = ${response.status}`);
 
       const data = await response.json();
 
       if (data.success) {
-        alert("Success! Marking paid.");
+        console.log("[Payment] Success!");
         toast.success("Payment marked! Waiting for verification.");
         router.push(`/booking/success?bookingIds=${bookingId}`);
       } else {
-        alert("API Error: " + (data.error || "Unknown"));
+        console.log("[Payment] API Error:", data.error);
         toast.error(data.error || "Failed to update payment status");
       }
     } catch (error) {
-      alert("Exception: " + String(error));
-      console.error("Error:", error);
+      console.error("[Payment] Exception:", error);
       toast.error("Something went wrong");
     } finally {
       setIsSubmitting(false);
