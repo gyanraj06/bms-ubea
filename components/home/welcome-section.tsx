@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 
 export function WelcomeSection() {
   const router = useRouter();
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
     <section className="py-20 bg-white">
@@ -35,12 +37,21 @@ export function WelcomeSection() {
               union members and their families visiting Bhopal.
             </p>
 
-            <p className="text-lg text-gray-600 leading-relaxed mb-10">
-              Conveniently located near Rani Kamlapati Station and AIIMS, our
-              guest house provides easy access to the city's key landmarks. Enjoy
-              our air-conditioned rooms, self-cooking kitchen, and dedicated meeting
-              hall, all designed for your comfort.
-            </p>
+            <div className={`transition-all duration-300 ${isExpanded ? 'block' : 'hidden md:block'}`}>
+              <p className="text-lg text-gray-600 leading-relaxed mb-10">
+                Conveniently located near Rani Kamlapati Station and AIIMS, our
+                guest house provides easy access to the city's key landmarks. Enjoy
+                our air-conditioned rooms, self-cooking kitchen, and dedicated meeting
+                hall, all designed for your comfort.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="md:hidden text-brown-dark font-semibold mb-8 underline underline-offset-4"
+            >
+              {isExpanded ? 'Read Less' : 'Read More'}
+            </button>
 
             <button
               onClick={() => router.push('/booking')}

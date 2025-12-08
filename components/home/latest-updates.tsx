@@ -112,7 +112,7 @@ export function LatestUpdates() {
                         ))}
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="flex md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 overflow-x-auto md:overflow-visible pb-8 md:pb-0 snap-x snap-mandatory md:snap-none -mx-4 md:mx-0 px-4 md:px-0 scrollbar-hide">
                         {newsletters.map((item, index) => (
                             <motion.div
                                 key={item.id}
@@ -120,6 +120,7 @@ export function LatestUpdates() {
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.1 }}
+                                className="min-w-[85vw] md:min-w-0 snap-center"
                             >
                                 <NewsletterCard
                                     item={item}
