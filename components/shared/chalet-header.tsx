@@ -111,17 +111,17 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
       )}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-20 relative">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0">
+          <Link href="/" className="flex items-center flex-shrink-0 md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto">
             <img
               src="/logo.png"
               alt="Happy Holidays"
-              className="h-12 sm:h-16 w-auto object-contain"
+              className="h-8 sm:h-16 w-auto object-contain"
             />
             <span
               className={cn(
-                "font-serif text-lg sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap",
+                "font-serif text-sm sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap",
                 shouldShowLight ? "text-brown-dark" : "text-white"
               )}
             >
@@ -323,7 +323,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
           </nav>
 
           {/* Mobile Right Section - Auth + Hamburger */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 md:hidden ml-auto">
             {/* Mobile Auth/Profile Buttons */}
             {!loading && (
               <>

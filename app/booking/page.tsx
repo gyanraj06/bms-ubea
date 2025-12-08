@@ -398,7 +398,7 @@ function BookingContent() {
           sizes="100vw"
           quality={75}
         />
-        <div className="absolute inset-0 bg-black/50 z-[1]" />
+        <div className="absolute inset-0 bg-black/60 z-[1]" />
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
           <h1 className="font-serif text-4xl md:text-5xl font-bold mb-4">
             Book Your Stay

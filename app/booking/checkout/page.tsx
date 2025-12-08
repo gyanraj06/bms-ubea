@@ -277,6 +277,8 @@ function CheckoutContent() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
+    alert(`DEBUG FORM:\nUser: ${user?.email}\nPhone: ${formData.phone}\nGuests (${guestDetails.length}): ${JSON.stringify(guestDetails)}\nAddr: ${formData.city}, ${formData.state}\nID: ${formData.idType} - ${formData.idNumber}\nFile: ${govtIdFile?.name || "MISSING"}\nBookingFor: ${formData.bookingFor}`);
+
     console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
 
     if (!user) {

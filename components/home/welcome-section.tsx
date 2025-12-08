@@ -46,19 +46,26 @@ export function WelcomeSection() {
               </p>
             </div>
 
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="md:hidden text-brown-dark font-semibold mb-8 underline underline-offset-4"
-            >
-              {isExpanded ? 'Read Less' : 'Read More'}
-            </button>
+            {/* Read More Trigger (Mobile Only) */}
+            <div className="md:hidden mb-8">
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-gray-500 font-medium underline underline-offset-4 hover:text-gray-700 transition-colors"
+                type="button"
+              >
+                {isExpanded ? 'Read Less' : 'Read More'}
+              </button>
+            </div>
 
-            <button
-              onClick={() => router.push('/booking')}
-              className="inline-flex items-center px-8 py-4 bg-brown-dark text-white rounded-full text-base font-medium hover:bg-brown-medium transition-all duration-150"
-            >
-              Book Your Experience
-            </button>
+            {/* CTA Button */}
+            <div>
+              <button
+                onClick={() => router.push('/booking')}
+                className="inline-flex items-center px-8 py-4 bg-brown-dark text-white rounded-full text-base font-medium hover:bg-brown-medium transition-all duration-150"
+              >
+                Book Your Experience
+              </button>
+            </div>
           </motion.div>
         </div>
       </div>
