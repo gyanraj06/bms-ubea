@@ -14,6 +14,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-context";
 
 interface UserData {
   full_name: string;
@@ -23,7 +24,9 @@ interface UserData {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const { session, user, isLoading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("account");
   const [userData, setUserData] = useState<UserData>({
     full_name: "",
@@ -46,20 +49,36 @@ export default function ProfilePage() {
   });
 
   useEffect(() => {
-    const userDataStr = localStorage.getItem("userData");
-    if (!userDataStr) {
+    // Wait for auth to finish loading
+    if (authLoading) return;
+
+    // Check if user is authenticated
+    if (!session || !user) {
       toast.error("Please login to access your profile");
       router.push("/login");
       return;
     }
 
-    const user = JSON.parse(userDataStr);
-    setUserData({
-      full_name: user.full_name || "",
-      email: user.email || "",
-      phone: user.phone || "",
-    });
-  }, [router]);
+    // Try to get user data from localStorage first, then fallback to session
+    const userDataStr = localStorage.getItem("userData");
+    if (userDataStr) {
+      const localUser = JSON.parse(userDataStr);
+      setUserData({
+        full_name: localUser.full_name || user.user_metadata?.full_name || "",
+        email: localUser.email || user.email || "",
+        phone: localUser.phone || user.user_metadata?.phone || "",
+      });
+    } else {
+      // Use session data
+      setUserData({
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+        email: user.email || "",
+        phone: user.user_metadata?.phone || user.phone || "",
+      });
+    }
+
+    setIsInitialized(true);
+  }, [authLoading, session, user, router]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,6 +150,20 @@ export default function ProfilePage() {
     { id: "account", label: "Account", icon: User },
     { id: "notifications", label: "Notifications", icon: Bell },
   ];
+
+  // Show loading while auth is checking
+  if (authLoading || !isInitialized) {
+    return (
+      <main className="min-h-screen bg-gray-50">
+        <ChaletHeader forceLight={true} />
+        <div className="h-20" />
+        <div className="flex items-center justify-center py-32">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark"></div>
+        </div>
+        <Footer />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">
