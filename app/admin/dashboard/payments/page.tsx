@@ -48,6 +48,21 @@ export default function PaymentsPage() {
   const [screenshotSignedUrl, setScreenshotSignedUrl] = useState<string>("");
   const [loadingScreenshot, setLoadingScreenshot] = useState(false);
 
+  // Confirmation State
+  const [confirmation, setConfirmation] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: 'success' | 'danger' | 'warning';
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "warning",
+    onConfirm: () => { },
+  });
+
   useEffect(() => {
     fetchBookings();
   }, []);
@@ -147,6 +162,40 @@ export default function PaymentsPage() {
     return true;
   });
 
+  const handleResendEmail = async (bookingId: string) => {
+    try {
+      const sessionStr = localStorage.getItem("adminSession");
+      if (!sessionStr) {
+        toast.error("Admin session not found. Please login again.");
+        return;
+      }
+      const session = JSON.parse(sessionStr);
+      const token = session.token;
+
+      toast.promise(
+        fetch(`/api/admin/bookings/${bookingId}/resend-email`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }).then(async (res) => {
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error(data.error || "Failed to send email");
+          return data;
+        }),
+        {
+          loading: 'Sending confirmation email...',
+          success: 'Email sent successfully',
+          error: (err) => `Failed to send email: ${err.message}`,
+        }
+      );
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Something went wrong");
+    }
+  };
+
   const handleValidate = async (bookingId: string, action: 'approve' | 'reject') => {
     try {
       const sessionStr = localStorage.getItem("adminSession");
@@ -171,6 +220,7 @@ export default function PaymentsPage() {
       if (data.success) {
         toast.success(`Payment ${action}d successfully`);
         fetchBookings(); // Refresh data
+        setConfirmation(prev => ({ ...prev, isOpen: false })); // Close modal
       } else {
         toast.error(data.error || "Action failed");
       }
@@ -178,6 +228,24 @@ export default function PaymentsPage() {
       console.error("Error:", error);
       toast.error("Something went wrong");
     }
+  };
+
+  const requestValidation = (bookingId: string, action: 'approve' | 'reject', currentStatus?: string) => {
+    const isRevoke = action === 'approve' && currentStatus === 'failed';
+    const title = action === 'approve' ? (isRevoke ? "Revoke Rejection & Approve?" : "Approve Payment?") : "Reject Payment?";
+    const message = action === 'approve'
+      ? (isRevoke
+        ? "Are you sure you want to revoke this rejection? The status will be updated to 'Paid' and a confirmation email will be sent."
+        : "Are you sure you want to approve this payment? This will update the status to 'Paid' and send a confirmation email.")
+      : "Are you sure you want to reject this payment? This will mark it as failed and notify the user.";
+
+    setConfirmation({
+      isOpen: true,
+      title,
+      message,
+      type: action === 'approve' ? 'success' : 'danger',
+      onConfirm: () => handleValidate(bookingId, action)
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -326,7 +394,7 @@ export default function PaymentsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Payment Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-600">
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -403,7 +471,7 @@ export default function PaymentsPage() {
                       {booking.payment_status === 'verification_pending' && (
                         <div className="flex gap-1">
                           <button
-                            onClick={() => handleValidate(booking.id, 'approve')}
+                            onClick={() => requestValidation(booking.id, 'approve', booking.payment_status)}
                             className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors"
                             title="Approve Payment"
                           >
@@ -412,7 +480,7 @@ export default function PaymentsPage() {
                             </svg>
                           </button>
                           <button
-                            onClick={() => handleValidate(booking.id, 'reject')}
+                            onClick={() => requestValidation(booking.id, 'reject', booking.payment_status)}
                             className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
                             title="Reject Payment"
                           >
@@ -423,13 +491,44 @@ export default function PaymentsPage() {
                         </div>
                       )}
                       {booking.payment_status === 'paid' && (
-                        <span className="text-xs text-gray-500 italic">Completed</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-1 rounded">Completed</span>
+                          <button
+                            onClick={() => handleResendEmail(booking.id)}
+                            className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            title="Resend Confirmation Email"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        </div>
                       )}
                       {booking.payment_status === 'pending' && (
                         <span className="text-xs text-gray-500 italic">Awaiting payment</span>
                       )}
                       {booking.payment_status === 'failed' && (
-                        <span className="text-xs text-red-500 italic">Payment rejected</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-red-500 italic bg-red-50 px-2 py-1 rounded">Rejected</span>
+                          <button
+                            onClick={() => handleResendEmail(booking.id)}
+                            className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Resend Rejection Email"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => requestValidation(booking.id, 'approve', booking.payment_status)}
+                            className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded transition-colors ml-1"
+                            title="Revoke Rejection (Approve)"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>
@@ -439,6 +538,44 @@ export default function PaymentsPage() {
           </table>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {confirmation.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-xl shadow-xl max-w-sm w-full overflow-hidden"
+          >
+            <div className={`p-6 text-center ${confirmation.type === 'danger' ? 'bg-red-50' : 'bg-green-50'}`}>
+              <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${confirmation.type === 'danger' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                {confirmation.type === 'danger' ? (
+                  <XCircle size={32} weight="fill" />
+                ) : (
+                  <CheckCircle size={32} weight="fill" />
+                )}
+              </div>
+              <h3 className={`text-lg font-bold ${confirmation.type === 'danger' ? 'text-red-900' : 'text-green-900'}`}>{confirmation.title}</h3>
+              <p className={`text-sm mt-2 ${confirmation.type === 'danger' ? 'text-red-700' : 'text-green-700'}`}>{confirmation.message}</p>
+            </div>
+            <div className="p-4 bg-white flex gap-3 justify-center">
+              <Button
+                variant="outline"
+                onClick={() => setConfirmation(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmation.onConfirm}
+                className={`flex-1 ${confirmation.type === 'danger' ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}`}
+              >
+                Confirm
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Booking Details Modal */}
       {isModalOpen && selectedBooking && (

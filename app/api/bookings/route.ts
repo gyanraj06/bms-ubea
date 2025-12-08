@@ -307,6 +307,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Send confirmation email asynchronously (fire and forget)
+    // We don't want to block the response if email fails
+    if (createdBookings.length > 0) {
+      const primaryBooking = createdBookings[0];
+      
+      // Calculate total amount for all bookings
+      const totalBookingAmount = createdBookings.reduce((sum, b) => sum + b.total_amount, 0);
+      
+      const emailData = {
+        user_name: userData.full_name || 'Guest',
+        user_email: userData.email,
+        // If multiple rooms, show the booking number of the first one or a combined ref if available
+        // The booking number is unique per room booking in this schema, so maybe show the first one
+        booking_reference: createdBookings.map(b => b.booking_number).join(', '), 
+        check_in_date: new Date(check_in).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+        check_out_date: new Date(check_out).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
+        room_count: createdBookings.length,
+        total_amount: Math.round(totalBookingAmount),
+        website_url: request.headers.get('origin') || 'https://unionawasholidayhome.com'
+      };
+
+      // Import dynamically to avoid top-level await issues or circular deps if any
+      const { sendBookingConfirmationEmail } = await import('@/lib/email-service');
+      
+      // Run in background without awaiting
+      sendBookingConfirmationEmail(emailData).then(result => {
+        console.log('Email sending initiated:', result);
+      }).catch(err => {
+        console.error('Failed to initiate email sending:', err);
+      });
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Bookings created successfully',

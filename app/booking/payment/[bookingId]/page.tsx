@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import {
   CheckCircle,
   Copy,
-  WhatsappLogo,
   ArrowRight,
   Upload,
   Image as ImageIcon,
@@ -38,7 +37,6 @@ export default function PaymentPage() {
 
   // Constants
   const UPI_ID = "qr919827058059-5132@unionbankofindia";
-  const WHATSAPP_NUMBER = "917649048059";
 
   useEffect(() => {
     if (session?.access_token) {
@@ -92,11 +90,7 @@ export default function PaymentPage() {
     toast.success("UPI ID copied to clipboard");
   };
 
-  const handleWhatsAppClick = () => {
-    const message = `Hi, I have paid for Booking ID: ${booking?.booking_number}. Here is the screenshot.`;
-    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
-  };
+
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -174,6 +168,13 @@ export default function PaymentPage() {
       if (!token) {
         toast.error("Session expired. Please login.");
         router.push("/login");
+        return;
+      }
+
+      // Enforce screenshot upload
+      if (!screenshotFile) {
+        toast.error("Please upload the payment screenshot to proceed");
+        setIsSubmitting(false);
         return;
       }
 
@@ -336,7 +337,7 @@ export default function PaymentPage() {
                   <li>Scan the QR code or copy the UPI ID above.</li>
                   <li>Make the payment of <strong>₹{booking.total_amount.toLocaleString()}</strong> using any UPI app.</li>
                   <li>Take a screenshot of the payment success screen.</li>
-                  <li><strong>Upload the screenshot below</strong> or send it on WhatsApp.</li>
+                  <li><strong>Upload the screenshot below</strong> to complete verification.</li>
                   <li>Click "I Have Made the Payment" to confirm.</li>
                 </ol>
               </div>
@@ -391,16 +392,7 @@ export default function PaymentPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-gray-500 text-center">
-                  Or share via WhatsApp (optional)
-                </p>
-                <button
-                  onClick={handleWhatsAppClick}
-                  className="w-full py-2.5 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366] rounded-xl font-medium hover:bg-[#25D366]/20 transition-colors flex items-center justify-center gap-2"
-                >
-                  <WhatsappLogo size={20} weight="fill" />
-                  Send on WhatsApp
-                </button>
+
               </div>
 
               {/* Main Submit Button */}
@@ -422,11 +414,7 @@ export default function PaymentPage() {
                     </>
                   )}
                 </button>
-                {!screenshotFile && (
-                  <p className="text-xs text-center text-gray-500 mt-2">
-                    Tip: Uploading a screenshot helps speed up verification
-                  </p>
-                )}
+
               </div>
             </div>
           </div>
