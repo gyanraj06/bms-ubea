@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
       guest_details,
       special_requests,
       booking_for,
+      phone, // Phone from checkout form
       // New Comprehensive Fields
       bank_id_number,
       govt_id_image_url,
@@ -261,7 +262,7 @@ export async function POST(request: NextRequest) {
             room_id: roomToBook.id,
             guest_name: userData.full_name,
             guest_email: userData.email,
-            guest_phone: userData.phone,
+            guest_phone: phone || userData.phone || 'Not provided',
             check_in: checkInDate.toISOString(),
             check_out: checkOutDate.toISOString(),
             total_nights: totalNights,
@@ -292,7 +293,7 @@ export async function POST(request: NextRequest) {
 
         if (createError) {
           console.error('Error creating booking:', createError);
-          errors.push(`Failed to book room ${roomToBook.room_number}`);
+          errors.push(`Failed to book room ${roomToBook.room_number}: ${createError.message} (${createError.code})`);
         } else {
           createdBookings.push(newBooking);
         }

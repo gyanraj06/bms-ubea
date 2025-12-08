@@ -481,6 +481,7 @@ function CheckoutContent() {
           special_requests: formData.specialRequests || '',
           booking_for: formData.bookingFor || 'self',
           num_guests: parseInt(String(guestDetails.length)) || 1,
+          phone: formData.phone || '',
           address: formData.address || '',
           city: formData.city || '',
           state: formData.state || '',
