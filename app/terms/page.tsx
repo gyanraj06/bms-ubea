@@ -99,10 +99,6 @@ export default function TermsOfServicePage() {
             </p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
               <li>Aadhaar Card</li>
-              <li>PAN Card</li>
-              <li>Passport</li>
-              <li>Driving License</li>
-              <li>Voter ID Card</li>
             </ul>
           </section>
 

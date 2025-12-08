@@ -600,10 +600,6 @@ function CheckoutContent() {
                       >
                         <option value="">Select ID Type</option>
                         <option value="aadhaar">Aadhaar Card</option>
-                        <option value="pan">PAN Card</option>
-                        <option value="passport">Passport</option>
-                        <option value="driving_license">Driving License</option>
-                        <option value="voter_id">Voter ID</option>
                       </select>
                     </div>
                     <div>
@@ -646,7 +642,7 @@ function CheckoutContent() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="bankIdNumber">Bank Account / ID</Label>
+                      <Label htmlFor="bankIdNumber">Bank ID</Label>
                       <input
                         type="text"
                         name="bankIdNumber"
@@ -853,8 +849,11 @@ function CheckoutContent() {
 
               <button
                 type="button"
-                onClick={handleSubmit}
-                disabled={isProcessing || !user}
+                onClick={(e) => {
+                  console.log("Button clicked from UI", { isProcessing, hasUser: !!user });
+                  handleSubmit(e);
+                }}
+                disabled={isProcessing}
                 className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {isProcessing ? "Processing..." : user ? "Proceed to QR Payment" : "Login to Book"}
