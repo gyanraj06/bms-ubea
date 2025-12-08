@@ -722,7 +722,7 @@ function CheckoutContent() {
 
           {/* Right Column: Summary */}
           <div className="lg:col-span-1">
-            <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="bg-white rounded-2xl shadow-lg p-6 sticky top-24">
+            <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-24 relative z-10">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Booking Summary</h2>
 
               <div className="space-y-4 mb-6">
@@ -854,11 +854,11 @@ function CheckoutContent() {
                   handleSubmit(e);
                 }}
                 disabled={isProcessing}
-                className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer z-20 relative"
               >
                 {isProcessing ? "Processing..." : user ? "Proceed to QR Payment" : "Login to Book"}
               </button>
-            </motion.div>
+            </div>
           </div>
         </div>
       </div>
