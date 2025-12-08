@@ -34,7 +34,6 @@ export default function RoomDetailsModal({
     "Hot Water Rod": Shower,
     "Shower": Shower,
     "Breakfast": Coffee,
-    "Parking": Coffee,
     "Room Service": Coffee,
     "Parking": Car,
     "Balcony": Check,
