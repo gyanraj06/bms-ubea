@@ -29,10 +29,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!documentType || !['govt_id', 'bank_id', 'guest_id'].includes(documentType)) {
+    if (!documentType || !['govt_id', 'bank_id', 'guest_id', 'payment_screenshot'].includes(documentType)) {
       console.log('[Upload API] Error: Invalid document type');
       return NextResponse.json(
-        { success: false, error: 'Invalid document type. Must be govt_id, bank_id, or guest_id' },
+        { success: false, error: 'Invalid document type. Must be govt_id, bank_id, guest_id, or payment_screenshot' },
         { status: 400 }
       );
     }

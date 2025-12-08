@@ -14,6 +14,8 @@ import {
   Copy,
   WhatsappLogo,
   ArrowRight,
+  Upload,
+  Image as ImageIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -30,6 +32,9 @@ export default function PaymentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [booking, setBooking] = useState<any>(null);
   const [isEnlarged, setIsEnlarged] = useState(false);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Constants
   const UPI_ID = "qr919827058059-5132@unionbankofindia";
@@ -93,22 +98,98 @@ export default function PaymentPage() {
     window.open(url, "_blank");
   };
 
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload an image file (JPG, PNG, or WEBP)");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be less than 5MB");
+      return;
+    }
+
+    setScreenshotFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setScreenshotPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    toast.success("Screenshot selected!");
+  };
+
+  const uploadScreenshot = async (): Promise<string | null> => {
+    if (!screenshotFile) return null;
+
+    try {
+      setIsUploading(true);
+      const token = session?.access_token;
+
+      if (!token) {
+        toast.error("Session expired");
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append('file', screenshotFile);
+      formData.append('documentType', 'payment_screenshot');
+
+      const response = await fetch('/api/bookings/upload-document', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        return data.data.filePath;
+      } else {
+        toast.error(data.error || "Failed to upload screenshot");
+        return null;
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload screenshot");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handlePaymentComplete = async () => {
-    console.log("[Payment] Processing Payment Confirmation...");
     try {
       setIsSubmitting(true);
       const token = session?.access_token;
 
-      console.log(`[Payment] Token from context: ${token ? "Present" : "MISSING"}`);
-
       if (!token) {
-        console.error("[Payment] Error: No Authentication Token found.");
         toast.error("Session expired. Please login.");
         router.push("/login");
         return;
       }
 
-      console.log("[Payment] Calling Payment API...");
+      // Upload screenshot first if exists
+      let screenshotPath: string | null = null;
+      if (screenshotFile) {
+        toast.info("Uploading payment screenshot...");
+        screenshotPath = await uploadScreenshot();
+        if (!screenshotPath) {
+          // Upload failed, error already shown
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      toast.info("Confirming payment...");
 
       const response = await fetch(`/api/bookings/${bookingId}/payment`, {
         method: "POST",
@@ -118,19 +199,16 @@ export default function PaymentPage() {
         },
         body: JSON.stringify({
           action: "mark_paid",
+          payment_screenshot_url: screenshotPath,
         }),
       });
-
-      console.log(`[Payment] API Response Status = ${response.status}`);
 
       const data = await response.json();
 
       if (data.success) {
-        console.log("[Payment] Success!");
         toast.success("Payment marked! Waiting for verification.");
         router.push(`/booking/success?bookingIds=${bookingId}`);
       } else {
-        console.log("[Payment] API Error:", data.error);
         toast.error(data.error || "Failed to update payment status");
       }
     } catch (error) {
@@ -258,35 +336,97 @@ export default function PaymentPage() {
                   <li>Scan the QR code or copy the UPI ID above.</li>
                   <li>Make the payment of <strong>₹{booking.total_amount.toLocaleString()}</strong> using any UPI app.</li>
                   <li>Take a screenshot of the payment success screen.</li>
-                  <li>Send the screenshot to us on WhatsApp using the button below.</li>
+                  <li><strong>Upload the screenshot below</strong> or send it on WhatsApp.</li>
                   <li>Click "I Have Made the Payment" to confirm.</li>
                 </ol>
               </div>
 
-              {/* Actions */}
-              <div className="space-y-3 pt-4">
+              {/* Screenshot Upload Section */}
+              <div className="border-t border-gray-100 pt-6 space-y-4">
+                <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                  <Upload size={20} className="text-brown-dark" />
+                  Upload Payment Screenshot
+                </h3>
+
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={handleScreenshotChange}
+                    className="hidden"
+                    id="screenshot-upload"
+                  />
+
+                  {screenshotPreview ? (
+                    <div className="space-y-3">
+                      <div className="relative border-2 border-green-200 rounded-xl overflow-hidden bg-gray-50">
+                        <img
+                          src={screenshotPreview}
+                          alt="Payment Screenshot"
+                          className="w-full max-h-48 object-contain"
+                        />
+                        <div className="absolute top-2 right-2">
+                          <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                            <CheckCircle size={14} weight="fill" />
+                            Selected
+                          </span>
+                        </div>
+                      </div>
+                      <label
+                        htmlFor="screenshot-upload"
+                        className="text-sm text-blue-600 hover:underline cursor-pointer inline-block"
+                      >
+                        Change screenshot
+                      </label>
+                    </div>
+                  ) : (
+                    <label
+                      htmlFor="screenshot-upload"
+                      className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-brown-dark hover:bg-gray-50 transition-colors"
+                    >
+                      <ImageIcon size={40} className="text-gray-400 mb-2" />
+                      <p className="text-sm font-medium text-gray-700">Click to upload screenshot</p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG or WEBP (max 5MB)</p>
+                    </label>
+                  )}
+                </div>
+
+                <p className="text-xs text-gray-500 text-center">
+                  Or share via WhatsApp (optional)
+                </p>
                 <button
                   onClick={handleWhatsAppClick}
-                  className="w-full py-3 bg-[#25D366] text-white rounded-xl font-semibold hover:bg-[#128C7E] transition-colors flex items-center justify-center gap-2 shadow-md"
+                  className="w-full py-2.5 bg-[#25D366]/10 text-[#128C7E] border border-[#25D366] rounded-xl font-medium hover:bg-[#25D366]/20 transition-colors flex items-center justify-center gap-2"
                 >
-                  <WhatsappLogo size={24} weight="fill" />
-                  Send Screenshot on WhatsApp
+                  <WhatsappLogo size={20} weight="fill" />
+                  Send on WhatsApp
                 </button>
+              </div>
 
+              {/* Main Submit Button */}
+              <div className="pt-4">
                 <button
                   onClick={handlePaymentComplete}
-                  disabled={isSubmitting}
-                  className="w-full py-3 bg-brown-dark text-white rounded-xl font-semibold hover:bg-brown-medium transition-colors flex items-center justify-center gap-2 shadow-md disabled:opacity-70"
+                  disabled={isSubmitting || isUploading}
+                  className="w-full py-4 bg-brown-dark text-white rounded-xl font-semibold hover:bg-brown-medium transition-colors flex items-center justify-center gap-2 shadow-lg disabled:opacity-70 text-lg"
                 >
-                  {isSubmitting ? (
-                    "Processing..."
+                  {isSubmitting || isUploading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+                      {isUploading ? "Uploading..." : "Processing..."}
+                    </>
                   ) : (
                     <>
+                      <CheckCircle size={24} weight="fill" />
                       I Have Made the Payment
-                      <ArrowRight size={20} weight="bold" />
                     </>
                   )}
                 </button>
+                {!screenshotFile && (
+                  <p className="text-xs text-center text-gray-500 mt-2">
+                    Tip: Uploading a screenshot helps speed up verification
+                  </p>
+                )}
               </div>
             </div>
           </div>

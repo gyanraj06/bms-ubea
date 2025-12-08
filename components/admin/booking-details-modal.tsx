@@ -26,6 +26,8 @@ export function BookingDetailsModal({
   } | null>(null);
   const [govtIdSignedUrl, setGovtIdSignedUrl] = useState<string>("");
   const [bankIdSignedUrl, setBankIdSignedUrl] = useState<string>("");
+  const [guestIdSignedUrl, setGuestIdSignedUrl] = useState<string>("");
+  const [paymentScreenshotSignedUrl, setPaymentScreenshotSignedUrl] = useState<string>("");
   const [loadingImages, setLoadingImages] = useState(true);
 
   // Fetch signed URLs for private bucket documents
@@ -69,11 +71,45 @@ export function BookingDetailsModal({
             setBankIdSignedUrl(booking.bank_id_image_url);
           }
         }
+
+        // Fetch signed URL for guest ID if exists (for booking for someone else)
+        if (booking.guest_id_image_url) {
+          const guestIdPath = booking.guest_id_image_url.split('/').pop();
+          const guestIdFolder = booking.guest_id_image_url.includes('guest_id') ? 'guest_id/' : '';
+          const fullGuestPath = guestIdFolder + guestIdPath;
+
+          const guestResponse = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(fullGuestPath)}`);
+          const guestData = await guestResponse.json();
+
+          if (guestData.success) {
+            setGuestIdSignedUrl(guestData.signedUrl);
+          } else {
+            setGuestIdSignedUrl(booking.guest_id_image_url);
+          }
+        }
+
+        // Fetch signed URL for payment screenshot if exists
+        if (booking.payment_screenshot_url) {
+          const screenshotPath = booking.payment_screenshot_url.split('/').pop();
+          const screenshotFolder = booking.payment_screenshot_url.includes('payment_screenshot') ? 'payment_screenshot/' : '';
+          const fullScreenshotPath = screenshotFolder + screenshotPath;
+
+          const screenshotResponse = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(fullScreenshotPath)}`);
+          const screenshotData = await screenshotResponse.json();
+
+          if (screenshotData.success) {
+            setPaymentScreenshotSignedUrl(screenshotData.signedUrl);
+          } else {
+            setPaymentScreenshotSignedUrl(booking.payment_screenshot_url);
+          }
+        }
       } catch (error) {
         console.error('Error fetching signed URLs:', error);
         // Fallback to original URLs
         if (booking.govt_id_image_url) setGovtIdSignedUrl(booking.govt_id_image_url);
         if (booking.bank_id_image_url) setBankIdSignedUrl(booking.bank_id_image_url);
+        if (booking.guest_id_image_url) setGuestIdSignedUrl(booking.guest_id_image_url);
+        if (booking.payment_screenshot_url) setPaymentScreenshotSignedUrl(booking.payment_screenshot_url);
       } finally {
         setLoadingImages(false);
       }
@@ -118,7 +154,7 @@ export function BookingDetailsModal({
   };
 
   const guestDetails: GuestDetail[] = booking.guest_details || [];
-  const hasDocuments = booking.govt_id_image_url || booking.bank_id_image_url;
+  const hasDocuments = booking.govt_id_image_url || booking.bank_id_image_url || booking.guest_id_image_url || booking.payment_screenshot_url;
 
   return (
     <>
@@ -354,6 +390,104 @@ export function BookingDetailsModal({
                               </div>
                             </div>
                           )}
+
+                          {/* Guest ID for booking for someone else */}
+                          {booking.guest_id_image_url && (
+                            <div className="border border-gray-200 rounded-lg p-4">
+                              <p className="text-sm font-medium text-gray-900 mb-2">
+                                Guest ID (Booking for Someone Else)
+                              </p>
+                              {booking.guest_id_number && (
+                                <p className="text-xs text-gray-600 mb-2">
+                                  Aadhaar: <span className="font-mono">{booking.guest_id_number}</span>
+                                </p>
+                              )}
+                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
+                                <img
+                                  src={guestIdSignedUrl || booking.guest_id_image_url}
+                                  alt="Guest ID"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    openImageViewer(
+                                      guestIdSignedUrl || booking.guest_id_image_url,
+                                      "Guest ID"
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  <Eye size={16} weight="bold" />
+                                  View
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    downloadDocument(
+                                      guestIdSignedUrl || booking.guest_id_image_url,
+                                      `guest_id_${booking.booking_number}.jpg`
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                                >
+                                  <Download size={16} weight="bold" />
+                                  Download
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </section>
+                  )}
+
+                  {/* Payment Screenshot */}
+                  {booking.payment_screenshot_url && (
+                    <section>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Payment Screenshot
+                      </h3>
+                      {loadingImages ? (
+                        <div className="p-8 text-center">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+                          <p className="text-sm text-gray-600 mt-2">Loading screenshot...</p>
+                        </div>
+                      ) : (
+                        <div className="border border-green-200 rounded-lg p-4 bg-green-50">
+                          <div className="relative aspect-video bg-white rounded overflow-hidden mb-3 border border-gray-200">
+                            <img
+                              src={paymentScreenshotSignedUrl || booking.payment_screenshot_url}
+                              alt="Payment Screenshot"
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                openImageViewer(
+                                  paymentScreenshotSignedUrl || booking.payment_screenshot_url,
+                                  "Payment Screenshot"
+                                )
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              <Eye size={16} weight="bold" />
+                              View
+                            </button>
+                            <button
+                              onClick={() =>
+                                downloadDocument(
+                                  paymentScreenshotSignedUrl || booking.payment_screenshot_url,
+                                  `payment_screenshot_${booking.booking_number}.jpg`
+                                )
+                              }
+                              className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                            >
+                              <Download size={16} weight="bold" />
+                              Download
+                            </button>
+                          </div>
                         </div>
                       )}
                     </section>

@@ -34,7 +34,7 @@ export async function POST(
         }
 
         const body = await request.json();
-        const { action, transaction_id } = body;
+        const { action, transaction_id, payment_screenshot_url } = body;
 
         if (action !== 'mark_paid') {
             return NextResponse.json(
@@ -69,12 +69,19 @@ export async function POST(
         }
 
         // Update payment status to verification_pending (waiting for admin verification)
+        const updateData: any = {
+            payment_status: 'verification_pending',
+            updated_at: new Date().toISOString(),
+        };
+
+        // Add screenshot URL if provided
+        if (payment_screenshot_url) {
+            updateData.payment_screenshot_url = payment_screenshot_url;
+        }
+
         const { error: updateError } = await supabaseAdmin
             .from('bookings')
-            .update({
-                payment_status: 'verification_pending',
-                updated_at: new Date().toISOString(),
-            })
+            .update(updateData)
             .eq('id', bookingId);
 
         if (updateError) {

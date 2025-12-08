@@ -45,10 +45,43 @@ export default function PaymentsPage() {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [screenshotSignedUrl, setScreenshotSignedUrl] = useState<string>("");
+  const [loadingScreenshot, setLoadingScreenshot] = useState(false);
 
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  // Fetch signed URL when modal opens
+  useEffect(() => {
+    const fetchScreenshotUrl = async () => {
+      if (!isModalOpen || !selectedBooking?.payment_screenshot_url) {
+        setScreenshotSignedUrl("");
+        return;
+      }
+
+      setLoadingScreenshot(true);
+      try {
+        const screenshotPath = selectedBooking.payment_screenshot_url;
+        const response = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(screenshotPath)}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setScreenshotSignedUrl(data.signedUrl);
+        } else {
+          // Fallback to original URL
+          setScreenshotSignedUrl(selectedBooking.payment_screenshot_url);
+        }
+      } catch (error) {
+        console.error("Error fetching screenshot URL:", error);
+        setScreenshotSignedUrl(selectedBooking.payment_screenshot_url);
+      } finally {
+        setLoadingScreenshot(false);
+      }
+    };
+
+    fetchScreenshotUrl();
+  }, [isModalOpen, selectedBooking]);
 
   const fetchBookings = async () => {
     try {
@@ -90,7 +123,7 @@ export default function PaymentsPage() {
     const totalRevenue = data
       .filter(b => b.payment_status === 'paid' || b.status === 'confirmed' || b.status === 'Confirmed')
       .reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
-      
+
     const pendingPayments = data
       .filter(b => b.payment_status === 'verification_pending')
       .reduce((acc, curr) => acc + (curr.total_amount || 0), 0);
@@ -278,7 +311,7 @@ export default function PaymentsPage() {
           </div>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[900px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -307,13 +340,13 @@ export default function PaymentsPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : filteredBookings.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                     No transactions found matching filter
                   </td>
                 </tr>
@@ -332,14 +365,21 @@ export default function PaymentsPage() {
                       {formatCurrency(booking.total_amount)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={cn(
-                          "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize",
-                          getStatusColor(booking.payment_status)
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize",
+                            getStatusColor(booking.payment_status)
+                          )}
+                        >
+                          {booking.payment_status?.replace('_', ' ') || 'Pending'}
+                        </span>
+                        {booking.payment_screenshot_url && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded bg-green-100 text-green-700 text-xs" title="Screenshot uploaded">
+                            📷
+                          </span>
                         )}
-                      >
-                        {booking.payment_status?.replace('_', ' ') || 'Pending'}
-                      </span>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {formatDate(new Date(booking.created_at))}
@@ -361,24 +401,24 @@ export default function PaymentsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       {booking.payment_status === 'verification_pending' && (
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <button
                             onClick={() => handleValidate(booking.id, 'approve')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 border border-green-200 rounded-lg font-medium transition-colors"
+                            className="p-2 bg-green-100 text-green-700 hover:bg-green-200 rounded-lg transition-colors"
+                            title="Approve Payment"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            Approve
                           </button>
                           <button
                             onClick={() => handleValidate(booking.id, 'reject')}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-lg font-medium transition-colors"
+                            className="p-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+                            title="Reject Payment"
                           >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
-                            Reject
                           </button>
                         </div>
                       )}
@@ -516,6 +556,131 @@ export default function PaymentsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Booking For Info */}
+              {selectedBooking.booking_for && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brown-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Booking Type
+                  </h3>
+                  <div className={`rounded-lg p-4 ${selectedBooking.booking_for === 'self' ? 'bg-green-50 border border-green-200' : 'bg-blue-50 border border-blue-200'}`}>
+                    <span className={`font-medium ${selectedBooking.booking_for === 'self' ? 'text-green-800' : 'text-blue-800'}`}>
+                      {selectedBooking.booking_for === 'self' ? '✓ Booking for Self' : '👥 Booking for Someone Else'}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Guest Details List */}
+              {selectedBooking.guest_details && selectedBooking.guest_details.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brown-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Guest Details ({selectedBooking.guest_details.length})
+                  </h3>
+                  <div className="bg-gray-50 rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-100">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">#</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Name</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Age</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {selectedBooking.guest_details.map((guest: any, idx: number) => (
+                          <tr key={idx}>
+                            <td className="px-4 py-2 text-sm text-gray-600">{idx + 1}</td>
+                            <td className="px-4 py-2 text-sm font-medium text-gray-900">{guest.name}</td>
+                            <td className="px-4 py-2 text-sm text-gray-600">{guest.age} yrs</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Guest ID (for booking for someone else) */}
+              {selectedBooking.booking_for === 'relative' && selectedBooking.guest_id_number && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-brown-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                    </svg>
+                    Guest ID Details
+                  </h3>
+                  <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-600">Guest Aadhaar Number:</span>
+                      <span className="font-mono font-medium text-gray-900">{selectedBooking.guest_id_number}</span>
+                    </div>
+                    {selectedBooking.guest_id_image_url && (
+                      <div className="mt-2 pt-2 border-t border-orange-200">
+                        <span className="text-sm text-orange-700">✓ Guest ID Document uploaded</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Screenshot */}
+              {selectedBooking.payment_screenshot_url && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Payment Screenshot
+                  </h3>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    {loadingScreenshot ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="relative aspect-video bg-white rounded-lg overflow-hidden border border-gray-200 mb-3">
+                          <img
+                            src={screenshotSignedUrl || selectedBooking.payment_screenshot_url}
+                            alt="Payment Screenshot"
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <a
+                            href={screenshotSignedUrl || selectedBooking.payment_screenshot_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View Full
+                          </a>
+                          <a
+                            href={screenshotSignedUrl || selectedBooking.payment_screenshot_url}
+                            download={`payment_${selectedBooking.booking_number}.jpg`}
+                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Download
+                          </a>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Special Requests */}
               {selectedBooking.special_requests && (
