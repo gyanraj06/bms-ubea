@@ -47,7 +47,7 @@ function CheckoutContent() {
   const [isSuccess, setIsSuccess] = useState(false);
 
 
-  const { user: realUser } = useAuth();
+  const { user: realUser, session } = useAuth();
   const user = realUser || { full_name: "Debug User", email: "debug@example.com", phone: "+919876543210", id: "debug-id" };
 
   // Cart Hook
@@ -276,6 +276,9 @@ function CheckoutContent() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
+    // TEMP: Alert to verify new code is deployed
+    alert("NEW CODE V2 - " + new Date().toLocaleTimeString());
+
     // Show processing state
     if (!isProcessing) setIsProcessing(true);
     toast.info("Processing your booking...");
@@ -377,48 +380,22 @@ function CheckoutContent() {
     }, 45000);
 
     try {
-      // Get auth token FIRST
-      console.log("[BOOKING DEBUG] Step 1: Getting auth token...");
-      const tokenStartTime = Date.now();
-      let authToken: string | undefined;
+      // Get auth token from context (already loaded, no hanging)
+      console.log("[BOOKING DEBUG] Step 1: Getting auth token from context...");
+      console.log("[BOOKING DEBUG] Session from context:", session ? "EXISTS" : "NULL");
+      console.log("[BOOKING DEBUG] Session token:", session?.access_token ? "EXISTS" : "NULL");
 
-      try {
-        console.log("[BOOKING DEBUG] Calling supabase.auth.getSession()...");
-        const { data, error } = await supabase.auth.getSession();
-        console.log("[BOOKING DEBUG] getSession completed in", Date.now() - tokenStartTime, "ms");
-        console.log("[BOOKING DEBUG] Session data:", data?.session ? "EXISTS" : "NULL");
-        console.log("[BOOKING DEBUG] Session error:", error || "NONE");
-
-        if (error) {
-          console.log("[BOOKING DEBUG] ❌ Supabase auth error:", error.message);
-          toast.error("Auth error: " + error.message);
-          setIsProcessing(false);
-          clearTimeout(safetyTimeout);
-          return;
-        }
-
-        authToken = data?.session?.access_token;
-        console.log("[BOOKING DEBUG] Token exists:", !!authToken);
-        console.log("[BOOKING DEBUG] User email:", data?.session?.user?.email || "NONE");
-      } catch (e) {
-        console.log("[BOOKING DEBUG] ❌ getSession EXCEPTION:", e);
-        console.log("[BOOKING DEBUG] Error type:", typeof e);
-        console.log("[BOOKING DEBUG] Error message:", (e as Error)?.message);
-        toast.error("Authentication failed: " + (e as Error)?.message);
-        setIsProcessing(false);
-        clearTimeout(safetyTimeout);
-        return;
-      }
+      const authToken = session?.access_token;
 
       if (!authToken) {
-        console.log("[BOOKING DEBUG] ❌ No auth token - user probably not logged in");
-        toast.error("Please login again to continue");
+        console.log("[BOOKING DEBUG] ❌ No auth token in context - user not logged in");
+        toast.error("Please login to continue");
         setIsProcessing(false);
         clearTimeout(safetyTimeout);
         router.push("/login");
         return;
       }
-      console.log("[BOOKING DEBUG] ✅ Auth token ready");
+      console.log("[BOOKING DEBUG] ✅ Auth token ready from context");
 
       // 1. Upload Documents
       let govtIdPath = null;
