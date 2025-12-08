@@ -99,7 +99,7 @@ export function Testimonials() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="bg-tan-light rounded-2xl p-8 hover:shadow-xl transition-all duration-300 flex-shrink-0 w-[calc((100vw-8rem)/3)] max-w-[380px] flex flex-col"
+                  className="bg-tan-light rounded-2xl p-8 hover:shadow-xl transition-all duration-300 flex-shrink-0 w-[85vw] md:w-[calc((100vw-8rem)/3)] max-w-[380px] flex flex-col"
                 >
                   {/* Star Rating */}
                   <div className="flex gap-1 mb-4">
@@ -129,9 +129,8 @@ export function Testimonials() {
             <button
               onClick={() => scroll('left')}
               disabled={!canScrollLeft}
-              className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${
-                !canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${!canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               aria-label="Previous testimonials"
             >
               <CaretLeft size={28} weight="bold" className="text-brown-dark group-hover:text-brown-medium transition-colors" />
@@ -139,9 +138,8 @@ export function Testimonials() {
             <button
               onClick={() => scroll('right')}
               disabled={!canScrollRight}
-              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${
-                !canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 translate-x-20 p-4 bg-white rounded-full shadow-xl hover:shadow-2xl hover:scale-110 transition-all duration-300 group ${!canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               aria-label="Next testimonials"
             >
               <CaretRight size={28} weight="bold" className="text-brown-dark group-hover:text-brown-medium transition-colors" />
@@ -153,9 +151,8 @@ export function Testimonials() {
             <button
               onClick={() => scroll('left')}
               disabled={!canScrollLeft}
-              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${
-                !canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${!canScrollLeft ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               aria-label="Previous testimonials"
             >
               <CaretLeft size={24} weight="bold" className="text-brown-dark" />
@@ -163,9 +160,8 @@ export function Testimonials() {
             <button
               onClick={() => scroll('right')}
               disabled={!canScrollRight}
-              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${
-                !canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
+              className={`p-3 bg-white rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all ${!canScrollRight ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               aria-label="Next testimonials"
             >
               <CaretRight size={24} weight="bold" className="text-brown-dark" />

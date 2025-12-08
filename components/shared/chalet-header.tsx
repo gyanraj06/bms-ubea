@@ -113,15 +113,15 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <img
               src="/logo.png"
               alt="Happy Holidays"
-              className="h-16 w-auto object-contain"
+              className="h-12 sm:h-16 w-auto object-contain"
             />
             <span
               className={cn(
-                "font-serif text-2xl font-semibold transition-colors ml-2",
+                "font-serif text-lg sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap",
                 shouldShowLight ? "text-brown-dark" : "text-white"
               )}
             >
@@ -322,25 +322,88 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
             )}
           </nav>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X
-                size={28}
-                className={shouldShowLight ? "text-brown-dark" : "text-white"}
-                weight="bold"
-              />
-            ) : (
-              <List
-                size={28}
-                className={shouldShowLight ? "text-brown-dark" : "text-white"}
-                weight="bold"
-              />
+          {/* Mobile Right Section - Auth + Hamburger */}
+          <div className="flex items-center gap-2 md:hidden">
+            {/* Mobile Auth/Profile Buttons */}
+            {!loading && (
+              <>
+                {adminUser ? (
+                  <Link
+                    href="/admin/dashboard"
+                    className={cn(
+                      "flex items-center justify-center p-2 rounded-full transition-all",
+                      shouldShowLight
+                        ? "text-amber-700 hover:bg-amber-50"
+                        : "text-amber-300 hover:bg-amber-900/20"
+                    )}
+                    aria-label="Admin Dashboard"
+                  >
+                    <ShieldCheck size={24} weight="fill" />
+                  </Link>
+                ) : user ? (
+                  <>
+                    <Link
+                      href="/booking/checkout"
+                      className={cn(
+                        "flex items-center justify-center p-2 rounded-full transition-all",
+                        shouldShowLight
+                          ? "text-brown-dark hover:bg-gray-100"
+                          : "text-white hover:bg-white/10"
+                      )}
+                      aria-label="Checkout"
+                    >
+                      <ShoppingCart size={22} weight="fill" />
+                    </Link>
+                    <Link
+                      href="/profile"
+                      className={cn(
+                        "flex items-center justify-center p-2 rounded-full transition-all",
+                        shouldShowLight
+                          ? "text-brown-dark hover:bg-gray-100"
+                          : "text-white hover:bg-white/10"
+                      )}
+                      aria-label="Profile"
+                    >
+                      <UserCircle size={24} weight="fill" />
+                    </Link>
+                  </>
+                ) : (
+                  <Link
+                    href={`/login?next=${encodeURIComponent(pathname)}`}
+                    className={cn(
+                      "flex items-center justify-center p-2 rounded-full transition-all",
+                      shouldShowLight
+                        ? "text-gray-600 hover:text-brown-dark hover:bg-gray-100"
+                        : "text-white/80 hover:text-white hover:bg-white/10"
+                    )}
+                    aria-label="Login"
+                  >
+                    <UserCircle size={24} weight="fill" />
+                  </Link>
+                )}
+              </>
             )}
-          </button>
+
+            {/* Mobile Menu Button */}
+            <button
+              className="p-2"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X
+                  size={28}
+                  className={shouldShowLight ? "text-brown-dark" : "text-white"}
+                  weight="bold"
+                />
+              ) : (
+                <List
+                  size={28}
+                  className={shouldShowLight ? "text-brown-dark" : "text-white"}
+                  weight="bold"
+                />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 

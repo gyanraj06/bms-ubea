@@ -1,6 +1,7 @@
 'use client'
 
-import { MapPin } from '@phosphor-icons/react'
+import { useState, useRef } from 'react'
+import { MapPin, CaretLeft, CaretRight } from '@phosphor-icons/react'
 
 const attractions = [
   {
@@ -152,6 +153,107 @@ function DecorativeDots() {
   )
 }
 
+// Mobile Carousel Component
+function MobileCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  const scrollToIndex = (index: number) => {
+    if (carouselRef.current) {
+      const cardWidth = carouselRef.current.offsetWidth * 0.75 + 12 // 75% width + gap
+      carouselRef.current.scrollTo({
+        left: index * cardWidth,
+        behavior: 'smooth'
+      })
+      setCurrentIndex(index)
+    }
+  }
+
+  const handleScroll = () => {
+    if (carouselRef.current) {
+      const cardWidth = carouselRef.current.offsetWidth * 0.75 + 12
+      const scrollPosition = carouselRef.current.scrollLeft
+      const newIndex = Math.round(scrollPosition / cardWidth)
+      if (newIndex !== currentIndex && newIndex >= 0 && newIndex < attractions.length) {
+        setCurrentIndex(newIndex)
+      }
+    }
+  }
+
+  const goToPrev = () => {
+    if (currentIndex > 0) {
+      scrollToIndex(currentIndex - 1)
+    }
+  }
+
+  const goToNext = () => {
+    if (currentIndex < attractions.length - 1) {
+      scrollToIndex(currentIndex + 1)
+    }
+  }
+
+  return (
+    <div className="md:hidden relative">
+      {/* Carousel Container */}
+      <div
+        ref={carouselRef}
+        onScroll={handleScroll}
+        className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-4 px-4 -mx-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {attractions.map((attraction, index) => (
+          <div
+            key={index}
+            className="flex-shrink-0 w-[75%] snap-center h-[200px]"
+          >
+            <AttractionCard {...attraction} />
+          </div>
+        ))}
+      </div>
+
+      {/* Navigation Controls - Below Carousel */}
+      <div className="flex items-center justify-center gap-4 mt-4">
+        {/* Left Arrow */}
+        <button
+          onClick={goToPrev}
+          disabled={currentIndex === 0}
+          className={`p-2 rounded-full bg-white shadow-md transition-all ${currentIndex === 0 ? 'opacity-40 cursor-not-allowed' : 'opacity-100 hover:bg-gray-50 active:scale-95'
+            }`}
+          aria-label="Previous"
+        >
+          <CaretLeft size={20} weight="bold" className="text-[#4a3f35]" />
+        </button>
+
+        {/* Dots Indicator */}
+        <div className="flex gap-2">
+          {attractions.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => scrollToIndex(index)}
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${currentIndex === index
+                ? 'bg-[#4a3f35] w-6'
+                : 'bg-[#4a3f35]/30 hover:bg-[#4a3f35]/50'
+                }`}
+              aria-label={`Go to slide ${index + 1}`}
+            />
+          ))}
+        </div>
+
+        {/* Right Arrow */}
+        <button
+          onClick={goToNext}
+          disabled={currentIndex === attractions.length - 1}
+          className={`p-2 rounded-full bg-white shadow-md transition-all ${currentIndex === attractions.length - 1 ? 'opacity-40 cursor-not-allowed' : 'opacity-100 hover:bg-gray-50 active:scale-95'
+            }`}
+          aria-label="Next"
+        >
+          <CaretRight size={20} weight="bold" className="text-[#4a3f35]" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function AttractionsSlider() {
   return (
     <section className="relative py-20 md:py-28 bg-[#f5f1ed] overflow-hidden">
@@ -237,14 +339,8 @@ export function AttractionsSlider() {
           </div>
         </div>
 
-        {/* Mobile - Simple Stack */}
-        <div className="grid md:hidden grid-cols-1 gap-5 max-w-md mx-auto">
-          {attractions.map((attraction, index) => (
-            <div key={index} className="h-[360px]">
-              <AttractionCard {...attraction} />
-            </div>
-          ))}
-        </div>
+        {/* Mobile - Horizontal Carousel */}
+        <MobileCarousel />
       </div>
     </section>
   )
