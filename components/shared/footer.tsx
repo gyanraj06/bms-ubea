@@ -33,7 +33,7 @@ export function Footer() {
     property_name: "Happy Holidays Guest House",
     address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
     phone: "+91 9926770259",
-    email: "info@happyholidays.com",
+    email: "ubeampcg@gmail.com",
     gst_number: "",
     check_in_time: "14:00",
     check_out_time: "11:00",

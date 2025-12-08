@@ -23,7 +23,7 @@ import {
   Plus,
   Minus,
 } from "@phosphor-icons/react";
-import { toast } from "sonner";
+import { toast, Toaster } from "sonner";
 import { cn, formatDateTime } from "@/lib/utils";
 
 import { isValidPhoneNumber } from "libphonenumber-js";
@@ -277,7 +277,11 @@ function CheckoutContent() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
-    alert(`DEBUG FORM:\nUser: ${user?.email}\nPhone: ${formData.phone}\nGuests (${guestDetails.length}): ${JSON.stringify(guestDetails)}\nAddr: ${formData.city}, ${formData.state}\nID: ${formData.idType} - ${formData.idNumber}\nFile: ${govtIdFile?.name || "MISSING"}\nBookingFor: ${formData.bookingFor}`);
+    console.log(`DEBUG FORM:\nUser: ${user?.email}\nPhone: ${formData.phone}\nGuests (${guestDetails.length}): ${JSON.stringify(guestDetails)}\nAddr: ${formData.city}, ${formData.state}\nID: ${formData.idType} - ${formData.idNumber}\nFile: ${govtIdFile?.name || "MISSING"}\nBookingFor: ${formData.bookingFor}`);
+
+    // Show spinner immediately to give feedback
+    if (!isProcessing) setIsProcessing(true);
+    toast.loading("Validating details...");
 
     console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
 
@@ -296,25 +300,33 @@ function CheckoutContent() {
 
     // Basic validation
     if (guestDetails.some(g => !g.name || !g.age)) {
-      alert("Validation Failed: Please fill all guest details (Name/Age)");
+      console.error("Validation Failed: Please fill all guest details (Name/Age)");
+      toast.dismiss();
+      setIsProcessing(false);
       toast.error("Please fill all guest details");
       return;
     }
 
     if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
-      alert("Validation Failed: Missing Address Details");
+      console.error("Validation Failed: Missing Address Details");
+      toast.dismiss();
+      setIsProcessing(false);
       toast.error("Please fill all address details");
       return;
     }
 
     if (!formData.idType || !formData.idNumber) {
-      alert("Validation Failed: Missing ID Type or Number");
+      console.error("Validation Failed: Missing ID Type or Number");
+      toast.dismiss();
+      setIsProcessing(false);
       toast.error("Please provide ID proof details");
       return;
     }
 
     if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
-      alert("Validation Failed: Aadhaar must be 12 digits");
+      console.error("Validation Failed: Aadhaar must be 12 digits");
+      toast.dismiss();
+      setIsProcessing(false);
       toast.error("Aadhaar Number must be exactly 12 digits");
       return;
     }
@@ -322,12 +334,16 @@ function CheckoutContent() {
     // Guest ID Validation if booking for someone else
     if (formData.bookingFor === 'relative') {
       if (!formData.guestIdNumber || !/^\d{12}$/.test(formData.guestIdNumber)) {
-        alert("Validation Failed: Guest Aadhaar must be 12 digits");
+        console.error("Validation Failed: Guest Aadhaar must be 12 digits");
+        toast.dismiss();
+        setIsProcessing(false);
         toast.error("Guest Aadhaar Number must be exactly 12 digits");
         return;
       }
       if (!guestIdFile) {
-        alert("Validation Failed: Missing Guest ID File Upload");
+        console.error("Validation Failed: Missing Guest ID File Upload");
+        toast.dismiss();
+        setIsProcessing(false);
         toast.error("Please upload Guest Identity Proof");
         return;
       }
@@ -335,7 +351,9 @@ function CheckoutContent() {
 
     // Validate file upload
     if (!govtIdFile) {
-      alert("Validation Failed: Missing Govt ID File Upload");
+      console.error("Validation Failed: Missing Govt ID File Upload");
+      toast.dismiss();
+      setIsProcessing(false);
       toast.error("Please upload your Government ID document");
       return;
     }
@@ -375,7 +393,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Govt ID Uploaded:", govtIdPath);
         } catch (err) {
           console.error("[BookingDebug] Govt ID upload failed", err);
-          alert("Error: Failed to upload Govt ID. " + String(err));
+          console.error("Error: Failed to upload Govt ID. " + String(err));
           toast.error("Failed to upload Govt ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -391,7 +409,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Bank ID Uploaded:", bankIdPath);
         } catch (err) {
           console.error("[BookingDebug] Bank ID upload failed", err);
-          alert("Error: Failed to upload Bank ID. " + String(err));
+          console.error("Error: Failed to upload Bank ID. " + String(err));
           toast.error("Failed to upload Bank ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -407,7 +425,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Guest ID Uploaded:", guestIdPath);
         } catch (err) {
           console.error("[BookingDebug] Guest ID upload failed", err);
-          alert("Error: Failed to upload Guest ID. " + String(err));
+          console.error("Error: Failed to upload Guest ID. " + String(err));
           toast.error("Failed to upload Guest ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -988,7 +1006,7 @@ function CheckoutContent() {
                   try {
                     await handleSubmit(e);
                   } catch (err) {
-                    alert("CRITICAL ERROR IN SUBMIT: " + String(err));
+                    console.error("CRITICAL ERROR IN SUBMIT: " + String(err));
                     console.error(err);
                   }
                 }}
@@ -1002,6 +1020,7 @@ function CheckoutContent() {
       </div>
 
 
+      <Toaster position="top-center" richColors />
       <Footer />
     </main>
   );
