@@ -94,19 +94,15 @@ function CheckoutContent() {
     }
   };
 
-  const uploadDocument = async (file: File, type: 'govt_id' | 'bank_id' | 'guest_id') => {
+  const uploadDocument = async (file: File, type: 'govt_id' | 'bank_id' | 'guest_id', authToken?: string) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('documentType', type);
 
-      // Get session for auth header
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
       const headers: HeadersInit = {};
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
       }
 
       console.log(`[Checkout] Starting upload for ${type}`, { fileSize: file.size, fileName: file.name });
@@ -123,7 +119,7 @@ function CheckoutContent() {
 
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Upload failed');
-      return data.data.filePath; // Store the path
+      return data.data.filePath;
     } catch (error) {
       console.error(`[Checkout] Upload error details for ${type}:`, error);
       throw error;
@@ -281,100 +277,147 @@ function CheckoutContent() {
     if (!isProcessing) setIsProcessing(true);
     toast.info("Processing your booking...");
 
-    console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
+    console.log("=".repeat(50));
+    console.log("[BOOKING DEBUG] Button clicked at:", new Date().toISOString());
+    console.log("[BOOKING DEBUG] Form Data:", JSON.stringify(formData, null, 2));
+    console.log("[BOOKING DEBUG] Guest Details:", JSON.stringify(guestDetails, null, 2));
+    console.log("[BOOKING DEBUG] User:", user?.email, "Phone Verified:", isPhoneVerified);
+    console.log("[BOOKING DEBUG] Files - Govt:", govtIdFile?.name, "Bank:", bankIdFile?.name, "Guest:", guestIdFile?.name);
+    console.log("[BOOKING DEBUG] Selected Rooms:", JSON.stringify(selectedRooms, null, 2));
+    console.log("=".repeat(50));
 
     if (!user) {
-      console.error("Validation failed: No user");
+      console.log("[BOOKING DEBUG] ❌ FAILED: No user logged in");
       setIsProcessing(false);
       toast.error("Please login to book");
       router.push("/login");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ User check passed");
 
     if (!isPhoneVerified) {
-      console.error("Validation failed: Phone not verified");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Phone not verified");
       setIsProcessing(false);
       toast.error("Please verify your phone number");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ Phone verified");
 
     // Basic validation
     if (guestDetails.some(g => !g.name || !g.age)) {
-      console.error("Validation Failed: Please fill all guest details");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Missing guest details");
       setIsProcessing(false);
       toast.error("Please fill all guest details");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ Guest details valid");
 
     if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
-      console.error("Validation Failed: Missing Address Details");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Missing address", { address: formData.address, city: formData.city, state: formData.state, pincode: formData.pincode });
       setIsProcessing(false);
       toast.error("Please fill all address details");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ Address valid");
 
     if (!formData.idType || !formData.idNumber) {
-      console.error("Validation Failed: Missing ID Type or Number");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Missing ID proof");
       setIsProcessing(false);
       toast.error("Please provide ID proof details");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ ID type/number present");
 
     if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
-      console.error("Validation Failed: Aadhaar must be 12 digits");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Invalid Aadhaar format:", formData.idNumber);
       setIsProcessing(false);
       toast.error("Aadhaar Number must be exactly 12 digits");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ ID format valid");
 
     // Guest ID Validation if booking for someone else
     if (formData.bookingFor === 'relative') {
+      console.log("[BOOKING DEBUG] Checking guest ID (booking for relative)...");
       if (!formData.guestIdNumber || !/^\d{12}$/.test(formData.guestIdNumber)) {
-        console.error("Validation Failed: Guest Aadhaar must be 12 digits");
+        console.log("[BOOKING DEBUG] ❌ FAILED: Invalid guest Aadhaar:", formData.guestIdNumber);
         setIsProcessing(false);
         toast.error("Guest Aadhaar Number must be exactly 12 digits");
         return;
       }
       if (!guestIdFile) {
-        console.error("Validation Failed: Missing Guest ID File Upload");
+        console.log("[BOOKING DEBUG] ❌ FAILED: Missing guest ID file");
         setIsProcessing(false);
         toast.error("Please upload Guest Identity Proof");
         return;
       }
+      console.log("[BOOKING DEBUG] ✅ Guest ID valid");
     }
 
     // Validate file upload
     if (!govtIdFile) {
-      console.error("Validation Failed: Missing Govt ID File Upload");
+      console.log("[BOOKING DEBUG] ❌ FAILED: Missing Govt ID file");
       setIsProcessing(false);
       toast.error("Please upload your Government ID document");
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ All validations passed!");
+    console.log("[BOOKING DEBUG] Starting API calls...");
 
     // Safety Timeout to prevent infinite spinner
     const safetyTimeout = setTimeout(() => {
+      console.log("[BOOKING DEBUG] ⏰ TIMEOUT triggered after 45 seconds");
       if (isProcessing) {
-        console.error("Booking timed out");
         setIsProcessing(false);
         toast.error("Request timed out. Please try again.");
       }
-    }, 45000); // 45 seconds timeout
+    }, 45000);
 
     try {
-      // 1. Upload Documents if present
+      // Get auth token FIRST with timeout
+      console.log("[BOOKING DEBUG] Step 1: Getting auth token...");
+      const tokenStartTime = Date.now();
+      let authToken: string | undefined;
+      try {
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Session timeout after 10s")), 10000)
+        );
+        console.log("[BOOKING DEBUG] Waiting for getSession()...");
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        authToken = session?.access_token;
+        console.log("[BOOKING DEBUG] Token obtained in", Date.now() - tokenStartTime, "ms - Token exists:", !!authToken);
+      } catch (e) {
+        console.log("[BOOKING DEBUG] ❌ getSession FAILED:", e);
+        toast.error("Authentication failed. Please refresh and try again.");
+        setIsProcessing(false);
+        clearTimeout(safetyTimeout);
+        return;
+      }
+
+      if (!authToken) {
+        console.log("[BOOKING DEBUG] ❌ No auth token received");
+        toast.error("Session expired, please login again");
+        setIsProcessing(false);
+        clearTimeout(safetyTimeout);
+        return;
+      }
+      console.log("[BOOKING DEBUG] ✅ Auth token ready");
+
+      // 1. Upload Documents
       let govtIdPath = null;
       let bankIdPath = null;
       let guestIdPath = null;
 
       if (govtIdFile) {
         try {
+          console.log("[BOOKING DEBUG] Step 2: Uploading Govt ID...", govtIdFile.name, govtIdFile.size, "bytes");
           toast.info("Uploading Government ID...");
-          console.log("[BookingDebug] Uploading Govt ID...");
-          govtIdPath = await uploadDocument(govtIdFile, 'govt_id');
-          console.log("[BookingDebug] Govt ID Uploaded:", govtIdPath);
+          const uploadStart = Date.now();
+          govtIdPath = await uploadDocument(govtIdFile, 'govt_id', authToken);
+          console.log("[BOOKING DEBUG] ✅ Govt ID uploaded in", Date.now() - uploadStart, "ms - Path:", govtIdPath);
         } catch (err) {
-          console.error("[BookingDebug] Govt ID upload failed", err);
-          console.error("Error: Failed to upload Govt ID. " + String(err));
+          console.log("[BOOKING DEBUG] ❌ Govt ID upload FAILED:", err);
           toast.error("Failed to upload Govt ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -384,13 +427,13 @@ function CheckoutContent() {
 
       if (bankIdFile) {
         try {
+          console.log("[BOOKING DEBUG] Step 3: Uploading Bank ID...", bankIdFile.name, bankIdFile.size, "bytes");
           toast.info("Uploading Bank ID...");
-          console.log("[BookingDebug] Uploading Bank ID...");
-          bankIdPath = await uploadDocument(bankIdFile, 'bank_id');
-          console.log("[BookingDebug] Bank ID Uploaded:", bankIdPath);
+          const uploadStart = Date.now();
+          bankIdPath = await uploadDocument(bankIdFile, 'bank_id', authToken);
+          console.log("[BOOKING DEBUG] ✅ Bank ID uploaded in", Date.now() - uploadStart, "ms - Path:", bankIdPath);
         } catch (err) {
-          console.error("[BookingDebug] Bank ID upload failed", err);
-          console.error("Error: Failed to upload Bank ID. " + String(err));
+          console.log("[BOOKING DEBUG] ❌ Bank ID upload FAILED:", err);
           toast.error("Failed to upload Bank ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -400,41 +443,18 @@ function CheckoutContent() {
 
       if (formData.bookingFor === 'relative' && guestIdFile) {
         try {
+          console.log("[BOOKING DEBUG] Step 4: Uploading Guest ID...", guestIdFile.name, guestIdFile.size, "bytes");
           toast.info("Uploading Guest ID...");
-          console.log("[BookingDebug] Uploading Guest ID...");
-          guestIdPath = await uploadDocument(guestIdFile, 'guest_id');
-          console.log("[BookingDebug] Guest ID Uploaded:", guestIdPath);
+          const uploadStart = Date.now();
+          guestIdPath = await uploadDocument(guestIdFile, 'guest_id', authToken);
+          console.log("[BOOKING DEBUG] ✅ Guest ID uploaded in", Date.now() - uploadStart, "ms - Path:", guestIdPath);
         } catch (err) {
-          console.error("[BookingDebug] Guest ID upload failed", err);
-          console.error("Error: Failed to upload Guest ID. " + String(err));
+          console.log("[BOOKING DEBUG] ❌ Guest ID upload FAILED:", err);
           toast.error("Failed to upload Guest ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
           return;
         }
-      }
-
-      // Get session with timeout
-      console.log("Getting session...");
-      let token: string | undefined;
-      try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Session timeout")), 10000));
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        token = session?.access_token;
-      } catch (e) {
-        console.error("Session retrieval failed:", e);
-        toast.dismiss();
-        toast.error("Authentication check failed. Please refresh.");
-        setIsProcessing(false);
-        return;
-      }
-
-      if (!token) {
-        toast.dismiss();
-        toast.error("Session expired, please login again");
-        setIsProcessing(false);
-        return;
       }
 
       // Prepare bookings payload
@@ -443,14 +463,22 @@ function CheckoutContent() {
         quantity: room.quantity,
       }));
 
-      console.log("[BookingDebug] POSTing to /api/bookings...", bookingsPayload);
+      console.log("[BOOKING DEBUG] Step 5: Creating booking...");
+      console.log("[BOOKING DEBUG] Payload:", JSON.stringify({
+        check_in: checkInDate?.toISOString(),
+        check_out: checkOutDate?.toISOString(),
+        bookings: bookingsPayload,
+        num_guests: guestDetails.length,
+        govtIdPath, bankIdPath, guestIdPath
+      }, null, 2));
       toast.info("Finalizing booking details...");
 
+      const apiStartTime = Date.now();
       const response = await fetch("/api/bookings", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           check_in: checkInDate?.toISOString(),
@@ -460,21 +488,17 @@ function CheckoutContent() {
           special_requests: formData.specialRequests || '',
           booking_for: formData.bookingFor || 'self',
           num_guests: parseInt(String(guestDetails.length)) || 1,
-          // Address
           address: formData.address || '',
           city: formData.city || '',
           state: formData.state || '',
           pincode: formData.pincode || '',
-          // ID Proof
           id_type: formData.idType || '',
           id_number: formData.idNumber || '',
           govt_id_image_url: govtIdPath || null,
-          // Bank Details
           bank_id_number: formData.bankIdNumber || null,
           bank_id_image_url: bankIdPath || null,
           guest_id_number: formData.guestIdNumber || null,
           guest_id_image_url: guestIdPath || null,
-          // Extras - Removed as requested
           needs_cot: false,
           num_cots: 0,
           needs_extra_bed: false,
@@ -482,30 +506,30 @@ function CheckoutContent() {
         }),
       });
 
-      console.log("[BookingDebug] API Response Status:", response.status);
+      console.log("[BOOKING DEBUG] API responded in", Date.now() - apiStartTime, "ms - Status:", response.status);
       const data = await response.json();
-      console.log("[BookingDebug] API Response Data:", data);
+      console.log("[BOOKING DEBUG] API Response:", JSON.stringify(data, null, 2));
 
       clearTimeout(safetyTimeout);
 
       if (data.success) {
-        console.log("[BookingDebug] SUCCESS. Redirecting...");
+        console.log("[BOOKING DEBUG] ✅ SUCCESS! Booking IDs:", data.booking_ids);
+        console.log("[BOOKING DEBUG] Redirecting to payment page...");
         setIsSuccess(true);
         toast.success("Booking initiated! Please complete payment.");
         clearCart(); // Clear cart after successful booking
         router.push(`/booking/payment/${data.booking_ids[0]}`);
       } else {
-        console.error("[BookingDebug] API Returned Error:", data.error);
-        console.error("[BookingDebug] API Returned Error:", data.error);
+        console.log("[BOOKING DEBUG] ❌ API returned error:", data.error);
+        console.log("[BOOKING DEBUG] Full error response:", JSON.stringify(data, null, 2));
         toast.dismiss();
-        // alert removed
         toast.error(data.error || "Booking failed");
         setIsProcessing(false);
       }
     } catch (error) {
-      console.error("[BookingDebug] Exception:", error);
+      console.log("[BOOKING DEBUG] ❌ EXCEPTION caught:", error);
+      console.log("[BOOKING DEBUG] Error stack:", (error as Error)?.stack);
       toast.dismiss();
-      // alert removed
       toast.error("An error occurred");
       setIsProcessing(false);
     }
