@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering - required for auth and searchParams on Vercel
+export const dynamic = 'force-dynamic';
+
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -374,32 +377,45 @@ function CheckoutContent() {
     }, 45000);
 
     try {
-      // Get auth token FIRST with timeout
+      // Get auth token FIRST
       console.log("[BOOKING DEBUG] Step 1: Getting auth token...");
       const tokenStartTime = Date.now();
       let authToken: string | undefined;
+
       try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Session timeout after 10s")), 10000)
-        );
-        console.log("[BOOKING DEBUG] Waiting for getSession()...");
-        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        authToken = session?.access_token;
-        console.log("[BOOKING DEBUG] Token obtained in", Date.now() - tokenStartTime, "ms - Token exists:", !!authToken);
+        console.log("[BOOKING DEBUG] Calling supabase.auth.getSession()...");
+        const { data, error } = await supabase.auth.getSession();
+        console.log("[BOOKING DEBUG] getSession completed in", Date.now() - tokenStartTime, "ms");
+        console.log("[BOOKING DEBUG] Session data:", data?.session ? "EXISTS" : "NULL");
+        console.log("[BOOKING DEBUG] Session error:", error || "NONE");
+
+        if (error) {
+          console.log("[BOOKING DEBUG] ❌ Supabase auth error:", error.message);
+          toast.error("Auth error: " + error.message);
+          setIsProcessing(false);
+          clearTimeout(safetyTimeout);
+          return;
+        }
+
+        authToken = data?.session?.access_token;
+        console.log("[BOOKING DEBUG] Token exists:", !!authToken);
+        console.log("[BOOKING DEBUG] User email:", data?.session?.user?.email || "NONE");
       } catch (e) {
-        console.log("[BOOKING DEBUG] ❌ getSession FAILED:", e);
-        toast.error("Authentication failed. Please refresh and try again.");
+        console.log("[BOOKING DEBUG] ❌ getSession EXCEPTION:", e);
+        console.log("[BOOKING DEBUG] Error type:", typeof e);
+        console.log("[BOOKING DEBUG] Error message:", (e as Error)?.message);
+        toast.error("Authentication failed: " + (e as Error)?.message);
         setIsProcessing(false);
         clearTimeout(safetyTimeout);
         return;
       }
 
       if (!authToken) {
-        console.log("[BOOKING DEBUG] ❌ No auth token received");
-        toast.error("Session expired, please login again");
+        console.log("[BOOKING DEBUG] ❌ No auth token - user probably not logged in");
+        toast.error("Please login again to continue");
         setIsProcessing(false);
         clearTimeout(safetyTimeout);
+        router.push("/login");
         return;
       }
       console.log("[BOOKING DEBUG] ✅ Auth token ready");
