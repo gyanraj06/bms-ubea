@@ -23,7 +23,7 @@ import {
   Plus,
   Minus,
 } from "@phosphor-icons/react";
-import { toast, Toaster } from "sonner";
+import { toast } from "sonner";
 import { cn, formatDateTime } from "@/lib/utils";
 
 import { isValidPhoneNumber } from "libphonenumber-js";
@@ -277,16 +277,15 @@ function CheckoutContent() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
-    console.log(`DEBUG FORM:\nUser: ${user?.email}\nPhone: ${formData.phone}\nGuests (${guestDetails.length}): ${JSON.stringify(guestDetails)}\nAddr: ${formData.city}, ${formData.state}\nID: ${formData.idType} - ${formData.idNumber}\nFile: ${govtIdFile?.name || "MISSING"}\nBookingFor: ${formData.bookingFor}`);
-
-    // Show spinner immediately to give feedback
+    // Show processing state
     if (!isProcessing) setIsProcessing(true);
-    toast.loading("Validating details...");
+    toast.info("Processing your booking...");
 
     console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
 
     if (!user) {
       console.error("Validation failed: No user");
+      setIsProcessing(false);
       toast.error("Please login to book");
       router.push("/login");
       return;
@@ -294,14 +293,14 @@ function CheckoutContent() {
 
     if (!isPhoneVerified) {
       console.error("Validation failed: Phone not verified");
+      setIsProcessing(false);
       toast.error("Please verify your phone number");
       return;
     }
 
     // Basic validation
     if (guestDetails.some(g => !g.name || !g.age)) {
-      console.error("Validation Failed: Please fill all guest details (Name/Age)");
-      toast.dismiss();
+      console.error("Validation Failed: Please fill all guest details");
       setIsProcessing(false);
       toast.error("Please fill all guest details");
       return;
@@ -309,7 +308,6 @@ function CheckoutContent() {
 
     if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
       console.error("Validation Failed: Missing Address Details");
-      toast.dismiss();
       setIsProcessing(false);
       toast.error("Please fill all address details");
       return;
@@ -317,7 +315,6 @@ function CheckoutContent() {
 
     if (!formData.idType || !formData.idNumber) {
       console.error("Validation Failed: Missing ID Type or Number");
-      toast.dismiss();
       setIsProcessing(false);
       toast.error("Please provide ID proof details");
       return;
@@ -325,7 +322,6 @@ function CheckoutContent() {
 
     if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
       console.error("Validation Failed: Aadhaar must be 12 digits");
-      toast.dismiss();
       setIsProcessing(false);
       toast.error("Aadhaar Number must be exactly 12 digits");
       return;
@@ -335,14 +331,12 @@ function CheckoutContent() {
     if (formData.bookingFor === 'relative') {
       if (!formData.guestIdNumber || !/^\d{12}$/.test(formData.guestIdNumber)) {
         console.error("Validation Failed: Guest Aadhaar must be 12 digits");
-        toast.dismiss();
         setIsProcessing(false);
         toast.error("Guest Aadhaar Number must be exactly 12 digits");
         return;
       }
       if (!guestIdFile) {
         console.error("Validation Failed: Missing Guest ID File Upload");
-        toast.dismiss();
         setIsProcessing(false);
         toast.error("Please upload Guest Identity Proof");
         return;
@@ -352,23 +346,10 @@ function CheckoutContent() {
     // Validate file upload
     if (!govtIdFile) {
       console.error("Validation Failed: Missing Govt ID File Upload");
-      toast.dismiss();
       setIsProcessing(false);
       toast.error("Please upload your Government ID document");
       return;
     }
-
-    // Get session for API call
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
-
-    if (!token) {
-      toast.error("Session expired, please login again");
-      return;
-    }
-
-    setIsProcessing(true);
-    console.log("[BookingDebug] Process Starting...");
 
     // Safety Timeout to prevent infinite spinner
     const safetyTimeout = setTimeout(() => {
@@ -433,6 +414,29 @@ function CheckoutContent() {
         }
       }
 
+      // Get session with timeout
+      console.log("Getting session...");
+      let token: string | undefined;
+      try {
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Session timeout")), 10000));
+        const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        token = session?.access_token;
+      } catch (e) {
+        console.error("Session retrieval failed:", e);
+        toast.dismiss();
+        toast.error("Authentication check failed. Please refresh.");
+        setIsProcessing(false);
+        return;
+      }
+
+      if (!token) {
+        toast.dismiss();
+        toast.error("Session expired, please login again");
+        setIsProcessing(false);
+        return;
+      }
+
       // Prepare bookings payload
       const bookingsPayload = selectedRooms.map(room => ({
         room_id: room.roomId,
@@ -492,13 +496,16 @@ function CheckoutContent() {
         router.push(`/booking/payment/${data.booking_ids[0]}`);
       } else {
         console.error("[BookingDebug] API Returned Error:", data.error);
-        alert("Booking Failed: " + (data.error || "Unknown Error"));
+        console.error("[BookingDebug] API Returned Error:", data.error);
+        toast.dismiss();
+        // alert removed
         toast.error(data.error || "Booking failed");
         setIsProcessing(false);
       }
     } catch (error) {
       console.error("[BookingDebug] Exception:", error);
-      alert("Booking Error Exception: " + String(error));
+      toast.dismiss();
+      // alert removed
       toast.error("An error occurred");
       setIsProcessing(false);
     }
@@ -1020,7 +1027,6 @@ function CheckoutContent() {
       </div>
 
 
-      <Toaster position="top-center" richColors />
       <Footer />
     </main>
   );
