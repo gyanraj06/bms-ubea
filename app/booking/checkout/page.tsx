@@ -276,30 +276,15 @@ function CheckoutContent() {
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
-    // TEMP: Alert to verify new code is deployed
-    alert("NEW CODE V2 - " + new Date().toLocaleTimeString());
-
-    // Show processing state
     if (!isProcessing) setIsProcessing(true);
     toast.info("Processing your booking...");
 
-    console.log("=".repeat(50));
-    console.log("[BOOKING DEBUG] Button clicked at:", new Date().toISOString());
-    console.log("[BOOKING DEBUG] Form Data:", JSON.stringify(formData, null, 2));
-    console.log("[BOOKING DEBUG] Guest Details:", JSON.stringify(guestDetails, null, 2));
-    console.log("[BOOKING DEBUG] User:", user?.email, "Phone Verified:", isPhoneVerified);
-    console.log("[BOOKING DEBUG] Files - Govt:", govtIdFile?.name, "Bank:", bankIdFile?.name, "Guest:", guestIdFile?.name);
-    console.log("[BOOKING DEBUG] Selected Rooms:", JSON.stringify(selectedRooms, null, 2));
-    console.log("=".repeat(50));
-
     if (!user) {
-      console.log("[BOOKING DEBUG] ❌ FAILED: No user logged in");
       setIsProcessing(false);
       toast.error("Please login to book");
       router.push("/login");
       return;
     }
-    console.log("[BOOKING DEBUG] ✅ User check passed");
 
     if (!isPhoneVerified) {
       console.log("[BOOKING DEBUG] ❌ FAILED: Phone not verified");

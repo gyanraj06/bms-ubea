@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/next";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -52,6 +53,7 @@ export default function RootLayout({
               }
             }}
           />
+          <Analytics />
         </Providers>
       </body>
     </html>
