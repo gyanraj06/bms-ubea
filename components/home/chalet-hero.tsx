@@ -20,10 +20,10 @@ export function ChaletHero() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('/hero.png')`,
+            backgroundImage: `url('/hero.jpg')`,
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/60" />
       </div>
 
       {/* Content - Left Aligned */}

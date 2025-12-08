@@ -67,6 +67,7 @@ function CheckoutContent() {
     bookingFor: "self" as "self" | "relative",
     bankIdNumber: "",
     bankAccountName: "",
+    guestIdNumber: "",
   });
 
   // Guest Details
@@ -81,17 +82,19 @@ function CheckoutContent() {
   // New State for Files & Extras
   const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
   const [bankIdFile, setBankIdFile] = useState<File | null>(null);
+  const [guestIdFile, setGuestIdFile] = useState<File | null>(null);
 
 
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'govt' | 'bank') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'govt' | 'bank' | 'guest') => {
     if (e.target.files && e.target.files[0]) {
       if (type === 'govt') setGovtIdFile(e.target.files[0]);
-      else setBankIdFile(e.target.files[0]);
+      else if (type === 'bank') setBankIdFile(e.target.files[0]);
+      else if (type === 'guest') setGuestIdFile(e.target.files[0]);
     }
   };
 
-  const uploadDocument = async (file: File, type: 'govt_id' | 'bank_id') => {
+  const uploadDocument = async (file: File, type: 'govt_id' | 'bank_id' | 'guest_id') => {
     try {
       const formData = new FormData();
       formData.append('file', file);
@@ -273,6 +276,7 @@ function CheckoutContent() {
 
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
+
     console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
 
     if (!user) {
@@ -290,27 +294,46 @@ function CheckoutContent() {
 
     // Basic validation
     if (guestDetails.some(g => !g.name || !g.age)) {
+      alert("Validation Failed: Please fill all guest details (Name/Age)");
       toast.error("Please fill all guest details");
       return;
     }
 
     if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
+      alert("Validation Failed: Missing Address Details");
       toast.error("Please fill all address details");
       return;
     }
 
     if (!formData.idType || !formData.idNumber) {
+      alert("Validation Failed: Missing ID Type or Number");
       toast.error("Please provide ID proof details");
       return;
     }
 
     if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
+      alert("Validation Failed: Aadhaar must be 12 digits");
       toast.error("Aadhaar Number must be exactly 12 digits");
       return;
     }
 
+    // Guest ID Validation if booking for someone else
+    if (formData.bookingFor === 'relative') {
+      if (!formData.guestIdNumber || !/^\d{12}$/.test(formData.guestIdNumber)) {
+        alert("Validation Failed: Guest Aadhaar must be 12 digits");
+        toast.error("Guest Aadhaar Number must be exactly 12 digits");
+        return;
+      }
+      if (!guestIdFile) {
+        alert("Validation Failed: Missing Guest ID File Upload");
+        toast.error("Please upload Guest Identity Proof");
+        return;
+      }
+    }
+
     // Validate file upload
     if (!govtIdFile) {
+      alert("Validation Failed: Missing Govt ID File Upload");
       toast.error("Please upload your Government ID document");
       return;
     }
@@ -325,28 +348,64 @@ function CheckoutContent() {
     }
 
     setIsProcessing(true);
+    console.log("[BookingDebug] Process Starting...");
+
+    // Safety Timeout to prevent infinite spinner
+    const safetyTimeout = setTimeout(() => {
+      if (isProcessing) {
+        console.error("Booking timed out");
+        setIsProcessing(false);
+        toast.error("Request timed out. Please try again.");
+      }
+    }, 45000); // 45 seconds timeout
 
     try {
       // 1. Upload Documents if present
       let govtIdPath = null;
       let bankIdPath = null;
+      let guestIdPath = null;
 
       if (govtIdFile) {
         try {
+          toast.info("Uploading Government ID...");
+          console.log("[BookingDebug] Uploading Govt ID...");
           govtIdPath = await uploadDocument(govtIdFile, 'govt_id');
+          console.log("[BookingDebug] Govt ID Uploaded:", govtIdPath);
         } catch (err) {
+          console.error("[BookingDebug] Govt ID upload failed", err);
           toast.error("Failed to upload Govt ID");
           setIsProcessing(false);
+          clearTimeout(safetyTimeout);
           return;
         }
       }
 
       if (bankIdFile) {
         try {
+          toast.info("Uploading Bank ID...");
+          console.log("[BookingDebug] Uploading Bank ID...");
           bankIdPath = await uploadDocument(bankIdFile, 'bank_id');
+          console.log("[BookingDebug] Bank ID Uploaded:", bankIdPath);
         } catch (err) {
+          console.error("[BookingDebug] Bank ID upload failed", err);
           toast.error("Failed to upload Bank ID");
           setIsProcessing(false);
+          clearTimeout(safetyTimeout);
+          return;
+        }
+      }
+
+      if (formData.bookingFor === 'relative' && guestIdFile) {
+        try {
+          toast.info("Uploading Guest ID...");
+          console.log("[BookingDebug] Uploading Guest ID...");
+          guestIdPath = await uploadDocument(guestIdFile, 'guest_id');
+          console.log("[BookingDebug] Guest ID Uploaded:", guestIdPath);
+        } catch (err) {
+          console.error("[BookingDebug] Guest ID upload failed", err);
+          toast.error("Failed to upload Guest ID");
+          setIsProcessing(false);
+          clearTimeout(safetyTimeout);
           return;
         }
       }
@@ -356,6 +415,9 @@ function CheckoutContent() {
         room_id: room.roomId,
         quantity: room.quantity,
       }));
+
+      console.log("[BookingDebug] POSTing to /api/bookings...", bookingsPayload);
+      toast.info("Finalizing booking details...");
 
       const response = await fetch("/api/bookings", {
         method: "POST",
@@ -383,6 +445,8 @@ function CheckoutContent() {
           // Bank Details
           bank_id_number: formData.bankIdNumber || null,
           bank_id_image_url: bankIdPath || null,
+          guest_id_number: formData.guestIdNumber || null,
+          guest_id_image_url: guestIdPath || null,
           // Extras - Removed as requested
           needs_cot: false,
           num_cots: 0,
@@ -391,22 +455,31 @@ function CheckoutContent() {
         }),
       });
 
+      console.log("[BookingDebug] API Response Status:", response.status);
       const data = await response.json();
+      console.log("[BookingDebug] API Response Data:", data);
+
+      clearTimeout(safetyTimeout);
 
       if (data.success) {
+        console.log("[BookingDebug] SUCCESS. Redirecting...");
         setIsSuccess(true);
         toast.success("Booking initiated! Please complete payment.");
         clearCart(); // Clear cart after successful booking
         router.push(`/booking/payment/${data.booking_ids[0]}`);
       } else {
+        console.error("[BookingDebug] API Returned Error:", data.error);
+        alert("Booking Failed: " + (data.error || "Unknown Error"));
         toast.error(data.error || "Booking failed");
+        setIsProcessing(false);
       }
     } catch (error) {
-      console.error("Booking error:", error);
+      console.error("[BookingDebug] Exception:", error);
+      alert("Booking Error Exception: " + String(error));
       toast.error("An error occurred");
-    } finally {
       setIsProcessing(false);
     }
+    // finally block removed as setIsProcessing is handled in each path now to respect success state
   };
 
   if (!isLoaded) {
@@ -652,9 +725,48 @@ function CheckoutContent() {
                     </div>
                   </div>
                 </div>
+
+                {/* Guest Identity Proof Section (Only if Booking for Someone Else) */}
+                {formData.bookingFor === 'relative' && (
+                  <div className="pt-4 border-t border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Users size={20} /> Identity Proof for Guest (Aadhaar Only)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="guestIdNumber">Guest Aadhaar Number *</Label>
+                        <input
+                          type="text"
+                          name="guestIdNumber"
+                          value={formData.guestIdNumber}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^\d+$/.test(val)) {
+                              handleInputChange(e);
+                            }
+                          }}
+                          className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none bg-yellow-50"
+                          maxLength={12}
+                          placeholder="12 digit Aadhaar Number"
+                        />
+                      </div>
+                      <div>
+                        <Label>Upload Guest Aadhaar (Image/PDF) *</Label>
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          onChange={(e) => handleFileChange(e, 'guest')}
+                          className="mt-1 w-full p-2 border border-blue-200 bg-blue-50 rounded-lg"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Please upload a clear copy of Guest's Aadhaar.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard size={20} /> Bank ID Number
+                    <CreditCard size={20} /> Bank Employee ID
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -864,10 +976,16 @@ function CheckoutContent() {
 
               <div
                 role="button"
-                onClick={(e) => {
-                  alert(`Debug Data: User=${!!user}, PhoneVerified=${isPhoneVerified}, Processing=${isProcessing}. Click OK to proceed.`);
+                onClick={async (e) => {
                   console.log("Button clicked from UI", { isProcessing, hasUser: !!user });
-                  if (!isProcessing) handleSubmit(e);
+                  if (isProcessing) return;
+
+                  try {
+                    await handleSubmit(e);
+                  } catch (err) {
+                    alert("CRITICAL ERROR IN SUBMIT: " + String(err));
+                    console.error(err);
+                  }
                 }}
                 className={`w-full h-12 bg-brown-dark text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer relative z-50 pointer-events-auto ${isProcessing ? 'opacity-50' : 'hover:bg-brown-medium'}`}
               >

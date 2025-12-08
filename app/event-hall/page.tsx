@@ -24,17 +24,18 @@ export default function EventHallPage() {
         <main className="min-h-screen bg-gray-50">
             <ChaletHeader />
 
+
             {/* Hero Section */}
             <div className="relative h-[60vh] flex items-center justify-center overflow-hidden">
                 <div
                     className="absolute inset-0"
                     style={{
-                        backgroundImage: `url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098')`, // Placeholder hall image
+                        backgroundImage: `url('/hall header.png')`,
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}
                 />
-                <div className="absolute inset-0 bg-black/50" />
+                <div className="absolute inset-0 bg-black/30" />
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -100,24 +101,30 @@ export default function EventHallPage() {
                 </div>
             </div>
 
-            {/* Gallery Section (Placeholders) */}
+            {/* Gallery Section */}
             <div className="bg-white py-20">
                 <div className="container mx-auto px-4">
                     <h2 className="font-serif text-3xl font-bold text-gray-900 mb-12 text-center">
                         Gallery
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[1, 2, 3].map((i) => (
+                        {[
+                            { src: "/hall.png", label: "Spacious Hall" },
+                            { src: "/kitchen.png", label: "Equipped Kitchen" },
+                            { src: "/Garden.png", label: "Lush Garden" }
+                        ].map((image, i) => (
                             <div key={i} className="aspect-video bg-gray-200 rounded-xl overflow-hidden relative group">
-                                <div className="absolute inset-0 flex items-center justify-center text-gray-400 font-medium">
-                                    Image Placeholder {i}
-                                </div>
                                 <div
-                                    className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-60 transition-opacity"
+                                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                                     style={{
-                                        backgroundImage: `url('https://images.unsplash.com/photo-1519167758481-83f550bb49b3?q=80&w=2098')`,
+                                        backgroundImage: `url('${image.src}')`,
                                     }}
                                 />
+                                <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-end p-6">
+                                    <p className="text-white font-semibold text-lg translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                                        {image.label}
+                                    </p>
+                                </div>
                             </div>
                         ))}
                     </div>

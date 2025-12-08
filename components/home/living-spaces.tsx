@@ -6,22 +6,22 @@ import { CaretLeft, CaretRight } from '@phosphor-icons/react'
 
 const spaces = [
   {
-    title: 'Day Zone',
-    subtitle: 'Relax & Socialize',
-    description: 'An open, airy living space designed for gathering with loved ones. Floor-to-ceiling windows flood the room with natural light, while premium furnishings create the perfect atmosphere for both relaxation and entertainment.',
-    image: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1200',
+    title: 'Dining Hall',
+    subtitle: 'Savor & Share',
+    description: 'A spacious and welcoming dining hall perfect for enjoying meals together. Experience local flavors in a comfortable setting designed for community and conversation.',
+    image: '/dining.png',
   },
   {
-    title: 'Night Zone',
-    subtitle: 'Rest & Rejuvenate',
-    description: 'Luxurious bedrooms featuring plush bedding, elegant decor, and thoughtful amenities. Each room is a private sanctuary offering stunning views and absolute tranquility for the perfect night\'s sleep.',
-    image: 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1200',
+    title: 'The Terrace',
+    subtitle: 'Views & Vibes',
+    description: 'Our expansive terrace offers breathtaking views of the surrounding landscape. It is the perfect spot for morning coffee, evening gatherings, or simply soaking in the fresh air.',
+    image: '/terrace.png',
   },
   {
-    title: 'Wellness & Terrace',
-    subtitle: 'Refresh & Restore',
-    description: 'Indulge in our spa facilities and expansive terrace. From the heated pool to the sauna and outdoor lounging areas, every element is designed to restore your body and refresh your spirit.',
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=1200',
+    title: 'Lush Gardens',
+    subtitle: 'Nature & Serenity',
+    description: 'Immerse yourself in nature with our beautifully maintained gardens. A peaceful retreat for a leisurely walk, meditation, or spending quality time outdoors.',
+    image: '/Garden.png',
   },
 ]
 

@@ -390,7 +390,7 @@ function BookingContent() {
       {/* Hero Section */}
       <div className="relative h-[300px] flex items-center justify-center overflow-hidden">
         <Image
-          src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1920&q=75"
+          src="/hero4.png"
           alt="Hotel"
           fill
           priority

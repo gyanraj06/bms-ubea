@@ -100,12 +100,12 @@ export default function AboutPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=2070')`,
+            backgroundImage: `url('/hero1.png')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 bg-black/40" />
         <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-4">
           <h1 className="font-serif text-5xl md:text-6xl font-bold mb-6">
             Our Story: A Home for Our Members
