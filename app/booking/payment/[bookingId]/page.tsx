@@ -90,11 +90,21 @@ export default function PaymentPage() {
   };
 
   const handlePaymentComplete = async () => {
+    console.log("Debug: Processing Payment Confirmation...");
     try {
       setIsSubmitting(true);
       const { data: { session } } = await supabase.auth.getSession();
       const token = session?.access_token;
-      if (!token) return;
+
+      console.log(`Debug: Session Token = ${token ? "Present" : "MISSING"}`, token);
+
+      if (!token) {
+        console.error("Error: No Authentication Token found.");
+        toast.error("Session expired. Please login.");
+        return;
+      }
+
+      console.log("Debug: Calling Payment API...");
 
       const response = await fetch(`/api/bookings/${bookingId}/payment`, {
         method: "POST",
@@ -107,15 +117,20 @@ export default function PaymentPage() {
         }),
       });
 
+      console.log(`Debug: API Response Status = ${response.status}`);
+
       const data = await response.json();
 
       if (data.success) {
+        alert("Success! Marking paid.");
         toast.success("Payment marked! Waiting for verification.");
         router.push(`/booking/success?bookingIds=${bookingId}`);
       } else {
+        alert("API Error: " + (data.error || "Unknown"));
         toast.error(data.error || "Failed to update payment status");
       }
     } catch (error) {
+      alert("Exception: " + String(error));
       console.error("Error:", error);
       toast.error("Something went wrong");
     } finally {
@@ -140,9 +155,7 @@ export default function PaymentPage() {
 
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
             className="bg-white rounded-2xl shadow-xl overflow-hidden"
           >
             {/* Header */}
@@ -273,7 +286,7 @@ export default function PaymentPage() {
                 </button>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </div>
       <Footer />

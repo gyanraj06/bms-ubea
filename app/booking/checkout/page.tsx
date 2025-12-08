@@ -375,6 +375,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Govt ID Uploaded:", govtIdPath);
         } catch (err) {
           console.error("[BookingDebug] Govt ID upload failed", err);
+          alert("Error: Failed to upload Govt ID. " + String(err));
           toast.error("Failed to upload Govt ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -390,6 +391,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Bank ID Uploaded:", bankIdPath);
         } catch (err) {
           console.error("[BookingDebug] Bank ID upload failed", err);
+          alert("Error: Failed to upload Bank ID. " + String(err));
           toast.error("Failed to upload Bank ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
@@ -405,6 +407,7 @@ function CheckoutContent() {
           console.log("[BookingDebug] Guest ID Uploaded:", guestIdPath);
         } catch (err) {
           console.error("[BookingDebug] Guest ID upload failed", err);
+          alert("Error: Failed to upload Guest ID. " + String(err));
           toast.error("Failed to upload Guest ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
