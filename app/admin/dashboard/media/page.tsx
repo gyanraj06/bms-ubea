@@ -36,6 +36,7 @@ export default function PropertyMediaPage() {
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState<string>("Rooms");
   const [selectedRoomForUpload, setSelectedRoomForUpload] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
 
   // Room form state
   const [roomForm, setRoomForm] = useState({
@@ -197,6 +198,10 @@ export default function PropertyMediaPage() {
       return;
     }
 
+    // Prevent multiple clicks
+    if (isUploading) return;
+    setIsUploading(true);
+
     const uploadPromises = uploadingFiles.map(async (file) => {
       const formData = new FormData();
       formData.append("file", file);
@@ -228,6 +233,8 @@ export default function PropertyMediaPage() {
       }
     } catch (error) {
       toast.error("Failed to upload images");
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -578,10 +585,16 @@ export default function PropertyMediaPage() {
                       Delete
                     </Button>
                   </div>
-                  <div className="absolute top-2 left-2">
-                    <span className="bg-white text-xs px-2 py-1 rounded-full font-medium">
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    <span className="bg-white/90 backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium shadow-sm">
                       {item.category}
                     </span>
+                    {item.room_id && rooms.find(r => r.id === item.room_id) && (
+                      <span className="bg-white/90 backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium shadow-sm flex items-center gap-1">
+                        <Bed size={12} weight="fill" />
+                        Room {rooms.find(r => r.id === item.room_id)?.room_number}
+                      </span>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -941,10 +954,29 @@ export default function PropertyMediaPage() {
                       multiple
                       onChange={(e) => {
                         if (e.target.files) {
-                          setUploadingFiles(Array.from(e.target.files));
+                          const files = Array.from(e.target.files);
+                          const validFiles = files.filter(file => {
+                            if (file.size > 1.5 * 1024 * 1024) {
+                              toast.error(`File ${file.name} is too large. Max size is 1.5MB.`);
+                              return false;
+                            }
+                            return true;
+                          });
+
+                          if (files.length !== validFiles.length) {
+                            // Clear input if needed, but for now just setting valid files
+                            e.target.value = ''; // Reset input to allow re-selection if all failed
+                          }
+
+                          if (validFiles.length > 0) {
+                            setUploadingFiles(validFiles);
+                          }
                         }
                       }}
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Max file size: 1.5 MB per image
+                    </p>
                     {uploadingFiles.length > 0 && (
                       <p className="text-sm text-gray-500 mt-2">
                         {uploadingFiles.length} file(s) selected
@@ -960,9 +992,19 @@ export default function PropertyMediaPage() {
                   <Button
                     onClick={handleUploadImages}
                     className="bg-brown-dark hover:bg-brown-medium text-white"
+                    disabled={isUploading}
                   >
-                    <Upload size={16} className="mr-2" />
-                    Upload
+                    {isUploading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} className="mr-2" />
+                        Upload
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
