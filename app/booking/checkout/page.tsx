@@ -45,7 +45,7 @@ function CheckoutContent() {
 
 
   const { user: realUser } = useAuth();
-  const user = realUser || { full_name: "Debug User", email: "debug@example.com", phone: "9876543210", id: "debug-id" };
+  const user = realUser || { full_name: "Debug User", email: "debug@example.com", phone: "+919876543210", id: "debug-id" };
 
   // Cart Hook
   const { cart, updateCart, totalItems, clearCart, isLoaded } = useCart();
@@ -169,18 +169,29 @@ function CheckoutContent() {
     const debugUser = {
       full_name: "Debug User",
       email: "debug@example.com",
-      phone: "9876543210"
+      phone: "+919876543210"
     };
     const currentUser = user || debugUser;
 
+    console.log("[Checkout] Syncing user data. Current User:", currentUser);
+    console.log("[Checkout] User Phone:", currentUser?.phone);
+
     if (currentUser) {
-      setFormData(prev => ({
-        ...prev,
-        firstName: currentUser.full_name?.split(' ')[0] || prev.firstName,
-        lastName: currentUser.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
-        email: currentUser.email || prev.email,
-        phone: currentUser.phone || prev.phone,
-      }));
+      setFormData(prev => {
+        let phone = currentUser.phone || prev.phone;
+        // Ensure phone is E.164 formatted (e.g. +91...) to valid react-phone-number-input error
+        if (phone && !phone.startsWith('+') && /^\d{10}$/.test(phone)) {
+          phone = `+91${phone}`;
+        }
+
+        return {
+          ...prev,
+          firstName: currentUser.full_name?.split(' ')[0] || prev.firstName,
+          lastName: currentUser.full_name?.split(' ').slice(1).join(' ') || prev.lastName,
+          email: currentUser.email || prev.email,
+          phone: phone,
+        };
+      });
 
       if (currentUser.phone) {
         setIsPhoneVerified(true);
@@ -234,6 +245,7 @@ function CheckoutContent() {
   };
 
   const handlePhoneChange = (value: string) => {
+    console.log("[Checkout] handlePhoneChange:", value);
     setFormData(prev => ({ ...prev, phone: value }));
   };
 
@@ -489,7 +501,9 @@ function CheckoutContent() {
                 {/* Personal Info Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="firstName">First Name *</Label>
+                    <Label htmlFor="firstName">
+                      {formData.bookingFor === 'self' ? 'First Name' : 'Guest First Name'} *
+                    </Label>
                     <input
                       type="text"
                       name="firstName"
@@ -500,7 +514,9 @@ function CheckoutContent() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="lastName">Last Name *</Label>
+                    <Label htmlFor="lastName">
+                      {formData.bookingFor === 'self' ? 'Last Name' : 'Guest Last Name'} *
+                    </Label>
                     <input
                       type="text"
                       name="lastName"
@@ -846,17 +862,17 @@ function CheckoutContent() {
                 </div>
               </div>
 
-              <button
-                type="button"
+              <div
+                role="button"
                 onClick={(e) => {
+                  alert("Debug: Click received!");
                   console.log("Button clicked from UI", { isProcessing, hasUser: !!user });
-                  handleSubmit(e);
+                  if (!isProcessing) handleSubmit(e);
                 }}
-                disabled={isProcessing}
-                className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer relative z-50 pointer-events-auto"
+                className={`w-full h-12 bg-brown-dark text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer relative z-50 pointer-events-auto ${isProcessing ? 'opacity-50' : 'hover:bg-brown-medium'}`}
               >
-                {isProcessing ? "Processing..." : user ? "Proceed to QR Payment (Try Now)" : "Login to Book"}
-              </button>
+                {isProcessing ? "Processing..." : user ? "Proceed to QR Payment" : "Login to Book"}
+              </div>
             </div>
           </div>
         </div>

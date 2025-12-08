@@ -20,7 +20,7 @@ export function ChaletHero() {
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
-            backgroundImage: `url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=2070')`,
+            backgroundImage: `url('/hero.png')`,
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/60" />

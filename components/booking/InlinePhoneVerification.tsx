@@ -46,7 +46,10 @@ export default function InlinePhoneVerification({
         }
     }, [resendCountdown]);
 
+    console.log("[InlinePhoneVer] Rendered with value:", value);
+
     const handlePhoneChange = (newValue: string | undefined) => {
+        console.log("[InlinePhoneVer] onChange triggering with:", newValue);
         const phone = newValue || "";
         onChange(phone);
         // Reset verification state if number changes
@@ -123,7 +126,9 @@ export default function InlinePhoneVerification({
     };
 
     const handleSendOtp = async () => {
+        console.log("[InlinePhoneVer] handleSendOtp called with value:", value);
         if (!value || value.length < 13 || !isValidPhoneNumber(value)) {
+            console.warn("[InlinePhoneVer] Invalid phone for OTP:", value);
             toast.error("Please enter a valid phone number");
             return;
         }
@@ -236,9 +241,7 @@ export default function InlinePhoneVerification({
                         "flex items-center h-12 w-full rounded-lg border border-gray-300 bg-white px-3 transition-colors focus-within:ring-2 focus-within:ring-brown-dark/20 focus-within:border-brown-dark",
                         isVerified ? "border-green-500 bg-green-50/10" : ""
                     )}>
-                        <span className="text-gray-500 font-medium border-r border-gray-300 pr-3 mr-3 select-none">
-                            +91
-                        </span>
+
                         <div className="flex-1 relative h-full">
                             <ReactPhoneInput
                                 country="IN"
@@ -260,14 +263,22 @@ export default function InlinePhoneVerification({
                     </div>
 
                     {!isVerified && !showOtpInput && (
-                        <Button
-                            type="button"
-                            onClick={handleSendOtp}
-                            disabled={!value || isLoading}
-                            className="h-12 bg-brown-dark hover:bg-brown-medium text-white px-6 rounded-lg font-semibold shrink-0"
-                        >
-                            {isLoading ? <CircleNotch className="animate-spin" size={20} /> : "Verify"}
-                        </Button>
+                        <div className="flex flex-col">
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    console.log("Native button clicked!");
+                                    handleSendOtp();
+                                }}
+                                className="h-12 bg-brown-dark hover:bg-brown-medium text-white px-6 rounded-lg font-semibold shrink-0 flex items-center justify-center"
+                                style={{ cursor: 'pointer', zIndex: 50 }}
+                            >
+                                {isLoading ? <CircleNotch className="animate-spin" size={20} /> : "Verify"}
+                            </button>
+                            <div className="text-[10px] text-red-500 mt-1">
+                                DBG: Len:{value?.length} Val:{value} Ld:{isLoading ? 'T' : 'F'}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
