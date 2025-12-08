@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed">
-              Happy Holidays Guest House ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services, in compliance with the Information Technology Act, 2000, the Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011, and the Digital Personal Data Protection Act, 2023.
+              Union Awaas Happy Holiday Guest House ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our services, in compliance with the Information Technology Act, 2000, the Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011, and the Digital Personal Data Protection Act, 2023.
             </p>
           </section>
 
@@ -158,7 +158,7 @@ export default function PrivacyPolicyPage() {
             </p>
             <div className="bg-gray-50 p-6 rounded-lg">
               <p className="text-gray-900 font-semibold">Grievance Officer</p>
-              <p className="text-gray-700">Happy Holidays Guest House</p>
+              <p className="text-gray-700">Union Awaas Happy Holiday Guest House</p>
               <p className="text-gray-700">Bhopal, Madhya Pradesh</p>
               <p className="text-gray-700">Email: privacy@happyholidays.com</p>
               <p className="text-gray-700 mt-2">
@@ -187,7 +187,7 @@ export default function PrivacyPolicyPage() {
               If you have any questions about this Privacy Policy, please contact us:
             </p>
             <div className="bg-gray-50 p-6 rounded-lg">
-              <p className="text-gray-900 font-semibold">Happy Holidays Guest House</p>
+              <p className="text-gray-900 font-semibold">Union Awaas Happy Holiday Guest House</p>
               <p className="text-gray-700">Bhopal, Madhya Pradesh, India</p>
               <p className="text-gray-700">Email: info@happyholidays.com</p>
               <p className="text-gray-700">Phone: +91 [Phone Number]</p>

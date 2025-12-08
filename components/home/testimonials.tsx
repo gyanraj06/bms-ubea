@@ -9,7 +9,7 @@ const testimonials = [
     id: 1,
     name: "Rajesh Kumar",
     rating: 5,
-    content: "Excellent facility for union members! The location near Rani Kamlapati Station made it very convenient for my official visit. Clean rooms, friendly staff, and the subsidized rates are a huge benefit. Highly recommended for all UBEA members.",
+    content: "Excellent facility for union members! The location near SMH Hospital made it very convenient for my official visit. Clean rooms, friendly staff, and the subsidized rates are a huge benefit. Highly recommended for all UBEA members.",
   },
   {
     id: 2,

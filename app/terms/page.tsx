@@ -19,7 +19,7 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Acceptance of Terms</h2>
             <p className="text-gray-700 leading-relaxed">
-              Welcome to Happy Holidays Guest House. By accessing our website, making a booking, or using our services, you agree to be bound by these Terms of Service ("Terms"), our Privacy Policy, and all applicable laws and regulations of India. If you do not agree with any of these terms, you are prohibited from using our services.
+              Welcome to Union Awaas Happy Holiday Guest House. By accessing our website, making a booking, or using our services, you agree to be bound by these Terms of Service ("Terms"), our Privacy Policy, and all applicable laws and regulations of India. If you do not agree with any of these terms, you are prohibited from using our services.
             </p>
           </section>
 
@@ -27,7 +27,7 @@ export default function TermsOfServicePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Definitions</h2>
             <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
               <li><strong>"Guest"</strong> refers to any person who makes a booking or stays at our property</li>
-              <li><strong>"Property"</strong> refers to Happy Holidays Guest House located in Bhopal, Madhya Pradesh</li>
+              <li><strong>"Property"</strong> refers to Union Awaas Happy Holiday Guest House located in Bhopal, Madhya Pradesh</li>
               <li><strong>"Services"</strong> refers to accommodation and related services provided by us</li>
               <li><strong>"Website"</strong> refers to our online booking platform</li>
               <li><strong>"Booking"</strong> refers to a confirmed reservation for accommodation</li>
@@ -171,7 +171,7 @@ export default function TermsOfServicePage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">10. Intellectual Property</h2>
             <p className="text-gray-700 leading-relaxed">
-              All content on this website, including text, graphics, logos, images, and software, is the property of Happy Holidays Guest House or its licensors and is protected by Indian copyright laws and international intellectual property treaties. Unauthorized use is prohibited.
+              All content on this website, including text, graphics, logos, images, and software, is the property of Union Awaas Happy Holiday Guest House or its licensors and is protected by Indian copyright laws and international intellectual property treaties. Unauthorized use is prohibited.
             </p>
           </section>
 

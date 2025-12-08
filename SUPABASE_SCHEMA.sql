@@ -1,5 +1,5 @@
 -- =============================================
--- HAPPY HOLIDAYS GUEST HOUSE - SUPABASE SCHEMA
+-- Union Awaas Happy Holiday GUEST HOUSE - SUPABASE SCHEMA
 -- =============================================
 -- Run this entire file in Supabase SQL Editor
 -- Dashboard > SQL Editor > New Query > Paste and Run
@@ -227,7 +227,7 @@ CREATE INDEX IF NOT EXISTS idx_media_featured ON media(is_featured);
 -- =============================================
 CREATE TABLE IF NOT EXISTS property_settings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  property_name VARCHAR(255) NOT NULL DEFAULT 'Happy Holidays Guest House',
+  property_name VARCHAR(255) NOT NULL DEFAULT 'Union Awaas Happy Holiday Guest House',
   address TEXT NOT NULL DEFAULT '94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal',
   phone VARCHAR(20) NOT NULL DEFAULT '+91 9926770259',
   email VARCHAR(255) NOT NULL DEFAULT 'info@happyholidays.com',
@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS property_settings (
 -- Insert default settings
 INSERT INTO property_settings (property_name, address, phone, email, gst_number, check_in_time, check_out_time, google_maps_embed_url, description)
 VALUES (
-  'Happy Holidays Guest House',
+  'Union Awaas Happy Holiday Guest House',
   '94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal',
   '+91 9926770259',
   'info@happyholidays.com',
@@ -251,7 +251,7 @@ VALUES (
   '14:00',
   '11:00',
   'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3665.4598739812!2d77.42277477535677!3d23.23629397906128!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x397c431e5f426f07%3A0x9c6ea93cdbb8c26c!2sHappy%20Holidays%20Guest%20House!5e0!3m2!1sen!2sin!4v1735718000000!5m2!1sen!2sin',
-  'Welcome to Happy Holidays Guest House - Your home away from home in Bhopal'
+  'Welcome to Union Awaas Happy Holiday Guest House - Your home away from home in Bhopal'
 )
 ON CONFLICT DO NOTHING;
 

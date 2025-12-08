@@ -71,6 +71,7 @@ function CheckoutContent() {
     bankIdNumber: "",
     bankAccountName: "",
     guestIdNumber: "",
+    relation: "",
   });
 
   // Guest Details
@@ -342,6 +343,13 @@ function CheckoutContent() {
         toast.error("Please upload Guest Identity Proof");
         return;
       }
+
+      if (!formData.relation) {
+        console.log("[BOOKING DEBUG] ❌ FAILED: Missing relation");
+        setIsProcessing(false);
+        toast.error("Please enter your relation with the guest");
+        return;
+      }
       console.log("[BOOKING DEBUG] ✅ Guest ID valid");
     }
 
@@ -405,14 +413,14 @@ function CheckoutContent() {
 
       if (bankIdFile) {
         try {
-          console.log("[BOOKING DEBUG] Step 3: Uploading Bank ID...", bankIdFile.name, bankIdFile.size, "bytes");
-          toast.info("Uploading Bank ID...");
+          console.log("[BOOKING DEBUG] Step 3: Uploading Employee ID...", bankIdFile.name, bankIdFile.size, "bytes");
+          toast.info("Uploading Employee ID...");
           const uploadStart = Date.now();
           bankIdPath = await uploadDocument(bankIdFile, 'bank_id', authToken);
-          console.log("[BOOKING DEBUG] ✅ Bank ID uploaded in", Date.now() - uploadStart, "ms - Path:", bankIdPath);
+          console.log("[BOOKING DEBUG] ✅ Employee ID uploaded in", Date.now() - uploadStart, "ms - Path:", bankIdPath);
         } catch (err) {
-          console.log("[BOOKING DEBUG] ❌ Bank ID upload FAILED:", err);
-          toast.error("Failed to upload Bank ID");
+          console.log("[BOOKING DEBUG] ❌ Employee ID upload FAILED:", err);
+          toast.error("Failed to upload Employee ID");
           setIsProcessing(false);
           clearTimeout(safetyTimeout);
           return;
@@ -478,6 +486,7 @@ function CheckoutContent() {
           bank_id_image_url: bankIdPath || null,
           guest_id_number: formData.guestIdNumber || null,
           guest_id_image_url: guestIdPath || null,
+          guest_relation: formData.relation || null,
           needs_cot: false,
           num_cots: 0,
           needs_extra_bed: false,
@@ -759,6 +768,36 @@ function CheckoutContent() {
                   </div>
                 </div>
 
+                {/* Employee ID Section */}
+                <div className="pt-4 border-t border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <CreditCard size={20} /> Employee ID
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bankIdNumber">Employee ID</Label>
+                      <input
+                        type="text"
+                        name="bankIdNumber"
+                        value={formData.bankIdNumber}
+                        onChange={handleInputChange}
+                        placeholder="Account Number or UPI ID"
+                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                      />
+                    </div>
+                    <div>
+                      <Label>Upload Employee ID Proof</Label>
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={(e) => handleFileChange(e, 'bank')}
+                        className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">.</p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Guest Identity Proof Section (Only if Booking for Someone Else) */}
                 {formData.bookingFor === 'relative' && (
                   <div className="pt-4 border-t border-gray-100">
@@ -784,6 +823,17 @@ function CheckoutContent() {
                         />
                       </div>
                       <div>
+                        <Label htmlFor="relation">Relation with Booking Person *</Label>
+                        <input
+                          type="text"
+                          name="relation"
+                          value={formData.relation}
+                          onChange={handleInputChange}
+                          className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none bg-yellow-50"
+                          placeholder="e.g. Father, Mother, Friend"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
                         <Label>Upload Guest Aadhaar (Image/PDF) *</Label>
                         <input
                           type="file"
@@ -796,35 +846,6 @@ function CheckoutContent() {
                     </div>
                   </div>
                 )}
-
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard size={20} /> Bank Employee ID
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bankIdNumber">Bank ID</Label>
-                      <input
-                        type="text"
-                        name="bankIdNumber"
-                        value={formData.bankIdNumber}
-                        onChange={handleInputChange}
-                        placeholder="Account Number or UPI ID"
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
-                      />
-                    </div>
-                    <div>
-                      <Label>Upload Bank Document (Optional)</Label>
-                      <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => handleFileChange(e, 'bank')}
-                        className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Cancelled cheque or passbook copy.</p>
-                    </div>
-                  </div>
-                </div>
 
 
 

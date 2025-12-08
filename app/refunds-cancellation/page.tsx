@@ -19,13 +19,13 @@ export default function RefundsCancellationPage() {
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
             <p className="text-gray-700 leading-relaxed">
-              At Happy Holidays Guest House, we understand that plans can change. This Refunds & Cancellation Policy outlines the terms and conditions regarding booking cancellations, no-shows, and refund processing. By making a reservation with us, you agree to the terms described below.
+              At Union Awaas Happy Holiday Guest House, we understand that plans can change. This Refunds & Cancellation Policy outlines the terms and conditions regarding booking cancellations, no-shows, and refund processing. By making a reservation with us, you agree to the terms described below.
             </p>
           </section>
 
           <section>
             <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Cancellation Policy</h2>
-            
+
             <h3 className="text-xl font-semibold text-gray-900 mb-3">2.1 Standard Bookings</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               For standard room reservations, the following cancellation charges apply:

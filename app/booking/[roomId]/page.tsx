@@ -92,10 +92,9 @@ function BookingDetailContent() {
     WiFi: WifiHigh,
     AC: Fan,
     TV: TelevisionSimple,
-    "Hot Water": Shower,
+    "Hot Water Rod": Shower,
     Shower: Shower,
     Breakfast: Coffee,
-    "Mini Bar": Coffee,
     "Room Service": Coffee,
     "Parking": Car,
     "Balcony": Check,
@@ -309,13 +308,7 @@ function BookingDetailContent() {
                     <Bed size={20} weight="fill" className="text-primary-600" />
                     <span>{room.bed_type}</span>
                   </div>
-                  {room.size_sqft > 0 && (
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <span className="text-primary-600 font-semibold">
-                        {room.size_sqft} sq ft
-                      </span>
-                    </div>
-                  )}
+
                 </div>
 
                 <div>

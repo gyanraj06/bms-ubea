@@ -1,7 +1,8 @@
-# Happy Holidays BMS - API Documentation
+# Union Awaas Happy Holiday BMS - API Documentation
 
 ## Overview
-This document provides a complete overview of all available APIs in the Happy Holidays Booking Management System.
+
+This document provides a complete overview of all available APIs in the Union Awaas Happy Holiday Booking Management System.
 
 **Base URL:** `http://localhost:3000`
 
@@ -14,27 +15,32 @@ This document provides a complete overview of all available APIs in the Happy Ho
 > **Note:** Actual count based on Next.js API routes, not HTTP methods. Each route file counts as one serverless function for deployment.
 
 #### 1. Authentication (4 endpoints)
+
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/user-login` - User login (email/password or Google SSO)
 - `POST /api/auth/admin-login` - Admin login
 - `GET|POST /api/auth/seed-admins` - Seed default admin users (setup only)
 
 #### 2. Rooms - Public (2 endpoints)
+
 - `GET /api/rooms` - Get all active rooms (supports optional date filtering)
   - **New:** `GET /api/rooms?check_in={date}&check_out={date}` - Filter by availability
 - **`POST /api/rooms/check-availability`** - ✅ **NEW** Check room availability for date range
 
 #### 3. Bookings - User (2 endpoints)
+
 - `POST /api/bookings` - Create new booking (with availability validation)
 - `GET /api/user/bookings` - Get user's bookings (requires user auth)
 
 #### 4. Admin - Users (4 endpoints)
+
 - `GET /api/admin/users` - List all admin users (Owner only)
 - `POST /api/admin/users` - Create admin user (Owner only)
 - `PUT /api/admin/users` - Update admin user (Owner only)
 - `DELETE /api/admin/users?id={id}` - Delete admin user (Owner only)
 
 #### 5. Admin - Rooms (5 endpoints)
+
 - `GET /api/admin/rooms` - Get all rooms (admin)
 - `GET /api/admin/rooms?is_active={true/false}` - Filter by status
 - `POST /api/admin/rooms` - Create room
@@ -42,11 +48,13 @@ This document provides a complete overview of all available APIs in the Happy Ho
 - `DELETE /api/admin/rooms?id={id}` - Delete room
 
 #### 6. Admin - Bookings (3 endpoints)
+
 - `GET /api/admin/bookings` - Get all bookings
 - `GET /api/admin/bookings?status={status}` - Filter by status
 - `PUT /api/admin/bookings` - Update booking
 
 #### 7. Admin - Media (5 endpoints)
+
 - `GET /api/admin/media` - Get all media
 - `GET /api/admin/media?category={category}` - Filter by category
 - `GET /api/admin/media?room_id={id}` - Get room media
@@ -54,15 +62,18 @@ This document provides a complete overview of all available APIs in the Happy Ho
 - `DELETE /api/admin/media?id={id}` - Delete media
 
 #### 8. Admin - Permissions (2 endpoints)
+
 - `GET /api/admin/permissions` - Get all permissions (any admin)
 - `PUT /api/admin/permissions` - Update permissions (Owner only)
 
 #### 9. Admin - Audit Logs (3 endpoints)
+
 - `GET /api/admin/audit-logs` - Get recent logs
 - `GET /api/admin/audit-logs?user_id={id}&limit={n}` - Filter logs
 - `POST /api/admin/audit-logs` - Create audit log entry
 
 #### 10. Property Settings (1 endpoint)
+
 - `GET|PUT /api/admin/property-settings` - Get/Update property settings
 
 ---
@@ -70,11 +81,13 @@ This document provides a complete overview of all available APIs in the Happy Ho
 ## Room Availability Feature (NEW) ✨
 
 ### Check Availability Endpoint
+
 **Endpoint:** `POST /api/rooms/check-availability`
 
 **Purpose:** Check which rooms are available for a given date range. Prevents double-booking by checking against existing confirmed/pending bookings.
 
 **Request:**
+
 ```json
 {
   "check_in": "2025-01-20",
@@ -84,6 +97,7 @@ This document provides a complete overview of all available APIs in the Happy Ho
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -102,12 +116,14 @@ This document provides a complete overview of all available APIs in the Happy Ho
 ```
 
 **Validation Rules:**
+
 - Check-in must not be in the past
 - Check-out must be after check-in
 - Dates must be in ISO format (YYYY-MM-DD)
 
 **Overlap Logic:**
 Bookings are considered overlapping if:
+
 - Existing `check_in` < Requested `check_out` AND
 - Existing `check_out` > Requested `check_in`
 
@@ -116,7 +132,9 @@ Bookings are considered overlapping if:
 ## Authentication
 
 ### User Authentication
+
 **Login Response:**
+
 ```json
 {
   "success": true,
@@ -139,7 +157,9 @@ Bookings are considered overlapping if:
 **Usage:** Send `Authorization: Bearer {access_token}` header
 
 ### Admin Authentication
+
 **Login Response:**
+
 ```json
 {
   "success": true,
@@ -147,7 +167,7 @@ Bookings are considered overlapping if:
   "user": {
     "id": "uuid",
     "email": "owner@happyholidays.com",
-    "full_name": "Happy Holidays Owner",
+    "full_name": "Union Awaas Happy Holiday Owner",
     "role": "Owner",
     "phone": "+919876543210"
   }
@@ -157,6 +177,7 @@ Bookings are considered overlapping if:
 **Usage:** Send `Authorization: Bearer {token}` header
 
 **Default Admin Credentials:**
+
 - **Owner:** owner@happyholidays.com / Owner@123
 - **Manager:** manager@happyholidays.com / Manager@123
 - **Front Desk:** frontdesk@happyholidays.com / FrontDesk@123
@@ -167,6 +188,7 @@ Bookings are considered overlapping if:
 ## Key Data Models
 
 ### Room
+
 ```json
 {
   "id": "uuid",
@@ -187,6 +209,7 @@ Bookings are considered overlapping if:
 ```
 
 ### Booking
+
 ```json
 {
   "id": "uuid",
@@ -214,6 +237,7 @@ Bookings are considered overlapping if:
 ```
 
 ### Media
+
 ```json
 {
   "id": "uuid",
@@ -237,12 +261,14 @@ Bookings are considered overlapping if:
 ## Admin Roles & Permissions
 
 ### Roles
+
 1. **Owner** - Full access to everything
 2. **Manager** - Manage bookings, rooms, view reports
 3. **Front Desk** - Handle bookings, check-ins/check-outs
 4. **Accountant** - Manage payments, view financial reports
 
 ### Role-Based Access
+
 - **User Management:** Owner only
 - **Permission Management:** Owner only
 - **Property Settings:** Owner only
@@ -256,29 +282,34 @@ Bookings are considered overlapping if:
 ## Common Status Values
 
 ### Booking Status
+
 - `Pending` - Awaiting confirmation
 - `Confirmed` - Booking confirmed
 - `Cancelled` - Booking cancelled
 - `Completed` - Stay completed
 
 ### Payment Status
+
 - `Pending` - No payment received
 - `Partial` - Advance paid
 - `Paid` - Full payment received
 
 ### Payment Methods
+
 - `Cash`
 - `UPI`
 - `Card`
 - `Bank Transfer`
 
 ### Media Categories
+
 - `Room` - Room images
 - `Gallery` - Property gallery
 - `Amenity` - Amenity images
 - `Other` - Other media
 
 ### Audit Actions
+
 - `CREATE` - Record created
 - `UPDATE` - Record updated
 - `DELETE` - Record deleted
@@ -289,6 +320,7 @@ Bookings are considered overlapping if:
 ## Error Responses
 
 ### Standard Error Format
+
 ```json
 {
   "success": false,
@@ -298,6 +330,7 @@ Bookings are considered overlapping if:
 ```
 
 ### Common Error Codes
+
 - `MISSING_CREDENTIALS` - Email/password not provided
 - `INVALID_CREDENTIALS` - Wrong email/password
 - `MISSING_FIELDS` - Required fields missing
@@ -313,15 +346,18 @@ Bookings are considered overlapping if:
 ## Rate Limits & Constraints
 
 ### File Upload
+
 - **Max Size:** 5MB per file
 - **Allowed Types:** JPEG, PNG, WebP
 - **Storage:** Supabase Storage bucket `property-media`
 
 ### Password Requirements
+
 - Minimum 8 characters
 - Should include uppercase, lowercase, number, special character (recommended)
 
 ### Booking Constraints
+
 - Check-in date must be in the future (or today)
 - Check-out must be after check-in (minimum 1 night)
 - Advance payment: 25%, 50%, or 100% of total
@@ -329,9 +365,11 @@ Bookings are considered overlapping if:
 - **NEW:** Overlapping bookings return 409 Conflict error
 
 ### GST
+
 - Fixed at 12% on room charges
 
 ### Availability Rules
+
 - Only Confirmed and Pending bookings block availability
 - Cancelled bookings do not affect availability
 - Same-day check-in/checkout considered as overlap
@@ -341,13 +379,16 @@ Bookings are considered overlapping if:
 ## Testing with Postman
 
 1. **Import Collection:**
+
    - Open Postman
    - Import `Happy-Holidays-BMS-API.postman_collection.json`
 
 2. **Set Base URL:**
+
    - Collection variables → `base_url` → `http://localhost:3000`
 
 3. **Authentication Flow:**
+
    - Run "Seed Admin Users" (once)
    - Run "Admin Login" (auto-saves token)
    - Run "User Register"
@@ -362,6 +403,7 @@ Bookings are considered overlapping if:
 ## Database Schema
 
 ### Tables
+
 1. `users` - Customer accounts
 2. `admin_users` - Admin accounts
 3. `rooms` - Room inventory
@@ -373,6 +415,7 @@ Bookings are considered overlapping if:
 9. `invoices` - Invoice records
 
 ### Key Relationships
+
 - `bookings.user_id` → `users.id`
 - `bookings.room_id` → `rooms.id`
 - `media.room_id` → `rooms.id` (optional)
@@ -396,6 +439,7 @@ Bookings are considered overlapping if:
 ## Development Setup
 
 ### Environment Variables Required
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
@@ -404,6 +448,7 @@ JWT_SECRET=your_jwt_secret
 ```
 
 ### First Time Setup
+
 1. Run migrations to create database tables
 2. Call `POST /api/auth/seed-admins` to create default admin users
 3. Login as Owner and configure property settings
@@ -414,6 +459,7 @@ JWT_SECRET=your_jwt_secret
 ## Support & Contacts
 
 For API issues or questions:
+
 - Check logs in browser console (client-side)
 - Check terminal logs (server-side)
 - Review Supabase logs for database errors

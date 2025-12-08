@@ -27,7 +27,7 @@ function DashboardContent({ children, userRole }: { children: React.ReactNode; u
           <div className="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
-                Happy Holidays Admin
+                Union Awaas Happy Holiday Admin
               </h1>
             </div>
             <div className="flex items-center gap-4">

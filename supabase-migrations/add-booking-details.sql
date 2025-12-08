@@ -1,6 +1,6 @@
 -- Migration: Add Enhanced Booking Details
 -- Date: 2025-01-18
--- Description: Adds fields for Bank ID, document uploads, guest details, and additional requirements
+-- Description: Adds fields for Employee ID, document uploads, guest details, and additional requirements
 
 -- Add new columns to bookings table
 ALTER TABLE bookings
@@ -17,7 +17,7 @@ ADD COLUMN IF NOT EXISTS num_extra_beds INTEGER DEFAULT 0 CHECK (num_extra_beds 
 -- Add comments for documentation
 COMMENT ON COLUMN bookings.bank_id_number IS 'Bank account ID/number for payment verification';
 COMMENT ON COLUMN bookings.govt_id_image_url IS 'Supabase Storage URL for government ID document image';
-COMMENT ON COLUMN bookings.bank_id_image_url IS 'Supabase Storage URL for bank ID document image';
+COMMENT ON COLUMN bookings.bank_id_image_url IS 'Supabase Storage URL for Employee ID document image';
 COMMENT ON COLUMN bookings.booking_for IS 'Whether booking is for self or a relative';
 COMMENT ON COLUMN bookings.guest_details IS 'JSONB array of guest details: [{name: string, age: number}]';
 COMMENT ON COLUMN bookings.needs_cot IS 'Whether guest requires a cot/baby bed';

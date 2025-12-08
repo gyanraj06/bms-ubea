@@ -31,10 +31,10 @@ export default function RoomDetailsModal({
     "WiFi": WifiHigh,
     "AC": Fan,
     "TV": TelevisionSimple,
-    "Hot Water": Shower,
+    "Hot Water Rod": Shower,
     "Shower": Shower,
     "Breakfast": Coffee,
-    "Mini Bar": Coffee,
+    "Parking": Coffee,
     "Room Service": Coffee,
     "Parking": Car,
     "Balcony": Check,
@@ -71,7 +71,7 @@ export default function RoomDetailsModal({
                   fill
                   className="object-cover"
                 />
-                
+
                 {/* Image Navigation Dots */}
                 {images.length > 1 && (
                   <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
@@ -152,7 +152,7 @@ export default function RoomDetailsModal({
             <div className="text-sm text-gray-500">
               {maxAvailable} rooms available for selected dates
             </div>
-            
+
             <div className="flex items-center gap-4">
               {quantityInCart > 0 ? (
                 <div className="flex items-center gap-4 bg-white border border-gray-200 rounded-xl p-1.5 shadow-sm">

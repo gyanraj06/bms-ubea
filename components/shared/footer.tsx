@@ -30,7 +30,7 @@ interface PropertySettings {
 export function Footer() {
   const currentYear = new Date().getFullYear();
   const [settings, setSettings] = useState<PropertySettings>({
-    property_name: "Happy Holidays Guest House",
+    property_name: "Union Awaas Happy Holiday Guest House",
     address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
     phone: "+91 9926770259",
     email: "ubeampcg@gmail.com",
@@ -80,7 +80,7 @@ export function Footer() {
             <div className="mb-4">
               <img
                 src="/logo.png"
-                alt="Happy Holidays"
+                alt="Union Awaas Happy Holiday"
                 className="h-20 w-auto object-contain"
               />
             </div>
@@ -179,7 +179,7 @@ export function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="text-center md:text-left">
               <p className="text-sm text-gray-400">
-                © {currentYear} Happy Holidays. All rights reserved.
+                © {currentYear} Union Awaas Happy Holiday. All rights reserved.
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 Crafted by{" "}

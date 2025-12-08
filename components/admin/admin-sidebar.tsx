@@ -129,7 +129,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
           <Link href="/admin/dashboard" className="flex items-center">
             <img
               src="/logo.png"
-              alt="Happy Holidays"
+              alt="Union Awaas Happy Holiday"
               className="h-16 w-auto object-contain"
             />
           </Link>
@@ -210,7 +210,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
             <Link href="/admin/dashboard" className="flex items-center">
               <img
                 src="/logo.png"
-                alt="Happy Holidays"
+                alt="Union Awaas Happy Holiday"
                 className="h-16 w-auto object-contain"
               />
             </Link>

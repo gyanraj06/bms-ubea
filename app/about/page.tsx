@@ -24,7 +24,7 @@ interface PropertySettings {
 export default function AboutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settings, setSettings] = useState<PropertySettings>({
-    property_name: "Happy Holidays Guest House",
+    property_name: "Union Awaas Happy Holiday Guest House",
     address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
     phone: "+91 9926770259",
     email: "info@happyholidays.com",
@@ -126,7 +126,7 @@ export default function AboutPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed mb-8">
               The Union Awaas in Bhopal is more than just a guest house; it's a dedicated
-              initiative by the United Bank Employees' Association (UBEA) and the All India
+              initiative by the Union Bank Employees' Association, MP (UBEA) and the All India
               Bank Employees' Association (AIBEA) to provide a comfortable, secure, and
               affordable haven for our esteemed members and their families.
             </p>

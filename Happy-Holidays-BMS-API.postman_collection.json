@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "happy-holidays-bms-api",
-		"name": "Happy Holidays BMS API",
-		"description": "Complete API collection for Happy Holidays Booking Management System",
+		"name": "Union Awaas Happy Holiday BMS API",
+		"description": "Complete API collection for Union Awaas Happy Holiday Booking Management System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -529,7 +529,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"room_number\": \"101\",\n  \"room_type\": \"Deluxe\",\n  \"floor\": 1,\n  \"max_guests\": 2,\n  \"base_price\": 2500,\n  \"description\": \"Spacious deluxe room with city view\",\n  \"amenities\": [\"WiFi\", \"TV\", \"AC\", \"Mini Bar\"],\n  \"size_sqft\": 300,\n  \"bed_type\": \"King\",\n  \"view_type\": \"City View\",\n  \"is_available\": true,\n  \"is_active\": true,\n  \"images\": []\n}"
+							"raw": "{\n  \"room_number\": \"101\",\n  \"room_type\": \"Deluxe\",\n  \"floor\": 1,\n  \"max_guests\": 2,\n  \"base_price\": 2500,\n  \"description\": \"Spacious deluxe room with city view\",\n  \"amenities\": [\"WiFi\", \"TV\", \"AC\", \"Parking\"],\n  \"size_sqft\": 300,\n  \"bed_type\": \"King\",\n  \"view_type\": \"City View\",\n  \"is_available\": true,\n  \"is_active\": true,\n  \"images\": []\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
@@ -1093,7 +1093,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"property_name\": \"Happy Holidays Guest House\",\n  \"address\": \"94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal\",\n  \"phone\": \"+91 9926770259\",\n  \"email\": \"info@happyholidays.com\",\n  \"gst_number\": \"GST123456789\",\n  \"check_in_time\": \"14:00\",\n  \"check_out_time\": \"11:00\",\n  \"google_maps_embed_url\": \"https://maps.google.com/...\",\n  \"description\": \"Premium guest house in Bhopal\"\n}"
+							"raw": "{\n  \"property_name\": \"Union Awaas Happy Holiday Guest House\",\n  \"address\": \"94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal\",\n  \"phone\": \"+91 9926770259\",\n  \"email\": \"info@happyholidays.com\",\n  \"gst_number\": \"GST123456789\",\n  \"check_in_time\": \"14:00\",\n  \"check_out_time\": \"11:00\",\n  \"google_maps_embed_url\": \"https://maps.google.com/...\",\n  \"description\": \"Premium guest house in Bhopal\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/property-settings",

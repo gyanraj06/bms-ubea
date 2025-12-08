@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       // Guest Specific
       guest_id_number,
       guest_id_image_url,
+      guest_relation,
       // Legacy support
       room_id,
       num_guests,
@@ -287,6 +288,7 @@ export async function POST(request: NextRequest) {
             num_extra_beds: parseInt(num_extra_beds) || 0,
             guest_id_number: guest_id_number || null,
             guest_id_image_url: guest_id_image_url || null,
+            guest_relation: guest_relation || null,
           })
           .select()
           .single();

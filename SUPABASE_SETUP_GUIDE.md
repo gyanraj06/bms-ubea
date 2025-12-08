@@ -1,4 +1,4 @@
-# Supabase Setup Guide for Happy Holidays Guest House
+# Supabase Setup Guide for Union Awaas Happy Holiday Guest House
 
 ## Step 1: Run Database Schema
 
@@ -11,6 +11,7 @@
 7. Wait for the success message: "Success. No rows returned"
 
 This will create:
+
 - 9 database tables (admin_users, permissions, users, rooms, bookings, payments, messages, media, audit_logs)
 - All necessary indexes for performance
 - Triggers for auto-updating timestamps and calculating amounts
@@ -21,6 +22,7 @@ This will create:
 ## Step 2: Create Storage Buckets
 
 ### Bucket 1: property-media (Public)
+
 1. Go to **Storage** in the left sidebar
 2. Click **Create a new bucket**
 3. Bucket name: `property-media`
@@ -28,6 +30,7 @@ This will create:
 5. Click **Create bucket**
 
 ### Bucket 2: documents (Private)
+
 1. Click **Create a new bucket** again
 2. Bucket name: `documents`
 3. Keep it **Private** (toggle off)
@@ -89,6 +92,7 @@ SELECT * FROM rooms;
 ```
 
 You should see:
+
 - 9 tables created
 - 7 permission records
 - 5 room records
@@ -96,6 +100,7 @@ You should see:
 ## Step 5: Ready for API Integration
 
 Everything is now ready! The backend APIs will:
+
 1. Create admin users with hashed passwords (Owner@123, Manager@123, etc.)
 2. Handle user registration and login
 3. Manage bookings, payments, communication
@@ -106,34 +111,40 @@ Everything is now ready! The backend APIs will:
 Tell me which feature you want to implement first:
 
 ### Option 1: Authentication System
+
 - Admin login API (with bcrypt password hashing)
 - User login/signup API
 - Google SSO integration
 - JWT token generation
 
 ### Option 2: Bookings Management
+
 - Create booking API
 - List bookings API
 - Update booking status API
 - Search and filter bookings
 
 ### Option 3: Rooms Management
+
 - List available rooms API
 - Room availability checker
 - Update room details API
 
 ### Option 4: Payments
+
 - Payment processing API
 - Payment history API
 - GST calculation and invoicing
 
 ### Option 5: Communication
+
 - Send email API
 - Send SMS API
 - WhatsApp integration
 - Message history API
 
 ### Option 6: Media Management
+
 - Upload photos API
 - List media by category API
 - Delete media API
@@ -159,6 +170,7 @@ Tell me which feature you want to implement first:
 ## Environment Variables
 
 Already configured in `.env.local`:
+
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://hgqyhqoieppwidrpkkvn.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGc...

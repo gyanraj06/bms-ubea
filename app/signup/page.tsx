@@ -149,7 +149,7 @@ function SignupContent() {
             <h1 className="font-serif text-3xl font-bold text-gray-900 mb-2">
               Create Account
             </h1>
-            <p className="text-gray-600">Join Happy Holidays for exclusive benefits</p>
+            <p className="text-gray-600">Join Union Awaas Happy Holiday for exclusive benefits</p>
           </div>
 
           {/* Google SSO Button */}

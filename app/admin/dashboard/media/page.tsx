@@ -59,8 +59,8 @@ export default function PropertyMediaPage() {
     "Free WiFi",
     "Air Conditioning",
     "TV",
-    "Mini Bar",
-    "Hot Water",
+    "Parking",
+    "Hot Water Rod",
     "Breakfast",
     "Room Service",
     "Balcony",
@@ -488,10 +488,7 @@ export default function PropertyMediaPage() {
                         <Bed size={16} />
                         <span>{room.bed_type}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Ruler size={16} />
-                        <span>{room.size_sqft} sq ft</span>
-                      </div>
+
                       <div className="flex items-center gap-2 text-gray-600">
                         <Images size={16} />
                         <span>{room.images?.length || 0} Photos</span>
@@ -741,22 +738,7 @@ export default function PropertyMediaPage() {
                     />
                   </div>
 
-                  {/* Size */}
-                  <div>
-                    <Label htmlFor="size_sqft">Size (sq ft)</Label>
-                    <Input
-                      id="size_sqft"
-                      type="number"
-                      value={roomForm.size_sqft}
-                      onChange={(e) =>
-                        setRoomForm({
-                          ...roomForm,
-                          size_sqft: parseInt(e.target.value),
-                        })
-                      }
-                      min="0"
-                    />
-                  </div>
+
 
                   {/* Bed Type */}
                   <div>
@@ -777,24 +759,6 @@ export default function PropertyMediaPage() {
                     </select>
                   </div>
 
-                  {/* View Type */}
-                  <div>
-                    <Label htmlFor="view_type">View Type</Label>
-                    <select
-                      id="view_type"
-                      value={roomForm.view_type}
-                      onChange={(e) =>
-                        setRoomForm({ ...roomForm, view_type: e.target.value })
-                      }
-                      className="w-full h-10 px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brown-dark"
-                    >
-                      {viewTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {type}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
                   {/* Description */}
                   <div className="md:col-span-2">

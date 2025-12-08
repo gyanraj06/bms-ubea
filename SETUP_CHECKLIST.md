@@ -1,4 +1,4 @@
-# Setup Checklist - Happy Holidays Authentication System
+# Setup Checklist - Union Awaas Happy Holiday Authentication System
 
 ## ✅ Quick Start Guide
 
@@ -133,29 +133,38 @@ curl -X POST http://localhost:3000/api/auth/seed-admins
 ## 🐛 Troubleshooting
 
 ### Issue: "Error: ECONNREFUSED localhost:3000"
+
 **Solution:** Make sure dev server is running: `npm run dev`
 
 ### Issue: "Module not found: '@/lib/supabase'"
+
 **Solution:**
+
 ```bash
 npm install @supabase/supabase-js bcryptjs jsonwebtoken
 npm install --save-dev @types/bcryptjs @types/jsonwebtoken
 ```
 
 ### Issue: Admin login returns 500 error
+
 **Solution:**
+
 1. Check if you ran the seed-admins API
 2. Verify `.env.local` has correct Supabase credentials
 3. Check Supabase Dashboard → Logs for errors
 
 ### Issue: User registration fails with "User creation failed"
+
 **Solution:**
+
 1. Verify database schema was run successfully
 2. Check if `users` table exists in Supabase
 3. Make sure Supabase Auth is enabled (should be by default)
 
 ### Issue: Multiple dev servers causing issues
+
 **Solution:**
+
 ```bash
 # Kill all Node processes
 powershell -Command "Get-Process node | Stop-Process -Force"
@@ -173,12 +182,12 @@ npm run dev
 
 After seeding, you can use these credentials:
 
-| Email | Password | Role | Description |
-|-------|----------|------|-------------|
-| owner@happyholidays.com | Owner@123 | Owner | Full access to all features |
-| manager@happyholidays.com | Manager@123 | Manager | Most features except Settings |
-| frontdesk@happyholidays.com | FrontDesk@123 | Front Desk | Bookings and Communication |
-| accountant@happyholidays.com | Accountant@123 | Accountant | Payments and Reports |
+| Email                        | Password       | Role       | Description                   |
+| ---------------------------- | -------------- | ---------- | ----------------------------- |
+| owner@happyholidays.com      | Owner@123      | Owner      | Full access to all features   |
+| manager@happyholidays.com    | Manager@123    | Manager    | Most features except Settings |
+| frontdesk@happyholidays.com  | FrontDesk@123  | Front Desk | Bookings and Communication    |
+| accountant@happyholidays.com | Accountant@123 | Accountant | Payments and Reports          |
 
 ---
 

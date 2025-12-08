@@ -155,7 +155,7 @@ export default function RoomsPage() {
             Amenities
           </label>
           <div className="space-y-2">
-            {["Ocean View", "WiFi", "King Bed", "Mini Bar", "Kitchen", "Private Pool"].map((amenity) => (
+            {["Ocean View", "WiFi", "King Bed", "Parking", "Kitchen", "Private Pool"].map((amenity) => (
               <label key={amenity} className="flex items-center space-x-2 cursor-pointer">
                 <input
                   type="checkbox"

@@ -27,6 +27,7 @@ interface Booking {
   guest_name: string;
   guest_email: string;
   guest_phone: string;
+  guest_relation?: string;
   check_in: string;
   check_out: string;
   total_nights: number;
@@ -337,8 +338,8 @@ export default function BookingsPage() {
                 key={status}
                 onClick={() => setSelectedStatus(status)}
                 className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${selectedStatus === status
-                    ? "bg-brown-dark text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "bg-brown-dark text-white"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
               >
                 {status === "all" ? "All" : status.split("-").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}

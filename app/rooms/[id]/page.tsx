@@ -26,7 +26,7 @@ const roomDetails = {
     "King Bed",
     "Living Area",
     "Work Desk",
-    "Mini Bar",
+    "Parking",
     "Safe",
     "Smart TV",
     "High-Speed WiFi",

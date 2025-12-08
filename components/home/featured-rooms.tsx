@@ -27,7 +27,7 @@ const featuredRooms = [
     price: 15000,
     capacity: 2,
     size: 450,
-    amenities: ["Ocean View", "King Bed", "Mini Bar"],
+    amenities: ["Ocean View", "King Bed", "Parking"],
   },
   {
     id: "3",

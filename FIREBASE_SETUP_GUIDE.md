@@ -12,7 +12,8 @@
 1. Go to: https://www.google.com/recaptcha/admin
 2. Click **"+"** to create a new site
 3. Fill in the form:
-   - **Label:** `Happy Holidays Booking - Phone Auth`
+
+   - **Label:** `Union Awaas Happy Holiday Booking - Phone Auth`
    - **reCAPTCHA type:** Select **"reCAPTCHA v2"** → **"Invisible reCAPTCHA badge"**
    - **Domains:** Add:
      - `localhost`
@@ -64,6 +65,7 @@ For development/testing without SMS costs:
 If you want to use explicit reCAPTCHA keys in your code:
 
 Add to `.env.local`:
+
 ```bash
 NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ```
@@ -75,12 +77,14 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ### 4. Verify the Fix
 
 1. **Restart your dev server:**
+
    ```bash
    # Stop current server (Ctrl+C)
    npm run dev
    ```
 
 2. **Clear browser cache:**
+
    - Press `Ctrl + Shift + Delete`
    - Select "Cached images and files"
    - Click "Clear data"
@@ -102,6 +106,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ### Issue 1: Still Getting `auth/invalid-app-credential`
 
 **Solution:**
+
 - Double-check reCAPTCHA keys are correctly pasted in Firebase Console
 - Ensure you clicked "Save" in Firebase Console
 - Wait 1-2 minutes for changes to propagate
@@ -110,6 +115,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ### Issue 2: `auth/too-many-requests`
 
 **Solution:**
+
 - Wait 15-30 minutes for rate limit to reset
 - Use test phone numbers instead of real numbers during development
 - This happens when you try too many times in quick succession
@@ -117,6 +123,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ### Issue 3: reCAPTCHA not visible
 
 **Solution:**
+
 - Check browser console for script loading errors
 - Ensure `https://www.google.com/recaptcha/api.js` is loaded
 - Try using visible reCAPTCHA for debugging (change `size: "invisible"` to `size: "normal"`)
@@ -124,6 +131,7 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ### Issue 4: Domain not authorized
 
 **Solution:**
+
 - Add your domain to both:
   1. Firebase Console → Authentication → Settings → Authorized domains
   2. Google reCAPTCHA Admin → Your site → Domains
@@ -133,10 +141,12 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ## Code Changes Made
 
 ### 1. Updated `app/layout.tsx`
+
 - Changed reCAPTCHA script strategy to `beforeInteractive`
 - Added `?render=explicit` parameter for better control
 
 ### 2. Updated `components/booking/phone-verification.tsx`
+
 - Added detailed console logging for debugging
 - Better error callbacks for reCAPTCHA initialization
 
@@ -158,15 +168,18 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ## Still Having Issues?
 
 1. **Check Firebase Console logs:**
+
    - Go to: https://console.firebase.google.com/project/union-awas-bank/logs
    - Look for authentication errors
 
 2. **Check browser console:**
+
    - Press F12
    - Look for network errors (400/403 responses)
    - Look for "DEBUG:" messages from the code
 
 3. **Verify environment variables:**
+
    ```bash
    # In your project root
    cat .env.local
@@ -182,5 +195,6 @@ NEXT_PUBLIC_RECAPTCHA_SITE_KEY=your-site-key-from-step-1
 ## Contact Support
 
 If issues persist after following all steps:
+
 - Firebase Support: https://firebase.google.com/support
 - Include: Project ID (`union-awas-bank`), error messages, browser console logs

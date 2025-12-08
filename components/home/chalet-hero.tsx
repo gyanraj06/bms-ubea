@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import { MapPin } from "@phosphor-icons/react"
 
 export function ChaletHero() {
   const router = useRouter()
@@ -45,13 +46,24 @@ export function ChaletHero() {
           </p>
 
           {/* Book Now Button */}
-          <div className="flex items-start">
+          {/* Book Now Button and Map Link */}
+          <div className="flex items-center gap-4">
             <button
               onClick={() => router.push('/booking')}
               className="inline-flex items-center px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg"
             >
               Book Your Stay
             </button>
+
+            <a
+              href="https://maps.app.goo.gl/WuqijiHpwnQmsiBX7"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center p-4 bg-white/10 backdrop-blur-md border border-white/30 text-white rounded-xl hover:bg-white/20 transition-all duration-300 shadow-lg group"
+              aria-label="View Location Map"
+            >
+              <MapPin size={28} weight="fill" className="group-hover:scale-110 transition-transform" />
+            </a>
           </div>
         </motion.div>
       </div>

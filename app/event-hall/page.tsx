@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export default function EventHallPage() {
     const amenities = [
-        { icon: Users, label: "Capacity", value: "40-50 People" },
+        { icon: Users, label: "Capacity", value: "50 Siting" },
         { icon: Snowflake, label: "Climate Control", value: "Air Conditioned" },
         { icon: ForkKnife, label: "Kitchen", value: "Fully Equipped" },
         { icon: Toilet, label: "Restroom", value: "Clean & Modern" },

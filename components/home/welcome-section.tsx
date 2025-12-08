@@ -31,15 +31,15 @@ export function WelcomeSection() {
             </h2>
 
             <p className="text-lg text-gray-600 leading-relaxed mb-6">
-              The official holiday home for members of the United Bank Employees'
-              Association (UBEA) and All India Bank Employees' Association (AIBEA).
+              The official holiday home for members of the Union Bank Employees'
+              Association, MP (UBEA) and All India Bank Employees' Association (AIBEA).
               We offer a clean, secure, and affordable stay exclusively for our
-              union members and their families visiting Bhopal.
+              union members, retirees, officers and their families visiting Bhopal.
             </p>
 
             <div className={`transition-all duration-300 ${isExpanded ? 'block' : 'hidden md:block'}`}>
               <p className="text-lg text-gray-600 leading-relaxed mb-10">
-                Conveniently located near Rani Kamlapati Station and AIIMS, our
+                Conveniently located near SMH Hospital, our
                 guest house provides easy access to the city's key landmarks. Enjoy
                 our air-conditioned rooms, self-cooking kitchen, and dedicated meeting
                 hall, all designed for your comfort.

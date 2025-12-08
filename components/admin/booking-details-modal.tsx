@@ -55,7 +55,7 @@ export function BookingDetailsModal({
           }
         }
 
-        // Fetch signed URL for bank ID if exists
+        // Fetch signed URL for Employee ID if exists
         if (booking.bank_id_image_url) {
           const bankIdPath = booking.bank_id_image_url.split('/').pop();
           const bankIdFolder = booking.bank_id_image_url.includes('bank_id') ? 'bank_id/' : '';
@@ -281,14 +281,14 @@ export function BookingDetailsModal({
                     </section>
                   )}
 
-                  {/* Bank ID Number */}
+                  {/* Employee ID Number */}
                   {booking.bank_id_number && (
                     <section>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">
                         Bank Details
                       </h3>
                       <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Bank ID Number</p>
+                        <p className="text-sm text-gray-600">Employee ID Number</p>
                         <p className="font-mono font-medium text-gray-900 mt-1">
                           {booking.bank_id_number}
                         </p>
@@ -309,6 +309,99 @@ export function BookingDetailsModal({
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {booking.bank_id_image_url && (
+                            <div className="border border-gray-200 rounded-lg p-4">
+                              <p className="text-sm font-medium text-gray-900 mb-2">
+                                Employee ID
+                              </p>
+                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
+                                <img
+                                  src={bankIdSignedUrl || booking.bank_id_image_url}
+                                  alt="Employee ID"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    openImageViewer(
+                                      bankIdSignedUrl || booking.bank_id_image_url,
+                                      "Employee ID"
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  <Eye size={16} weight="bold" />
+                                  View
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    downloadDocument(
+                                      bankIdSignedUrl || booking.bank_id_image_url,
+                                      `bank_id_${booking.booking_number}.jpg`
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                                >
+                                  <Download size={16} weight="bold" />
+                                  Download
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Guest ID for booking for someone else */}
+                          {booking.guest_id_image_url && (
+                            <div className="border border-gray-200 rounded-lg p-4">
+                              <p className="text-sm font-medium text-gray-900 mb-2">
+                                Identity Proof for Guest (Aadhaar Only)
+                              </p>
+                              {booking.guest_id_number && (
+                                <p className="text-xs text-gray-600 mb-2">
+                                  Aadhaar: <span className="font-mono">{booking.guest_id_number}</span>
+                                </p>
+                              )}
+                              {booking.guest_relation && (
+                                <p className="text-xs text-gray-600 mb-2">
+                                  Relation: <span className="font-medium">{booking.guest_relation}</span>
+                                </p>
+                              )}
+                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
+                                <img
+                                  src={guestIdSignedUrl || booking.guest_id_image_url}
+                                  alt="Guest ID"
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    openImageViewer(
+                                      guestIdSignedUrl || booking.guest_id_image_url,
+                                      "Guest ID"
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  <Eye size={16} weight="bold" />
+                                  View
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    downloadDocument(
+                                      guestIdSignedUrl || booking.guest_id_image_url,
+                                      `guest_id_${booking.booking_number}.jpg`
+                                    )
+                                  }
+                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                                >
+                                  <Download size={16} weight="bold" />
+                                  Download
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
                           {booking.govt_id_image_url && (
                             <div className="border border-gray-200 rounded-lg p-4">
                               <p className="text-sm font-medium text-gray-900 mb-2">
@@ -339,94 +432,6 @@ export function BookingDetailsModal({
                                     downloadDocument(
                                       govtIdSignedUrl || booking.govt_id_image_url,
                                       `govt_id_${booking.booking_number}.jpg`
-                                    )
-                                  }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                                >
-                                  <Download size={16} weight="bold" />
-                                  Download
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {booking.bank_id_image_url && (
-                            <div className="border border-gray-200 rounded-lg p-4">
-                              <p className="text-sm font-medium text-gray-900 mb-2">
-                                Bank ID
-                              </p>
-                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
-                                <img
-                                  src={bankIdSignedUrl || booking.bank_id_image_url}
-                                  alt="Bank ID"
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    openImageViewer(
-                                      bankIdSignedUrl || booking.bank_id_image_url,
-                                      "Bank ID"
-                                    )
-                                  }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                  <Eye size={16} weight="bold" />
-                                  View
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    downloadDocument(
-                                      bankIdSignedUrl || booking.bank_id_image_url,
-                                      `bank_id_${booking.booking_number}.jpg`
-                                    )
-                                  }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-                                >
-                                  <Download size={16} weight="bold" />
-                                  Download
-                                </button>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Guest ID for booking for someone else */}
-                          {booking.guest_id_image_url && (
-                            <div className="border border-gray-200 rounded-lg p-4">
-                              <p className="text-sm font-medium text-gray-900 mb-2">
-                                Guest ID (Booking for Someone Else)
-                              </p>
-                              {booking.guest_id_number && (
-                                <p className="text-xs text-gray-600 mb-2">
-                                  Aadhaar: <span className="font-mono">{booking.guest_id_number}</span>
-                                </p>
-                              )}
-                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
-                                <img
-                                  src={guestIdSignedUrl || booking.guest_id_image_url}
-                                  alt="Guest ID"
-                                  className="w-full h-full object-contain"
-                                />
-                              </div>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    openImageViewer(
-                                      guestIdSignedUrl || booking.guest_id_image_url,
-                                      "Guest ID"
-                                    )
-                                  }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                  <Eye size={16} weight="bold" />
-                                  View
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    downloadDocument(
-                                      guestIdSignedUrl || booking.guest_id_image_url,
-                                      `guest_id_${booking.booking_number}.jpg`
                                     )
                                   }
                                   className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"

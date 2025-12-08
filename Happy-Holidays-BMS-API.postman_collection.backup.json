@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "happy-holidays-bms-api",
-		"name": "Happy Holidays BMS API",
-		"description": "Complete API collection for Happy Holidays Booking Management System",
+		"name": "Union Awaas Happy Holiday BMS API",
+		"description": "Complete API collection for Union Awaas Happy Holiday Booking Management System",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
@@ -42,8 +42,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/auth/register",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "register"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
 						},
 						"description": "Register a new user account"
 					}
@@ -79,8 +85,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/auth/user-login",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "user-login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"user-login"
+							]
 						},
 						"description": "Login with email and password. Returns user data and session token."
 					}
@@ -101,8 +113,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/auth/user-login",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "user-login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"user-login"
+							]
 						},
 						"description": "Login using Google SSO"
 					}
@@ -138,8 +156,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/auth/admin-login",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "admin-login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"admin-login"
+							]
 						},
 						"description": "Admin login. Returns JWT token.\n\nDefault credentials:\n- Owner: owner@happyholidays.com / Owner@123\n- Manager: manager@happyholidays.com / Manager@123\n- Front Desk: frontdesk@happyholidays.com / FrontDesk@123\n- Accountant: accountant@happyholidays.com / Accountant@123"
 					}
@@ -151,8 +175,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/auth/seed-admins",
-							"host": ["{{base_url}}"],
-							"path": ["api", "auth", "seed-admins"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"seed-admins"
+							]
 						},
 						"description": "Seed default admin users (Owner, Manager, Front Desk, Accountant). Use this once during initial setup."
 					}
@@ -170,8 +200,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/rooms",
-							"host": ["{{base_url}}"],
-							"path": ["api", "rooms"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"rooms"
+							]
 						},
 						"description": "Get all active and available rooms (public endpoint)"
 					}
@@ -183,8 +218,13 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/rooms?room_type=Deluxe",
-							"host": ["{{base_url}}"],
-							"path": ["api", "rooms"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"rooms"
+							],
 							"query": [
 								{
 									"key": "room_type",
@@ -221,8 +261,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/bookings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "bookings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"bookings"
+							]
 						},
 						"description": "Create a new booking. Requires user authentication.\n\nadvance_percentage can be: 25, 50, or 100"
 					}
@@ -239,8 +284,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/user/bookings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "user", "bookings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"bookings"
+							]
 						},
 						"description": "Get all bookings for the logged-in user"
 					}
@@ -263,8 +314,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/users",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "users"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
 						},
 						"description": "Get all admin users. Only Owners can access."
 					}
@@ -289,8 +346,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/users",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "users"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
 						},
 						"description": "Create a new admin user. Only Owners can create users.\n\nValid roles: Owner, Manager, Front Desk, Accountant"
 					}
@@ -315,8 +378,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/users",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "users"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							]
 						},
 						"description": "Update an admin user. Only Owners can update users."
 					}
@@ -333,8 +402,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/users?id=user-uuid-here",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "users"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"users"
+							],
 							"query": [
 								{
 									"key": "id",
@@ -363,8 +438,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "rooms"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							]
 						},
 						"description": "Get all rooms including inactive ones"
 					}
@@ -381,8 +462,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms?is_active=true",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "rooms"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							],
 							"query": [
 								{
 									"key": "is_active",
@@ -409,12 +496,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"room_number\": \"101\",\n  \"room_type\": \"Deluxe\",\n  \"floor\": 1,\n  \"max_guests\": 2,\n  \"base_price\": 2500,\n  \"description\": \"Spacious deluxe room with city view\",\n  \"amenities\": [\"WiFi\", \"TV\", \"AC\", \"Mini Bar\"],\n  \"size_sqft\": 300,\n  \"bed_type\": \"King\",\n  \"view_type\": \"City View\",\n  \"is_available\": true,\n  \"is_active\": true,\n  \"images\": []\n}"
+							"raw": "{\n  \"room_number\": \"101\",\n  \"room_type\": \"Deluxe\",\n  \"floor\": 1,\n  \"max_guests\": 2,\n  \"base_price\": 2500,\n  \"description\": \"Spacious deluxe room with city view\",\n  \"amenities\": [\"WiFi\", \"TV\", \"AC\", \"Parking\"],\n  \"size_sqft\": 300,\n  \"bed_type\": \"King\",\n  \"view_type\": \"City View\",\n  \"is_available\": true,\n  \"is_active\": true,\n  \"images\": []\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "rooms"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							]
 						},
 						"description": "Create a new room. Requires admin authentication."
 					}
@@ -439,8 +532,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "rooms"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							]
 						},
 						"description": "Update an existing room"
 					}
@@ -457,8 +556,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/rooms?id=room-uuid-here",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "rooms"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"rooms"
+							],
 							"query": [
 								{
 									"key": "id",
@@ -487,8 +592,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/bookings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "bookings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"bookings"
+							]
 						},
 						"description": "Get all bookings with room and user details"
 					}
@@ -505,8 +616,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/bookings?status=Confirmed",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "bookings"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"bookings"
+							],
 							"query": [
 								{
 									"key": "status",
@@ -537,8 +654,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/bookings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "bookings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"bookings"
+							]
 						},
 						"description": "Update booking status and payment information"
 					}
@@ -561,8 +684,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/media",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "media"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"media"
+							]
 						},
 						"description": "Get all media files"
 					}
@@ -579,8 +708,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/media?category=Room",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "media"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"media"
+							],
 							"query": [
 								{
 									"key": "category",
@@ -603,8 +738,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/media?room_id=room-uuid-here",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "media"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"media"
+							],
 							"query": [
 								{
 									"key": "room_id",
@@ -672,8 +813,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/media",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "media"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"media"
+							]
 						},
 						"description": "Upload a media file (image). Max size: 5MB. Allowed types: JPEG, PNG, WebP"
 					}
@@ -690,8 +837,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/media?id=media-uuid-here",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "media"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"media"
+							],
 							"query": [
 								{
 									"key": "id",
@@ -720,8 +873,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/permissions",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "permissions"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"permissions"
+							]
 						},
 						"description": "Get all permissions with role assignments. Any admin can view."
 					}
@@ -746,8 +905,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/permissions",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "permissions"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"permissions"
+							]
 						},
 						"description": "Update permissions (bulk update). Only Owners can update."
 					}
@@ -770,8 +935,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/audit-logs?limit=50",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "audit-logs"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"audit-logs"
+							],
 							"query": [
 								{
 									"key": "limit",
@@ -794,8 +965,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/admin/audit-logs?user_id=admin-uuid-here&limit=20",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "audit-logs"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"audit-logs"
+							],
 							"query": [
 								{
 									"key": "user_id",
@@ -830,8 +1007,14 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/audit-logs",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "audit-logs"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"audit-logs"
+							]
 						},
 						"description": "Create a manual audit log entry. Actions: CREATE, UPDATE, DELETE, LOGIN"
 					}
@@ -849,8 +1032,14 @@
 						"header": [],
 						"url": {
 							"raw": "{{base_url}}/api/admin/property-settings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "property-settings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"property-settings"
+							]
 						},
 						"description": "Get property settings (public endpoint - no auth required)"
 					}
@@ -871,12 +1060,18 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"property_name\": \"Happy Holidays Guest House\",\n  \"address\": \"94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal\",\n  \"phone\": \"+91 9926770259\",\n  \"email\": \"info@happyholidays.com\",\n  \"gst_number\": \"GST123456789\",\n  \"check_in_time\": \"14:00\",\n  \"check_out_time\": \"11:00\",\n  \"google_maps_embed_url\": \"https://maps.google.com/...\",\n  \"description\": \"Premium guest house in Bhopal\"\n}"
+							"raw": "{\n  \"property_name\": \"Union Awaas Happy Holiday Guest House\",\n  \"address\": \"94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal\",\n  \"phone\": \"+91 9926770259\",\n  \"email\": \"info@happyholidays.com\",\n  \"gst_number\": \"GST123456789\",\n  \"check_in_time\": \"14:00\",\n  \"check_out_time\": \"11:00\",\n  \"google_maps_embed_url\": \"https://maps.google.com/...\",\n  \"description\": \"Premium guest house in Bhopal\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/admin/property-settings",
-							"host": ["{{base_url}}"],
-							"path": ["api", "admin", "property-settings"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"admin",
+								"property-settings"
+							]
 						},
 						"description": "Update property settings. Only Owners can update."
 					}
@@ -899,8 +1094,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/api/invoices/:id",
-							"host": ["{{base_url}}"],
-							"path": ["api", "invoices", ":id"],
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"invoices",
+								":id"
+							],
 							"variable": [
 								{
 									"key": "id",

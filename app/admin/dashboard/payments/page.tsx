@@ -757,6 +757,12 @@ export default function PaymentsPage() {
                       <span className="text-gray-600">Guest Aadhaar Number:</span>
                       <span className="font-mono font-medium text-gray-900">{selectedBooking.guest_id_number}</span>
                     </div>
+                    {selectedBooking.guest_relation && (
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600">Relation:</span>
+                        <span className="font-medium text-gray-900">{selectedBooking.guest_relation}</span>
+                      </div>
+                    )}
                     {selectedBooking.guest_id_image_url && (
                       <div className="mt-2 pt-2 border-t border-orange-200">
                         <span className="text-sm text-orange-700">✓ Guest ID Document uploaded</span>

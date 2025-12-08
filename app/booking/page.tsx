@@ -162,10 +162,9 @@ function BookingContent() {
     "WiFi": WifiHigh,
     "AC": Fan,
     "TV": TelevisionSimple,
-    "Hot Water": Shower,
+    "Hot Water Rod": Shower,
     "Shower": Shower,
     "Breakfast": Coffee,
-    "Mini Bar": Coffee,
     "Room Service": Coffee,
     "Parking": Car,
     "Balcony": Check,
@@ -731,9 +730,7 @@ function BookingContent() {
                                 <h3 className="text-2xl font-bold text-gray-900 mb-1 cursor-pointer hover:text-brown-dark transition-colors" onClick={() => navigateToRoomDetails(room.id)}>
                                   {room.room_type}
                                 </h3>
-                                <p className="text-sm text-gray-500 mb-3">
-                                  {room.view_type && `${room.view_type} View`}
-                                </p>
+
                                 <p className="text-gray-600 mb-4 line-clamp-2">{room.description}</p>
                               </div>
                             </div>
@@ -747,13 +744,7 @@ function BookingContent() {
                                 <Bed size={18} weight="fill" className="text-brown-dark" />
                                 <span>{room.bed_type}</span>
                               </div>
-                              {room.size_sqft > 0 && (
-                                <div className="flex items-center gap-2">
-                                  <span className="text-brown-dark font-semibold">
-                                    {room.size_sqft} sq ft
-                                  </span>
-                                </div>
-                              )}
+
                             </div>
 
                             {/* Amenities */}
