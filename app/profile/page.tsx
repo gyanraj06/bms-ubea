@@ -24,7 +24,7 @@ interface UserData {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { session, user, isLoading: authLoading } = useAuth();
+  const { session, user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeTab, setActiveTab] = useState("account");
@@ -59,21 +59,21 @@ export default function ProfilePage() {
       return;
     }
 
-    // Try to get user data from localStorage first, then fallback to session
+    // Try to get user data from localStorage first, then fallback to auth context user
     const userDataStr = localStorage.getItem("userData");
     if (userDataStr) {
       const localUser = JSON.parse(userDataStr);
       setUserData({
-        full_name: localUser.full_name || user.user_metadata?.full_name || "",
+        full_name: localUser.full_name || user.full_name || "",
         email: localUser.email || user.email || "",
-        phone: localUser.phone || user.user_metadata?.phone || "",
+        phone: localUser.phone || user.phone || "",
       });
     } else {
-      // Use session data
+      // Use auth context user data
       setUserData({
-        full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+        full_name: user.full_name || "",
         email: user.email || "",
-        phone: user.user_metadata?.phone || user.phone || "",
+        phone: user.phone || "",
       });
     }
 
