@@ -502,7 +502,7 @@ function CheckoutContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="firstName">
-                      {formData.bookingFor === 'self' ? 'First Name' : 'Guest First Name'} *
+                      {formData.bookingFor === 'self' ? 'First Name' : 'Booking Person First Name'} *
                     </Label>
                     <input
                       type="text"
@@ -515,7 +515,7 @@ function CheckoutContent() {
                   </div>
                   <div>
                     <Label htmlFor="lastName">
-                      {formData.bookingFor === 'self' ? 'Last Name' : 'Guest Last Name'} *
+                      {formData.bookingFor === 'self' ? 'Last Name' : 'Booking Person Last Name'} *
                     </Label>
                     <input
                       type="text"
@@ -865,7 +865,7 @@ function CheckoutContent() {
               <div
                 role="button"
                 onClick={(e) => {
-                  alert("Debug: Click received!");
+                  alert(`Debug Data: User=${!!user}, PhoneVerified=${isPhoneVerified}, Processing=${isProcessing}. Click OK to proceed.`);
                   console.log("Button clicked from UI", { isProcessing, hasUser: !!user });
                   if (!isProcessing) handleSubmit(e);
                 }}
