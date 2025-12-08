@@ -259,16 +259,19 @@ function CheckoutContent() {
     setGuestDetails(updated);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+    if (e) e.preventDefault();
+    console.log("HandleSubmit called", { user: !!user, isPhoneVerified });
 
     if (!user) {
+      console.error("Validation failed: No user");
       toast.error("Please login to book");
       router.push("/login");
       return;
     }
 
     if (!isPhoneVerified) {
+      console.error("Validation failed: Phone not verified");
       toast.error("Please verify your phone number");
       return;
     }
@@ -849,8 +852,8 @@ function CheckoutContent() {
               </div>
 
               <button
-                type="submit"
-                form="booking-form"
+                type="button"
+                onClick={handleSubmit}
                 disabled={isProcessing || !user}
                 className="w-full h-12 bg-brown-dark text-white rounded-lg font-semibold hover:bg-brown-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
