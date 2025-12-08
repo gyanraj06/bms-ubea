@@ -21,12 +21,12 @@ function Calendar({
       className={cn("p-4", className)}
       classNames={{
         month: "space-y-4",
-        month_caption: "flex justify-center pt-1 relative items-center mb-4",
+        month_caption: "flex justify-center relative items-center h-10 mb-2",
         caption_label: "text-base font-semibold text-gray-900",
-        nav: "space-x-1 flex items-center",
-        button_previous: "absolute left-1 h-8 w-8 bg-transparent p-0 opacity-60 hover:opacity-100 hover:bg-gray-100 rounded-md inline-flex items-center justify-center transition-all",
-        button_next: "absolute right-1 h-8 w-8 bg-transparent p-0 opacity-60 hover:opacity-100 hover:bg-gray-100 rounded-md inline-flex items-center justify-center transition-all",
-        month_grid: "w-full border-collapse mt-2",
+        nav: "flex items-center gap-1",
+        button_previous: "absolute left-0 top-0 h-10 w-10 bg-transparent p-0 opacity-60 hover:opacity-100 hover:bg-gray-100 rounded-md inline-flex items-center justify-center transition-all z-10",
+        button_next: "absolute right-0 top-0 h-10 w-10 bg-transparent p-0 opacity-60 hover:opacity-100 hover:bg-gray-100 rounded-md inline-flex items-center justify-center transition-all z-10",
+        month_grid: "w-full border-collapse",
         weekdays: "flex",
         weekday: "text-gray-600 w-10 font-semibold text-xs uppercase text-center py-2",
         week: "flex w-full mt-0.5",
