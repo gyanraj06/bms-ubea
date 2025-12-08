@@ -82,12 +82,7 @@ function CheckoutContent() {
   const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
   const [bankIdFile, setBankIdFile] = useState<File | null>(null);
 
-  const [extras, setExtras] = useState({
-    needsCot: false,
-    numCots: 0,
-    needsExtraBed: false,
-    numExtraBeds: 0
-  });
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'govt' | 'bank') => {
     if (e.target.files && e.target.files[0]) {
@@ -294,6 +289,11 @@ function CheckoutContent() {
       return;
     }
 
+    if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
+      toast.error("Aadhaar Number must be exactly 12 digits");
+      return;
+    }
+
     // Validate file upload
     if (!govtIdFile) {
       toast.error("Please upload your Government ID document");
@@ -368,11 +368,11 @@ function CheckoutContent() {
           // Bank Details
           bank_id_number: formData.bankIdNumber || null,
           bank_id_image_url: bankIdPath || null,
-          // Extras - ENSURE THESE ARE NUMBERS
-          needs_cot: Boolean(extras.needsCot),
-          num_cots: parseInt(String(extras.numCots)) || 0,
-          needs_extra_bed: Boolean(extras.needsExtraBed),
-          num_extra_beds: parseInt(String(extras.numExtraBeds)) || 0,
+          // Extras - Removed as requested
+          needs_cot: false,
+          num_cots: 0,
+          needs_extra_bed: false,
+          num_extra_beds: 0,
         }),
       });
 
@@ -609,8 +609,20 @@ function CheckoutContent() {
                         type="text"
                         name="idNumber"
                         value={formData.idNumber}
-                        onChange={handleInputChange}
+                        onChange={(e) => {
+                          // Allow only numbers for Aadhaar
+                          if (formData.idType === 'aadhaar') {
+                            const val = e.target.value;
+                            if (val === '' || /^\d+$/.test(val)) {
+                              handleInputChange(e);
+                            }
+                          } else {
+                            handleInputChange(e);
+                          }
+                        }}
                         className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        maxLength={formData.idType === 'aadhaar' ? 12 : undefined}
+                        placeholder={formData.idType === 'aadhaar' ? '12 digit Aadhaar Number' : ''}
                       />
                     </div>
                     <div className="md:col-span-2">
@@ -627,7 +639,7 @@ function CheckoutContent() {
                 </div>
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard size={20} /> Bank Information (Optional)
+                    <CreditCard size={20} /> Bank ID Number
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -654,69 +666,7 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                {/* Extras Section */}
-                <div className="pt-4 border-t border-gray-100">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Plus size={20} /> Extra Requirements
-                  </h3>
-                  <div className="space-y-4">
-                    {/* Cot Request */}
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={extras.needsCot}
-                          onChange={(e) => setExtras({ ...extras, needsCot: e.target.checked, numCots: e.target.checked ? 1 : 0 })}
-                          className="w-5 h-5 text-brown-dark focus:ring-brown-dark rounded"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900">Need Baby Cot?</p>
-                          <p className="text-xs text-gray-500">Subject to availability</p>
-                        </div>
-                      </div>
-                      {extras.needsCot && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Qty:</span>
-                          <select
-                            value={extras.numCots}
-                            onChange={(e) => setExtras({ ...extras, numCots: parseInt(e.target.value) })}
-                            className="bg-white border border-gray-300 rounded px-2 py-1 text-sm"
-                          >
-                            {[1, 2, 3].map(n => <option key={n} value={n}>{n}</option>)}
-                          </select>
-                        </div>
-                      )}
-                    </div>
 
-                    {/* Extra Bed Request */}
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={extras.needsExtraBed}
-                          onChange={(e) => setExtras({ ...extras, needsExtraBed: e.target.checked, numExtraBeds: e.target.checked ? 1 : 0 })}
-                          className="w-5 h-5 text-brown-dark focus:ring-brown-dark rounded"
-                        />
-                        <div>
-                          <p className="font-medium text-gray-900">Need Extra Bed?</p>
-                          <p className="text-xs text-gray-500">Additional charges may apply</p>
-                        </div>
-                      </div>
-                      {extras.needsExtraBed && (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-gray-600">Qty:</span>
-                          <select
-                            value={extras.numExtraBeds}
-                            onChange={(e) => setExtras({ ...extras, numExtraBeds: parseInt(e.target.value) })}
-                            className="bg-white border border-gray-300 rounded px-2 py-1 text-sm"
-                          >
-                            {[1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
-                          </select>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
                 {/* Guest List */}
                 <div className="pt-4 border-t border-gray-100">
