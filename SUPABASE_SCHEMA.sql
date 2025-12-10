@@ -436,3 +436,33 @@ CREATE POLICY "Service role can manage audit logs" ON audit_logs FOR ALL USING (
 -- 1. Go to Storage and create buckets: property-media (public), documents (private)
 -- 2. Run the storage policies mentioned above
 -- 3. Test admin user creation will be done via API with password hashing
+
+-- =============================================
+-- 11. GALLERY IMAGES TABLE (Added 2025-12-10)
+-- =============================================
+CREATE TABLE IF NOT EXISTS gallery_images (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  image_url TEXT NOT NULL,
+  storage_path TEXT NOT NULL,
+  width INTEGER,
+  height INTEGER,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  uploaded_by UUID REFERENCES admin_users(id)
+);
+
+-- RLS for Gallery Images
+ALTER TABLE gallery_images ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can view gallery images" ON gallery_images FOR SELECT USING (true);
+CREATE POLICY "Service role can manage gallery images" ON gallery_images FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Authenticated admins can insert gallery images" ON gallery_images FOR INSERT WITH CHECK (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+CREATE POLICY "Authenticated admins can delete gallery images" ON gallery_images FOR DELETE USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
+
+-- =============================================
+-- GALLERY STORAGE INSTRUCTIONS
+-- =============================================
+-- 1. Create a new public bucket named 'gallery'
+-- 2. Add Policies:
+--    - SELECT: (bucket_id = 'gallery') -> Public
+--    - INSERT: (bucket_id = 'gallery' AND auth.role() IN ('authenticated', 'service_role')) -> Admin
+--    - DELETE: (bucket_id = 'gallery' AND auth.role() IN ('authenticated', 'service_role')) -> Admin

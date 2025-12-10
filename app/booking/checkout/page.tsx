@@ -215,32 +215,25 @@ function CheckoutContent() {
   // Calculations
   const calculateTotal = () => {
     if (!checkInDate || !checkOutDate || selectedRooms.length === 0)
-      return { nights: 0, subtotal: 0, tax: 0, grandTotal: 0 };
+      return { nights: 0, subtotal: 0, grandTotal: 0 };
 
     // Calculate nights as 24-hour slots
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
     let subtotal = 0;
-    let tax = 0;
 
     selectedRooms.forEach(room => {
       const roomTotal = room.price * nights * room.quantity;
       subtotal += roomTotal;
-
-      // Get exact GST if available from updated details, else fall back to 12%
-      const details = roomDetailsMap[room.roomId];
-      const gstPercentage = details?.gst_percentage || 12;
-
-      tax += roomTotal * (gstPercentage / 100);
     });
 
-    const grandTotal = subtotal + tax;
+    const grandTotal = subtotal;
 
-    return { nights, subtotal, tax, grandTotal };
+    return { nights, subtotal, grandTotal };
   };
 
-  const { nights, subtotal, tax, grandTotal } = calculateTotal();
+  const { nights, subtotal, grandTotal } = calculateTotal();
 
   // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -1018,14 +1011,18 @@ function CheckoutContent() {
                   <span className="text-gray-600">Subtotal</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between mb-4 text-sm">
-                  <span className="text-gray-600">Taxes</span>
-                  <span>₹{tax.toLocaleString()}</span>
-                </div>
+
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
                   <span className="text-brown-dark">₹{grandTotal.toLocaleString()}</span>
                 </div>
+              </div>
+
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800">
+                <p className="font-semibold mb-1">Terms and Conditions</p>
+                <p>
+                  You are liable for cancellation in case there are any issues with details and payment.
+                </p>
               </div>
 
               <div

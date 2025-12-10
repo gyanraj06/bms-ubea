@@ -330,6 +330,55 @@ export default function PaymentPage() {
                 </a>
               </div>
 
+              {/* Bank Details Section */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <span></span> Bank Account Details
+                </h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600">Account Name</span>
+                    <span className="font-medium text-right text-gray-900">Union Bank Emp. Asso.</span>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600">Account Number</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-gray-900">581002010015132</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText("581002010015132");
+                          toast.success("Account Number copied");
+                        }}
+                        className="text-brown-dark hover:text-brown-medium"
+                        title="Copy Account Number"
+                      >
+                        <Copy size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600">IFSC Code</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-gray-900">UBIN0558109</span>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText("UBIN0558109");
+                          toast.success("IFSC Code copied");
+                        }}
+                        className="text-brown-dark hover:text-brown-medium"
+                        title="Copy IFSC Code"
+                      >
+                        <Copy size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-start">
+                    <span className="text-gray-600">Branch</span>
+                    <span className="font-medium text-right text-gray-900">Arera Hills Bhopal Branch</span>
+                  </div>
+                </div>
+              </div>
+
               {/* Instructions */}
               <div className="space-y-4 border-t border-gray-100 pt-6">
                 <h3 className="font-semibold text-gray-900">Instructions:</h3>

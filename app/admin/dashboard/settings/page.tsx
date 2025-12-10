@@ -71,6 +71,9 @@ export default function SettingsPage() {
     property_name: "",
     address: "",
     phone: "",
+    phone2: "",
+    phone3: "",
+    phone4: "",
     email: "",
     gst_number: "",
     check_in_time: "14:00",
@@ -153,6 +156,9 @@ export default function SettingsPage() {
             property_name: data.settings.property_name || "",
             address: data.settings.address || "",
             phone: data.settings.phone || "",
+            phone2: data.settings.phone2 || "",
+            phone3: data.settings.phone3 || "",
+            phone4: data.settings.phone4 || "",
             email: data.settings.email || "",
             gst_number: data.settings.gst_number || "",
             check_in_time: data.settings.check_in_time || "14:00",
@@ -743,16 +749,48 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="phone">Phone Number *</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      value={propertySettings.phone}
-                      onChange={(e) => setPropertySettings({ ...propertySettings, phone: e.target.value })}
-                      className="mt-1"
-                      required
-                    />
+                  <div className="md:col-span-2 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="phone">Phone 1 *</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={propertySettings.phone}
+                        onChange={(e) => setPropertySettings({ ...propertySettings, phone: e.target.value })}
+                        className="mt-1"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone2">Phone 2 (Optional)</Label>
+                      <Input
+                        id="phone2"
+                        type="tel"
+                        value={propertySettings.phone2}
+                        onChange={(e) => setPropertySettings({ ...propertySettings, phone2: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone3">Phone 3 (Optional)</Label>
+                      <Input
+                        id="phone3"
+                        type="tel"
+                        value={propertySettings.phone3}
+                        onChange={(e) => setPropertySettings({ ...propertySettings, phone3: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="phone4">Phone 4 (Optional)</Label>
+                      <Input
+                        id="phone4"
+                        type="tel"
+                        value={propertySettings.phone4}
+                        onChange={(e) => setPropertySettings({ ...propertySettings, phone4: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="propertyEmail">Email *</Label>

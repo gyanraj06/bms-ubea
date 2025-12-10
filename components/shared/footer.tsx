@@ -19,6 +19,9 @@ interface PropertySettings {
   property_name: string;
   address: string;
   phone: string;
+  phone2?: string;
+  phone3?: string;
+  phone4?: string;
   email: string;
   gst_number: string;
   check_in_time: string;
@@ -131,12 +134,21 @@ export function Footer() {
                   className="text-primary-400 flex-shrink-0"
                   weight="fill"
                 />
-                <a
-                  href={`tel:${settings.phone.replace(/\s/g, '')}`}
-                  className="text-gray-400 hover:text-white transition-colors"
-                >
-                  {settings.phone}
-                </a>
+                <span className="text-gray-400">
+                  {[settings.phone, settings.phone2, settings.phone3, settings.phone4]
+                    .filter(Boolean)
+                    .map((num, i, arr) => (
+                      <span key={i}>
+                        <a
+                          href={`tel:${num?.replace(/\s/g, '')}`}
+                          className="hover:text-white transition-colors"
+                        >
+                          {num}
+                        </a>
+                        {i < arr.length - 1 && ", "}
+                      </span>
+                    ))}
+                </span>
               </li>
               <li className="flex items-center space-x-3 text-sm">
                 <EnvelopeSimple

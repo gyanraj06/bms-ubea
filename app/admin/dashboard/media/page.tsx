@@ -20,15 +20,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Room, Media } from "@/types";
+import type { Room, Media, GalleryImage } from "@/types";
 
-type TabType = "rooms" | "media";
+type TabType = "rooms" | "media" | "gallery";
 
 export default function PropertyMediaPage() {
   const [adminUserId, setAdminUserId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<TabType>("rooms");
   const [rooms, setRooms] = useState<Room[]>([]);
   const [media, setMedia] = useState<Media[]>([]);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -41,11 +42,10 @@ export default function PropertyMediaPage() {
   // Room form state
   const [roomForm, setRoomForm] = useState({
     room_number: "",
-    room_type: "Deluxe",
+    room_type: "Com. H.L. Parwana Room",
     floor: 1,
     max_guests: 2,
     base_price: 2500,
-    gst_percentage: 0,
     description: "",
     amenities: [] as string[],
     size_sqft: 250,
@@ -68,7 +68,12 @@ export default function PropertyMediaPage() {
     "Safe",
   ];
 
-  const roomTypes = ["Deluxe", "Suite", "Premium", "Standard"];
+  const roomTypes = [
+    "Com. H.L. Parwana Room",
+    "Dada Tarkakeshwar Chakraborti Room",
+    "Com. Prabhatkar Room",
+    "Standard Room",
+  ];
   const bedTypes = ["Single Bed", "Queen Bed", "King Bed", "Twin Beds"];
   const viewTypes = ["Garden View", "Mountain View", "City View", "Pool View"];
 
@@ -101,6 +106,19 @@ export default function PropertyMediaPage() {
     }
   };
 
+  // Fetch gallery images
+  const fetchGalleryImages = async () => {
+    try {
+      const response = await fetch("/api/admin/gallery");
+      const data = await response.json();
+      if (data.success) {
+        setGalleryImages(data.images);
+      }
+    } catch (error) {
+      console.error("Error fetching gallery images:", error);
+    }
+  };
+
   useEffect(() => {
     // Load admin user ID from localStorage
     const adminUser = localStorage.getItem("adminUser");
@@ -115,6 +133,7 @@ export default function PropertyMediaPage() {
 
     fetchRooms();
     fetchMedia();
+    fetchGalleryImages();
   }, []);
 
   const getAuthHeaders = () => {
@@ -188,6 +207,11 @@ export default function PropertyMediaPage() {
       return;
     }
 
+    if (activeTab === 'gallery') {
+      await handleUploadGalleryImages();
+      return;
+    }
+
     if (uploadCategory === "Rooms" && !selectedRoomForUpload) {
       toast.error("Please select a room for these images");
       return;
@@ -238,6 +262,88 @@ export default function PropertyMediaPage() {
     }
   };
 
+  // Handle gallery image upload
+  const handleUploadGalleryImages = async () => {
+    // Check limit
+    if (galleryImages.length + uploadingFiles.length > 20) {
+      toast.error(`Cannot upload ${uploadingFiles.length} images. Limit is 20 (Current: ${galleryImages.length})`);
+      return;
+    }
+
+    // Check size limit client-side
+    const oversizedFiles = uploadingFiles.filter(f => f.size > 1048576);
+    if (oversizedFiles.length > 0) {
+      toast.error(`${oversizedFiles.length} file(s) exceed 1MB limit.`);
+      return;
+    }
+
+    if (!adminUserId) {
+      toast.error("Admin user not found. Please login again.");
+      return;
+    }
+
+    if (isUploading) return;
+    setIsUploading(true);
+
+    const uploadPromises = uploadingFiles.map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("uploaded_by", adminUserId);
+
+      // Optional: Get dimensions if possible, but simpler to skip or do on backend if essential
+      // For now, strict masonry usually works fine without pre-calc dimensions if using CSS columns
+
+      const response = await fetch("/api/admin/gallery", {
+        method: "POST",
+        body: formData,
+      });
+
+      return response.json();
+    });
+
+    try {
+      const results = await Promise.all(uploadPromises);
+      const successCount = results.filter((r) => r.success).length;
+      const failures = results.filter((r) => !r.success);
+
+      if (successCount > 0) {
+        toast.success(`${successCount} gallery image(s) uploaded successfully`);
+        fetchGalleryImages();
+        handleCloseUploadModal();
+      }
+
+      if (failures.length > 0) {
+        toast.error(`Failed to upload ${failures.length} images. ${failures[0].error || ''}`);
+      }
+    } catch (error) {
+      toast.error("Failed to upload gallery images");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Handle gallery image deletion
+  const handleDeleteGalleryImage = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this gallery image?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/gallery?id=${id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchGalleryImages();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error("Failed to delete gallery image");
+    }
+  };
+
   // Handle media deletion
   const handleDeleteMedia = async (id: string) => {
     if (!confirm("Are you sure you want to delete this media?")) return;
@@ -270,7 +376,6 @@ export default function PropertyMediaPage() {
         floor: room.floor,
         max_guests: room.max_guests,
         base_price: room.base_price,
-        gst_percentage: room.gst_percentage || 0,
         description: room.description,
         amenities: room.amenities,
         size_sqft: room.size_sqft,
@@ -287,7 +392,6 @@ export default function PropertyMediaPage() {
         floor: 1,
         max_guests: 2,
         base_price: 2500,
-        gst_percentage: 0,
         description: "",
         amenities: [],
         size_sqft: 250,
@@ -371,6 +475,23 @@ export default function PropertyMediaPage() {
         >
           Media Gallery ({media.length})
           {activeTab === "media" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-brown-dark"
+            />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("gallery")}
+          className={cn(
+            "px-6 py-3 font-medium text-sm transition-colors relative",
+            activeTab === "gallery"
+              ? "text-brown-dark"
+              : "text-gray-500 hover:text-gray-700"
+          )}
+        >
+          Main Gallery ({galleryImages.length}/20)
+          {activeTab === "gallery" && (
             <motion.div
               layoutId="activeTab"
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-brown-dark"
@@ -514,6 +635,75 @@ export default function PropertyMediaPage() {
                     </div>
                   </div>
                 </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Gallery Tab */}
+      {activeTab === "gallery" && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Main Gallery
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Manage recent photos for the customer gallery page (Max 20, 1MB each)
+              </p>
+            </div>
+            <Button
+              onClick={() => setShowUploadModal(true)}
+              className="bg-brown-dark hover:bg-brown-medium text-white"
+              disabled={galleryImages.length >= 20}
+            >
+              <Upload size={20} className="mr-2" />
+              Upload Photos
+            </Button>
+          </div>
+
+          {galleryImages.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <Images size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No gallery images yet
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Upload images to populate the main gallery
+              </p>
+              <Button
+                onClick={() => setShowUploadModal(true)}
+                className="bg-brown-dark hover:bg-brown-medium text-white"
+              >
+                <Upload size={20} className="mr-2" />
+                Upload Photos
+              </Button>
+            </div>
+          ) : (
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
+              {galleryImages.map((item) => (
+                <div
+                  key={item.id}
+                  className="relative group rounded-lg overflow-hidden border border-gray-200 break-inside-avoid"
+                >
+                  <img
+                    src={item.image_url}
+                    alt="Gallery"
+                    className="w-full h-auto object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <Button
+                      onClick={() => handleDeleteGalleryImage(item.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white"
+                      size="sm"
+                    >
+                      <Trash size={16} className="mr-1" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -717,26 +907,7 @@ export default function PropertyMediaPage() {
                     />
                   </div>
 
-                  {/* GST Percentage */}
-                  <div>
-                    <Label htmlFor="gst_percentage">
-                      GST Percentage (%)
-                    </Label>
-                    <Input
-                      id="gst_percentage"
-                      type="number"
-                      value={roomForm.gst_percentage}
-                      onChange={(e) =>
-                        setRoomForm({
-                          ...roomForm,
-                          gst_percentage: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      min="0"
-                      max="100"
-                      step="0.01"
-                    />
-                  </div>
+
 
 
 

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 const navigation = [
   { name: "About", href: "/about" },
+  { name: "Gallery", href: "/gallery" },
   { name: "Event Hall", href: "/event-hall" },
   { name: "Newsletter", href: "/newsletter" },
   { name: "Book Now", href: "/booking", highlight: true },
@@ -121,7 +122,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
             />
             <span
               className={cn(
-                "font-serif text-sm sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap",
+                "font-serif text-sm sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap hidden md:block",
                 shouldShowLight ? "text-brown-dark" : "text-white"
               )}
             >
@@ -342,18 +343,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                   </Link>
                 ) : user ? (
                   <>
-                    <Link
-                      href="/booking/checkout"
-                      className={cn(
-                        "flex items-center justify-center p-2 rounded-full transition-all",
-                        shouldShowLight
-                          ? "text-brown-dark hover:bg-gray-100"
-                          : "text-white hover:bg-white/10"
-                      )}
-                      aria-label="Checkout"
-                    >
-                      <ShoppingCart size={22} weight="fill" />
-                    </Link>
+                    {/* Cart Hidden on Mobile as per request */}
                     <Link
                       href="/profile"
                       className={cn(

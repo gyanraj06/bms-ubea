@@ -108,3 +108,13 @@ export interface AvailabilityResponse {
   message: string
   error?: string
 }
+
+export interface GalleryImage {
+  id: string
+  image_url: string
+  storage_path: string
+  width?: number
+  height?: number
+  created_at?: string
+  uploaded_by?: string
+}

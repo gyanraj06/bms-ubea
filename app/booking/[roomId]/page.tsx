@@ -105,20 +105,14 @@ function BookingDetailContent() {
   const quantityInCart = cart[roomId]?.quantity || 0;
   const maxAvailable = room?.count || 10; // Fallback if count not available
 
-  // Calculate total price (including taxes)
-  const calculateTotalWithTax = () => {
-    // We need to fetch all room details for accurate tax calculation
-    // For now, we rely on the price stored in cart + 12% assumption if GST missing
-    // Ideally, we should fetch all room details or store GST in cart
+  // Calculate total price
+  const calculateTotal = () => {
     return Object.values(cart).reduce((total, item) => {
-      const gstPercentage = 12; // Default assumption as we don't have room details for ALL cart items here easily without fetching
-      const itemTotal = item.price * item.quantity;
-      const tax = itemTotal * (gstPercentage / 100);
-      return total + itemTotal + tax;
+      return total + (item.price * item.quantity);
     }, 0);
   };
 
-  const totalPriceWithTax = calculateTotalWithTax();
+  const totalPrice = calculateTotal();
 
   const nights = checkInDate && checkOutDate
     ? Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24))
@@ -350,7 +344,7 @@ function BookingDetailContent() {
                     ₹{room.base_price.toLocaleString()}
                     <span className="text-base font-normal text-gray-600">/night</span>
                   </div>
-                  <p className="text-sm text-gray-500 mt-1">+ taxes & fees</p>
+                  <p className="text-sm text-gray-500 mt-1"></p>
                 </div>
 
                 {/* Quantity Selector */}
@@ -402,7 +396,7 @@ function BookingDetailContent() {
                     <h3 className="font-semibold text-gray-900 mb-4">Your Selection</h3>
                     <div className="flex justify-between items-center mb-4">
                       <span className="text-gray-600">{totalItems} Room{totalItems !== 1 ? 's' : ''}</span>
-                      <span className="font-bold text-gray-900">₹{(totalPriceWithTax * nights).toLocaleString()}</span>
+                      <span className="font-bold text-gray-900">₹{(totalPrice * nights).toLocaleString()}</span>
                     </div>
                     <button
                       onClick={proceedToCheckout}
@@ -467,7 +461,7 @@ function BookingDetailContent() {
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">
-                    ₹{(totalPriceWithTax * nights).toLocaleString()}
+                    ₹{(totalPrice * nights).toLocaleString()}
                   </p>
                 </div>
               </div>

@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       // We need to check availability for all rooms of this type
       const { data: allRoomsOfType, error: typeError } = await supabaseAdmin
         .from('rooms')
-        .select('id, room_number, base_price, gst_percentage')
+        .select('id, room_number, base_price')
         .eq('room_type', targetRoom.room_type)
         .eq('is_available', true);
 
@@ -246,8 +246,7 @@ export async function POST(request: NextRequest) {
 
       for (const roomToBook of roomsToBook) {
         const roomCharges = roomToBook.base_price * totalNights;
-        const gstAmount = roomCharges * ((roomToBook.gst_percentage || 12) / 100);
-        const totalAmount = roomCharges + gstAmount;
+        const totalAmount = roomCharges;
 
         // For now, assume 100% advance or whatever logic
         const advancePaid = totalAmount;
@@ -269,7 +268,7 @@ export async function POST(request: NextRequest) {
             total_nights: totalNights,
             num_guests: Math.ceil((parseInt(num_guests) || 1) / bookingsToCreate.length), // Distribute guests roughly
             room_charges: roomCharges,
-            gst_amount: gstAmount,
+            gst_amount: 0,
             total_amount: totalAmount,
             advance_paid: advancePaid,
             balance_amount: balanceAmount,

@@ -154,7 +154,7 @@ export default function RoomDetailPage({ params }: { params: { id: string } }) {
                   </span>
                   <span className="text-gray-600">/night</span>
                 </div>
-                <p className="text-sm text-gray-500">Exclusive of taxes</p>
+
               </div>
 
               <div className="space-y-4 mb-6">

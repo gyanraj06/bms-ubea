@@ -328,7 +328,12 @@ function BookingContent() {
   const isDateDisabled = (date: Date) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return date < today;
+
+    const maxDate = new Date();
+    maxDate.setMonth(maxDate.getMonth() + 4);
+    maxDate.setHours(23, 59, 59, 999);
+
+    return date < today || date > maxDate;
   };
 
   // Group rooms by type
@@ -348,20 +353,14 @@ function BookingContent() {
 
   const roomTypes = Object.values(groupedRooms);
 
-  // Calculate total price (including taxes)
-  const calculateTotalWithTax = () => {
+  // Calculate total price
+  const calculateTotal = () => {
     return Object.values(cart).reduce((total, item) => {
-      // We need to find the room to get GST percentage if possible, or assume 12%
-      // Since cart item might not have GST, we can try to find it in availableRooms if loaded
-      const room = availableRooms.find(r => r.id === item.roomId);
-      const gstPercentage = room?.gst_percentage || 12;
-      const itemTotal = item.price * item.quantity;
-      const tax = itemTotal * (gstPercentage / 100);
-      return total + itemTotal + tax;
+      return total + (item.price * item.quantity);
     }, 0);
   };
 
-  const totalPriceWithTax = calculateTotalWithTax();
+  const totalPrice = calculateTotal();
 
   const nights = (() => {
     const start = getFullDateTime(checkInDate, checkInTime);
@@ -533,7 +532,15 @@ function BookingContent() {
                       setCheckOutDate(date);
                       setCheckOutOpen(false);
                     }}
-                    disabled={(date) => isDateDisabled(date) || (checkInDate ? date <= checkInDate : false)}
+                    disabled={(date) => {
+                      if (isDateDisabled(date)) return true;
+                      if (checkInDate) {
+                        const maxCheckoutDate = new Date(checkInDate);
+                        maxCheckoutDate.setDate(maxCheckoutDate.getDate() + 7);
+                        return date <= checkInDate || date > maxCheckoutDate;
+                      }
+                      return false;
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -772,7 +779,7 @@ function BookingContent() {
                                 ₹{room.base_price.toLocaleString()}
                                 <span className="text-base font-normal text-gray-600">/night</span>
                               </div>
-                              <p className="text-sm text-gray-500 mt-1">+ taxes & fees</p>
+                              <p className="text-sm text-gray-500 mt-1"></p>
                             </div>
 
                             <div className="flex items-center gap-4">
@@ -856,7 +863,7 @@ function BookingContent() {
                         <CaretUp size={16} weight="bold" className="text-brown-dark group-hover:-translate-y-1 transition-transform" />
                       </div>
                       <p className="text-xl font-bold text-gray-900">
-                        ₹{(totalPriceWithTax * nights).toLocaleString()}
+                        ₹{(totalPrice * nights).toLocaleString()}
                         <span className="text-xs font-normal text-gray-500 ml-1">(incl. taxes)</span>
                       </p>
                     </div>
@@ -938,11 +945,13 @@ function BookingContent() {
                       </div>
                     )}
                     <div className="flex justify-between items-center pt-2 mt-2 border-t border-gray-200">
-                      <span className="font-bold text-gray-900">Total Estimate</span>
-                      <span className="font-bold text-xl text-brown-dark">₹{(totalPriceWithTax * nights).toLocaleString()}</span>
+                      <span className="text-gray-600">Total (for {nights} nights):</span>
+                      <div className="flex items-baseline">
+                        <span className="font-bold text-xl text-brown-dark">₹{(totalPrice * nights).toLocaleString()}</span>
+                      </div>
                     </div>
                     <p className="text-xs text-gray-400 mt-2 text-center">
-                      Final tax calculation will be done at checkout
+
                     </p>
                   </div>
                 </PopoverContent>
