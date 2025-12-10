@@ -1,7 +1,7 @@
 {
   "name": "bms-clientside",
   "version": "1.0.0",
-  "description": "Union Awaas Happy Holiday Booking System - Customer-facing website",
+  "description": "Union Awas Happy Holiday Booking System - Customer-facing website",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

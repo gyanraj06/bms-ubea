@@ -19,11 +19,11 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Union Awaas Happy Holiday - Book Your Perfect Stay",
+  title: "Union Awas Happy Holiday - Book Your Perfect Stay",
   description:
     "Experience unparalleled Service and comfort at our premium hotel. Book your perfect room or event hall today.",
   keywords: [
-    "Union Awaas Happy Holiday",
+    "Union Awas Happy Holiday",
     "premium accommodation",
     "hotel booking",
     "event halls",

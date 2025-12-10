@@ -27,7 +27,7 @@ export function WelcomeSection() {
             </div>
 
             <h2 className="font-serif text-4xl md:text-5xl lg:text-6xl font-medium text-brown-dark mb-6 leading-tight">
-              Welcome to Union Awaas
+              Welcome to Union Awas
             </h2>
 
             <p className="text-lg text-gray-600 leading-relaxed mb-6">

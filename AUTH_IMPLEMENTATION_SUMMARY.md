@@ -2,7 +2,7 @@
 
 ## 🎉 Implementation Status: COMPLETE
 
-The complete authentication system for Union Awaas Happy Holiday Guest House has been successfully implemented with both **Admin (Role-Based)** and **User (Supabase Auth)** authentication.
+The complete authentication system for Union Awas Happy Holiday Guest House has been successfully implemented with both **Admin (Role-Based)** and **User (Supabase Auth)** authentication.
 
 ---
 

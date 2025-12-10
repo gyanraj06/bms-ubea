@@ -24,7 +24,7 @@ interface PropertySettings {
 export default function AboutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settings, setSettings] = useState<PropertySettings>({
-    property_name: "Union Awaas Happy Holiday Guest House",
+    property_name: "Union Awas Happy Holiday Guest House",
     address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
     phone: "+91 9926770259",
     email: "info@happyholidays.com",
@@ -87,7 +87,7 @@ export default function AboutPage() {
       icon: Trophy,
       title: "Continuous Enhancement",
       description:
-        "Dedicated to enhancing the Union Awaas experience, serving our growing family of members with excellence.",
+        "Dedicated to enhancing the Union Awas experience, serving our growing family of members with excellence.",
     },
   ];
 
@@ -125,7 +125,7 @@ export default function AboutPage() {
               Introduction
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-              The Union Awaas in Bhopal is more than just a guest house; it's a dedicated
+              The Union Awas in Bhopal is more than just a guest house; it's a dedicated
               initiative by the Union Bank Employees' Association, MP (UBEA) and the All India
               Bank Employees' Association (AIBEA) to provide a comfortable, secure, and
               affordable haven for our esteemed members and their families.
@@ -146,10 +146,10 @@ export default function AboutPage() {
               Our Commitment to Members
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed mb-8">
-              Every aspect of Union Awaas is managed with our members in mind. From the carefully
+              Every aspect of Union Awas is managed with our members in mind. From the carefully
               maintained facilities to the exclusive, subsidized tariffs, our aim is to provide
               unparalleled value and convenience. We understand the importance of trust and community
-              within our union, and Union Awaas stands as a testament to that commitment.
+              within our union, and Union Awas stands as a testament to that commitment.
             </p>
 
             <h2 className="font-serif text-3xl md:text-4xl font-semibold text-brown-dark mb-6">
@@ -157,7 +157,7 @@ export default function AboutPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               As we continue to serve our growing family of members, we remain dedicated to enhancing
-              the Union Awaas experience. We invite all eligible UBEA and AIBEA members to experience
+              the Union Awas experience. We invite all eligible UBEA and AIBEA members to experience
               the comfort, convenience, and community spirit of their very own holiday home in Bhopal.
             </p>
           </div>

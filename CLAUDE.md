@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Union Awaas Happy Holiday booking website client-side application built with Next.js 14. The design is an exact recreation of chaletmatthe.sk, featuring a premium aesthetic with brown/tan color scheme and smooth animations.
+This is a Union Awas Happy Holiday booking website client-side application built with Next.js 14. The design is an exact recreation of chaletmatthe.sk, featuring a premium aesthetic with brown/tan color scheme and smooth animations.
 
 ## Development Commands
 

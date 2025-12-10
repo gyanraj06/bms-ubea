@@ -21,7 +21,7 @@ const testimonials = [
     id: 3,
     name: "Amit Patel",
     rating: 5,
-    content: "Perfect for retired members like me! The peaceful environment and affordable tariff made my Bhopal visit very enjoyable. The proximity to AIIMS was especially helpful. Union Awaas feels like a home away from home.",
+    content: "Perfect for retired members like me! The peaceful environment and affordable tariff made my Bhopal visit very enjoyable. The proximity to AIIMS was especially helpful. Union Awas feels like a home away from home.",
   },
   {
     id: 4,
@@ -80,7 +80,7 @@ export function Testimonials() {
             Guest Experiences
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Hear what our members have to say about their stay at Union Awaas
+            Hear what our members have to say about their stay at Union Awas
           </p>
         </div>
 

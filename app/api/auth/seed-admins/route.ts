@@ -42,7 +42,7 @@ async function seedAdminUsers() {
       {
         email: 'owner@happyholidays.com',
         password: 'Owner@123',
-        full_name: 'Union Awaas Happy Holiday Owner',
+        full_name: 'Union Awas Happy Holiday Owner',
         role: 'Owner',
         phone: '+919876543210',
       },

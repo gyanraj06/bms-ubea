@@ -1,8 +1,8 @@
-# Union Awaas Happy Holiday BMS - API Documentation
+# Union Awas Happy Holiday BMS - API Documentation
 
 ## Overview
 
-This document provides a complete overview of all available APIs in the Union Awaas Happy Holiday Booking Management System.
+This document provides a complete overview of all available APIs in the Union Awas Happy Holiday Booking Management System.
 
 **Base URL:** `http://localhost:3000`
 
@@ -167,7 +167,7 @@ Bookings are considered overlapping if:
   "user": {
     "id": "uuid",
     "email": "owner@happyholidays.com",
-    "full_name": "Union Awaas Happy Holiday Owner",
+    "full_name": "Union Awas Happy Holiday Owner",
     "role": "Owner",
     "phone": "+919876543210"
   }

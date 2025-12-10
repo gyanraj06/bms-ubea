@@ -1,4 +1,4 @@
-# Setup Checklist - Union Awaas Happy Holiday Authentication System
+# Setup Checklist - Union Awas Happy Holiday Authentication System
 
 ## ✅ Quick Start Guide
 

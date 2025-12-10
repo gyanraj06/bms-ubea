@@ -275,9 +275,7 @@ export default function InlinePhoneVerification({
                             >
                                 {isLoading ? <CircleNotch className="animate-spin" size={20} /> : "Verify"}
                             </button>
-                            <div className="text-[10px] text-red-500 mt-1">
-                                DBG: Len:{value?.length} Val:{value} Ld:{isLoading ? 'T' : 'F'}
-                            </div>
+
                         </div>
                     )}
                 </div>

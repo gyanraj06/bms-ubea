@@ -40,7 +40,7 @@ export function Header() {
           <Link href="/" className="flex items-center space-x-2">
             <img
               src="/logo.png"
-              alt="Union Awaas Happy Holiday"
+              alt="Union Awas Happy Holiday"
               className="h-16 w-auto object-contain"
             />
             <span
@@ -49,7 +49,7 @@ export function Header() {
                 isScrolled ? "text-gray-900" : "text-white"
               )}
             >
-              Union Awaas Happy Holiday
+              Union Awas Happy Holiday
             </span>
           </Link>
 

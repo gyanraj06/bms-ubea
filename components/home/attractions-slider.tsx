@@ -266,7 +266,7 @@ export function AttractionsSlider() {
             Experience in the heart of Madhya Pradesh
           </h2>
           <p className="text-base md:text-lg text-gray-600 leading-relaxed mb-10 max-w-2xl mx-auto">
-            Union Awaas Happy Holiday is an ideal starting point for exploring the rich cultural
+            Union Awas Happy Holiday is an ideal starting point for exploring the rich cultural
             heritage and natural beauty of Bhopal and Madhya Pradesh – throughout the year.
             Discover ancient monuments, serene lakes, and vibrant wildlife, all within easy
             reach of your tranquil retreat.

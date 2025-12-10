@@ -13,7 +13,7 @@
 2. Click **"+"** to create a new site
 3. Fill in the form:
 
-   - **Label:** `Union Awaas Happy Holiday Booking - Phone Auth`
+   - **Label:** `Union Awas Happy Holiday Booking - Phone Auth`
    - **reCAPTCHA type:** Select **"reCAPTCHA v2"** → **"Invisible reCAPTCHA badge"**
    - **Domains:** Add:
      - `localhost`

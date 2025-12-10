@@ -116,7 +116,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
           <Link href="/" className="flex items-center flex-shrink-0 md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto">
             <img
               src="/logo.png"
-              alt="Union Awaas Happy Holiday"
+              alt="Union Awas Happy Holiday"
               className="h-8 sm:h-16 w-auto object-contain"
             />
             <span
@@ -125,7 +125,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
                 shouldShowLight ? "text-brown-dark" : "text-white"
               )}
             >
-              Union Awaas Happy Holiday
+              Union Awas Happy Holiday
             </span>
           </Link>
 

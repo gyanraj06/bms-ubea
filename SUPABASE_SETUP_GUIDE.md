@@ -1,4 +1,4 @@
-# Supabase Setup Guide for Union Awaas Happy Holiday Guest House
+# Supabase Setup Guide for Union Awas Happy Holiday Guest House
 
 ## Step 1: Run Database Schema
 

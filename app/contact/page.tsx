@@ -24,7 +24,7 @@ interface PropertySettings {
 export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [settings, setSettings] = useState<PropertySettings>({
-    property_name: "Union Awaas Happy Holiday Guest House",
+    property_name: "Union Awas Happy Holiday Guest House",
     address: "94, Hanuman Nagar, Narmadapuram Road, near Shani Mandir and SMH Hospital, behind UcoBank, Bhopal",
     phone: "+91 9926770259",
     email: "info@happyholidays.com",

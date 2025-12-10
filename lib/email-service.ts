@@ -45,7 +45,7 @@ const getPropertySettings = async (): Promise<PropertySettings> => {
     if (error) throw error;
 
     return {
-      property_name: data.property_name || 'Union Awaas Happy Holiday',
+      property_name: data.property_name || 'Union Awas Happy Holiday',
       phone: data.phone || '+91 9926770259',
       check_in_time: formatTime(data.check_in_time || '14:00'),
       check_out_time: formatTime(data.check_out_time || '11:00'),
@@ -54,7 +54,7 @@ const getPropertySettings = async (): Promise<PropertySettings> => {
     console.error('Error fetching property settings:', error);
     // Fallback values
     return {
-      property_name: 'Union Awaas Happy Holiday',
+      property_name: 'Union Awas Happy Holiday',
       phone: '+91 9926770259',
       check_in_time: '02:00 PM',
       check_out_time: '11:00 AM',
@@ -81,7 +81,7 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
     const zeptoUrl = process.env.ZEPTO_MAIL_URL;
     const zeptoToken = process.env.ZEPTO_MAIL_TOKEN;
     const senderEmail = process.env.ZEPTO_MAIL_SENDER_EMAIL;
-    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awaas Happy Holiday';
+    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awas Happy Holiday';
 
     if (!zeptoUrl || !zeptoToken || !senderEmail) {
       console.error('Zepto Mail credentials missing');
@@ -216,7 +216,7 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
         <!-- Replace with actual logo URL for production -->
         <img
           src="https://bms-clientside.vercel.app/logo.png"
-          alt="Union Awaas Happy Holiday"
+          alt="Union Awas Happy Holiday"
           class="logo"
           style="display: block; margin: 0 auto 20px auto; max-width: 150px"
         />
@@ -228,7 +228,7 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
       <div class="content">
         <p class="p">Hi <strong>{{user_name}}</strong>,</p>
         <p class="p">
-          Thank you for choosing Union Awaas Happy Holiday! Your booking has been
+          Thank you for choosing Union Awas Happy Holiday! Your booking has been
           successfully created. We have received your request and the rooms have
           been reserved for you.
         </p>
@@ -293,7 +293,7 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
 
       <!-- Footer -->
       <div class="footer">
-        <p>&copy; Union Awaas Happy Holiday. All rights reserved.</p>
+        <p>&copy; Union Awas Happy Holiday. All rights reserved.</p>
         <p>{{property_address}}</p>
         <p><a href="{{website_url}}">Visit our website</a></p>
       </div>
@@ -368,7 +368,7 @@ export async function sendPaymentVerifiedEmail(data: PaymentVerifiedEmailData) {
     let zeptoUrl = process.env.ZEPTO_MAIL_URL;
     const zeptoToken = process.env.ZEPTO_MAIL_TOKEN;
     const senderEmail = process.env.ZEPTO_MAIL_SENDER_EMAIL;
-    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awaas Happy Holiday';
+    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awas Happy Holiday';
 
     if (!zeptoUrl || !zeptoToken || !senderEmail) {
       console.error('Zepto Mail credentials missing');
@@ -456,7 +456,7 @@ export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
     let zeptoUrl = process.env.ZEPTO_MAIL_URL;
     const zeptoToken = process.env.ZEPTO_MAIL_TOKEN;
     const senderEmail = process.env.ZEPTO_MAIL_SENDER_EMAIL;
-    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awaas Happy Holiday';
+    const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awas Happy Holiday';
 
     if (!zeptoUrl || !zeptoToken || !senderEmail) {
       console.error('Zepto Mail credentials missing');

@@ -7,7 +7,7 @@ const audiences = [
   {
     icon: UserCircle,
     title: 'UBEA/AIBEA Members',
-    description: 'Whether you\'re visiting Bhopal for personal work, a short trip, or official bank duties, Union Awaas is your home base. We provide a secure, comfortable, and highly affordable stay for all serving and retired members.',
+    description: 'Whether you\'re visiting Bhopal for personal work, a short trip, or official bank duties, Union Awas is your home base. We provide a secure, comfortable, and highly affordable stay for all serving and retired members.',
   },
   {
     icon: Presentation,
