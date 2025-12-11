@@ -42,7 +42,7 @@ export function ChaletHero() {
 
           {/* Subtitle */}
           <p className="text-tan text-base md:text-lg font-medium tracking-wide mb-12">
-            An exclusive and comfortable stay for members of UBEA, AIBEA, and their families.
+            An exclusive and comfortable stay for members of UBEA , AIUBEA , MPBEA , AIBEA and their families.
           </p>
 
           {/* Book Now Button */}
