@@ -1026,7 +1026,7 @@ function CheckoutContent() {
                     />
                     <div className="flex-1">
                       <span className="font-medium text-gray-900">Are you a UBEA MPCG member?</span>
-                      <p className="text-xs text-gray-500">Get ₹100 off per room per night</p>
+                      <p className="text-xs text-gray-500"></p>
                     </div>
                   </label>
                 </div>
