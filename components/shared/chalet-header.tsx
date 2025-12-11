@@ -117,15 +117,15 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 relative">
           {/* Logo */}
-          <Link href="/" className="flex items-center flex-shrink-0 md:static absolute left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto">
+          <Link href="/" className="flex items-center flex-shrink-0">
             <img
               src="/logo.png"
               alt="Union Awas Happy Holiday"
-              className="h-8 sm:h-16 w-auto object-contain"
+              className="hidden md:block h-8 sm:h-16 w-auto object-contain"
             />
             <span
               className={cn(
-                "font-serif text-sm sm:text-2xl font-semibold transition-colors ml-2 whitespace-nowrap hidden md:block",
+                "font-serif text-lg sm:text-2xl font-bold transition-colors md:ml-2 whitespace-nowrap",
                 shouldShowLight ? "text-brown-dark" : "text-white"
               )}
             >

@@ -285,13 +285,13 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Header */}
+    <div className="space-y-4 md:space-y-6">
+      {/* Welcome Header - Hidden on Mobile to save space */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="hidden md:flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -300,103 +300,41 @@ export default function AdminDashboardPage() {
         </div>
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-lg p-3 md:p-6 shadow-sm border border-gray-200 flex flex-col justify-between"
-            >
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-1 md:gap-0">
-                <div className="order-2 md:order-1">
-                  <p className="text-[10px] md:text-sm text-gray-600 font-medium whitespace-nowrap">
-                    {stat.title}
-                  </p>
-                  <p className="text-base md:text-2xl font-bold text-gray-900 mt-0 md:mt-2">
-                    {stat.value}
-                  </p>
-                </div>
-                <div
-                  className={cn(
-                    "p-1.5 md:p-3 rounded-lg w-fit order-1 md:order-2 mb-1 md:mb-0",
-                    getStatColorClass(stat.color)
-                  )}
-                >
-                  <Icon size={16} className="md:w-6 md:h-6" weight="fill" />
-                </div>
-              </div>
-              <div className="flex items-center gap-1 mt-1 md:mt-4">
-                {stat.change > 0 ? (
-                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
-                ) : (
-                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
-                )}
-                <span
-                  className={cn(
-                    "text-[10px] md:text-sm font-medium",
-                    stat.change > 0 ? "text-green-600" : "text-red-600"
-                  )}
-                >
-                  {Math.abs(stat.change)}%
-                </span>
-                <span className="text-[10px] md:text-sm text-gray-500 ml-1">vs last month</span>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Today's Activity */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-        className="bg-white rounded-lg p-3 md:p-6 shadow-sm border border-gray-200"
-      >
-        <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Today's Activity</h2>
-        <div className="grid grid-cols-3 gap-2 md:gap-4">
-          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-green-50 rounded-lg text-center md:text-left">
-            <div className="p-1.5 md:p-3 bg-green-100 rounded-lg">
-              <CheckCircle size={16} className="text-green-600 md:w-6 md:h-6" weight="fill" />
-            </div>
-            <div>
-              <p className="text-lg md:text-2xl font-bold text-green-900 leading-tight">
-                {todaysActivity.checkIns}
-              </p>
-              <p className="text-[10px] md:text-sm text-green-700 font-medium leading-tight">Check-ins</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-blue-50 rounded-lg text-center md:text-left">
-            <div className="p-1.5 md:p-3 bg-blue-100 rounded-lg">
-              <XCircle size={16} className="text-blue-600 md:w-6 md:h-6" weight="fill" />
-            </div>
-            <div>
-              <p className="text-lg md:text-2xl font-bold text-blue-900 leading-tight">
-                {todaysActivity.checkOuts}
-              </p>
-              <p className="text-[10px] md:text-sm text-blue-700 font-medium leading-tight">Check-outs</p>
-            </div>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-yellow-50 rounded-lg text-center md:text-left">
-            <div className="p-1.5 md:p-3 bg-yellow-100 rounded-lg">
-              <Clock size={16} className="text-yellow-600 md:w-6 md:h-6" weight="fill" />
-            </div>
-            <div>
-              <p className="text-lg md:text-2xl font-bold text-yellow-900 leading-tight">
-                {todaysActivity.pending}
-              </p>
-              <p className="text-[10px] md:text-sm text-yellow-700 font-medium leading-tight">Pending</p>
-            </div>
-          </div>
+      {/* Unified Metrics Grid (Stats + Today's Activity) */}
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
+        {/* Check-ins */}
+        <div className="bg-green-50 rounded-lg p-2 md:p-4 text-center border border-green-100">
+          <p className="text-xl md:text-2xl font-bold text-green-700">{todaysActivity.checkIns}</p>
+          <p className="text-[10px] md:text-xs text-green-600 font-medium leading-tight">Check-ins</p>
         </div>
-      </motion.div>
+
+        {/* Check-outs */}
+        <div className="bg-blue-50 rounded-lg p-2 md:p-4 text-center border border-blue-100">
+          <p className="text-xl md:text-2xl font-bold text-blue-700">{todaysActivity.checkOuts}</p>
+          <p className="text-[10px] md:text-xs text-blue-600 font-medium leading-tight">Check-outs</p>
+        </div>
+
+        {/* Pending */}
+        <div className="bg-yellow-50 rounded-lg p-2 md:p-4 text-center border border-yellow-100">
+          <p className="text-xl md:text-2xl font-bold text-yellow-700">{todaysActivity.pending}</p>
+          <p className="text-[10px] md:text-xs text-yellow-600 font-medium leading-tight">Pending</p>
+        </div>
+
+        {/* Render consolidated Stats */}
+        {stats.map((stat, index) => (
+          <div
+            key={stat.title}
+            className="bg-white rounded-lg p-2 md:p-4 shadow-sm border border-gray-200 text-center flex flex-col justify-center"
+          >
+            <p className="text-sm md:text-lg font-bold text-gray-900 leading-tight block">
+              {stat.value}
+            </p>
+            <p className="text-[10px] md:text-xs text-gray-500 font-medium leading-tight mt-0.5">
+              {stat.title.replace("Total ", "").replace("Monthly ", "")}
+            </p>
+          </div>
+        ))}
+      </div>
 
       {/* Recent Bookings */}
       <motion.div
@@ -405,11 +343,11 @@ export default function AdminDashboardPage() {
         transition={{ duration: 0.5, delay: 0.5 }}
         className="bg-white rounded-lg shadow-sm border border-gray-200"
       >
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-3 md:p-6 border-b border-gray-200 hidden md:block">
           <h2 className="text-xl font-bold text-gray-900">Recent Bookings</h2>
         </div>
         {recentBookings.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
+          <div className="p-4 text-center text-gray-500 text-sm">
             No bookings found
           </div>
         ) : (
@@ -417,58 +355,55 @@ export default function AdminDashboardPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Booking ID
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    ID
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Guest Name
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Guest
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Room
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check-in
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    In/Out
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Check-out
-                  </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
                     Amount
                   </th>
-                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentBookings.slice(0, 3).map((booking) => (
+                {recentBookings.slice(0, 5).map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
-                      {booking.booking_number}
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm font-medium text-gray-900">
+                      #{booking.booking_number.slice(-6)}
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-900 truncate max-w-[80px] md:max-w-none">
                       {booking.guest_name}
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
-                      {booking.rooms?.room_type || 'N/A'} - {booking.rooms?.room_number || 'N/A'}
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-600 hidden md:table-cell">
+                      {booking.rooms?.room_number || '-'}
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
-                      {formatDateTime(new Date(booking.check_in))}
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-600">
+                      <div className="flex flex-col">
+                        <span>{formatDateTime(new Date(booking.check_in)).split(',')[0]}</span>
+                        <span className="text-gray-400 text-[9px] md:hidden">{formatDateTime(new Date(booking.check_out)).split(',')[0]}</span>
+                      </div>
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
-                      {formatDateTime(new Date(booking.check_out))}
-                    </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900 font-medium">
+                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-900 font-medium hidden md:table-cell">
                       {formatCurrency(booking.total_amount)}
                     </td>
-                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
+                    <td className="px-2 py-2 whitespace-nowrap">
                       <span
                         className={cn(
-                          "px-2 md:px-3 py-0.5 md:py-1 inline-flex text-[10px] md:text-xs leading-5 font-semibold rounded-full capitalize",
+                          "px-1.5 py-0.5 inline-flex text-[9px] md:text-xs leading-4 font-semibold rounded-full capitalize",
                           getStatusColor(booking.status)
                         )}
                       >
-                        {booking.status || 'Unknown'}
+                        {booking.status || 'Unk'}
                       </span>
                     </td>
                   </tr>
@@ -478,10 +413,6 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </motion.div>
-
-
-
-
     </div>
   );
 }
