@@ -32,7 +32,7 @@ export function WelcomeSection() {
 
             <p className="text-lg text-gray-600 leading-relaxed mb-6">
               The official holiday home for members of the Union Bank Employees'
-              Association, MP (UBEA) and All India Bank Employees' Association (AIBEA).
+              Association, MP (UBEA), All India Union Bank Employees Association (AIUBEA), Madhya Pradesh Bank Employees Association (MPBEA) and All India Bank Employees' Association (AIBEA).
               We offer a clean, secure, and affordable stay exclusively for our
               union members, retirees, officers and their families visiting Bhopal.
             </p>
