@@ -251,60 +251,62 @@ export default function BookingsPage() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="hidden md:block"
       >
         <h1 className="text-3xl font-bold text-gray-900">Bookings Management</h1>
         <p className="text-gray-600 mt-1">View and manage all property bookings</p>
       </motion.div>
+      <h1 className="text-lg font-bold text-gray-900 md:hidden">Bookings</h1>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-lg p-4 shadow-sm border border-gray-200"
+          className="bg-white rounded-lg p-2 shadow-sm border border-gray-200"
         >
-          <p className="text-sm text-gray-600 mb-1">Total Bookings</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-[10px] md:text-sm text-gray-600 mb-0.5 leading-tight">Total</p>
+          <p className="text-base md:text-2xl font-bold text-gray-900 leading-none">{stats.total}</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-green-50 rounded-lg p-4 shadow-sm border border-green-200"
+          className="bg-green-50 rounded-lg p-2 shadow-sm border border-green-200"
         >
-          <p className="text-sm text-green-700 mb-1">Confirmed</p>
-          <p className="text-2xl font-bold text-green-900">{stats.confirmed}</p>
+          <p className="text-[10px] md:text-sm text-green-700 mb-0.5 leading-tight">Confirmed</p>
+          <p className="text-base md:text-2xl font-bold text-green-900 leading-none">{stats.confirmed}</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-yellow-50 rounded-lg p-4 shadow-sm border border-yellow-200"
+          className="bg-yellow-50 rounded-lg p-2 shadow-sm border border-yellow-200"
         >
-          <p className="text-sm text-yellow-700 mb-1">Pending</p>
-          <p className="text-2xl font-bold text-yellow-900">{stats.pending}</p>
+          <p className="text-[10px] md:text-sm text-yellow-700 mb-0.5 leading-tight">Pending</p>
+          <p className="text-base md:text-2xl font-bold text-yellow-900 leading-none">{stats.pending}</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-blue-50 rounded-lg p-4 shadow-sm border border-blue-200"
+          className="bg-blue-50 rounded-lg p-2 shadow-sm border border-blue-200"
         >
-          <p className="text-sm text-blue-700 mb-1">Checked In</p>
-          <p className="text-2xl font-bold text-blue-900">{stats.checkedIn}</p>
+          <p className="text-[10px] md:text-sm text-blue-700 mb-0.5 leading-tight">Checked In</p>
+          <p className="text-base md:text-2xl font-bold text-blue-900 leading-none">{stats.checkedIn}</p>
         </motion.div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-red-50 rounded-lg p-4 shadow-sm border border-red-200"
+          className="bg-red-50 rounded-lg p-2 shadow-sm border border-red-200"
         >
-          <p className="text-sm text-red-700 mb-1">Cancelled</p>
-          <p className="text-2xl font-bold text-red-900">{stats.cancelled}</p>
+          <p className="text-[10px] md:text-sm text-red-700 mb-0.5 leading-tight">Cancelled</p>
+          <p className="text-base md:text-2xl font-bold text-red-900 leading-none">{stats.cancelled}</p>
         </motion.div>
       </div>
 
@@ -313,31 +315,29 @@ export default function BookingsPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
-        className="bg-white rounded-lg p-6 shadow-sm border border-gray-200"
+        className="bg-white rounded-lg p-3 md:p-6 shadow-sm border border-gray-200"
       >
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlass
-                size={20}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-              />
-              <Input
-                type="text"
-                placeholder="Search by booking ID, name, email, or phone..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <MagnifyingGlass
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
+            <Input
+              type="text"
+              placeholder="Search booking ID, name, email, phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 md:h-11 text-sm"
+            />
           </div>
 
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-1.5 md:gap-2 flex-wrap">
             {["all", "confirmed", "pending", "checked-in", "cancelled"].map((status) => (
               <button
                 key={status}
                 onClick={() => setSelectedStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${selectedStatus === status
+                className={`px-2.5 md:px-4 py-1.5 md:py-2 rounded-lg font-medium text-xs md:text-sm transition-colors ${selectedStatus === status
                   ? "bg-brown-dark text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
@@ -365,103 +365,102 @@ export default function BookingsPage() {
               transition={{ delay: index * 0.05 }}
               className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
             >
-              <div className="p-6">
+              <div className="p-3 md:p-6">
                 {/* Booking Header */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 pb-4 border-b border-gray-200">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-gray-900">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 pb-3 border-b border-gray-200">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                      <h3 className="font-bold text-sm md:text-base text-gray-900">
                         {booking.booking_number}
                       </h3>
                       <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${getStatusColor(
                           booking.status
                         )}`}
                       >
-                        {getStatusIcon(booking.status)}
+                        <span className="hidden md:inline">{getStatusIcon(booking.status)}</span>
                         {booking.status}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getPaymentStatusColor(
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] md:text-xs font-medium ${getPaymentStatusColor(
                           booking.payment_status
                         )}`}
                       >
                         {booking.payment_status}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">
-                      Booked on {formatDate(new Date(booking.created_at))}
+                    <p className="text-xs md:text-sm text-gray-500">
+                      {formatDate(new Date(booking.created_at))}
                     </p>
                   </div>
 
-                  <div className="mt-4 md:mt-0">
-                    <p className="text-sm text-gray-500 mb-1">Total Amount</p>
-                    <p className="text-2xl font-bold text-brown-dark">
+                  <div className="mt-2 md:mt-0">
+                    <p className="text-xs md:text-sm text-gray-500 mb-0.5">Total</p>
+                    <p className="text-lg md:text-2xl font-bold text-brown-dark">
                       {formatCurrency(booking.total_amount)}
                     </p>
                   </div>
                 </div>
 
                 {/* Customer Info */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-4 mb-3">
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Guest Name</p>
-                    <p className="font-medium text-gray-900">{booking.guest_name}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Guest</p>
+                    <p className="font-medium text-sm text-gray-900 truncate">{booking.guest_name}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Email</p>
-                    <p className="font-medium text-gray-900">{booking.guest_email}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Email</p>
+                    <p className="font-medium text-sm text-gray-900 truncate">{booking.guest_email}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500 mb-1">Phone</p>
-                    <p className="font-medium text-gray-900">{booking.guest_phone}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">Phone</p>
+                    <p className="font-medium text-sm text-gray-900">{booking.guest_phone}</p>
                   </div>
                 </div>
 
                 {/* Booking Details */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="flex items-start gap-2">
-                    <Calendar size={18} className="text-brown-dark mt-1" weight="bold" />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 mb-3">
+                  <div className="flex items-start gap-1.5">
+                    <Calendar size={16} className="text-brown-dark mt-0.5 hidden md:block" weight="bold" />
                     <div>
-                      <p className="text-sm text-gray-500">Check-in</p>
-                      <p className="font-medium text-sm">{formatDateTime(new Date(booking.check_in))}</p>
+                      <p className="text-xs text-gray-500">Check-in</p>
+                      <p className="font-medium text-xs md:text-sm">{formatDate(new Date(booking.check_in))}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <Calendar size={18} className="text-brown-dark mt-1" weight="bold" />
+                  <div className="flex items-start gap-1.5">
+                    <Calendar size={16} className="text-brown-dark mt-0.5 hidden md:block" weight="bold" />
                     <div>
-                      <p className="text-sm text-gray-500">Check-out</p>
-                      <p className="font-medium text-sm">{formatDateTime(new Date(booking.check_out))}</p>
+                      <p className="text-xs text-gray-500">Check-out</p>
+                      <p className="font-medium text-xs md:text-sm">{formatDate(new Date(booking.check_out))}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <Users size={18} className="text-brown-dark mt-1" weight="bold" />
+                  <div className="flex items-start gap-1.5">
+                    <Users size={16} className="text-brown-dark mt-0.5 hidden md:block" weight="bold" />
                     <div>
-                      <p className="text-sm text-gray-500">Guests</p>
-                      <p className="font-medium text-sm">{booking.num_guests}</p>
+                      <p className="text-xs text-gray-500">Guests</p>
+                      <p className="font-medium text-xs md:text-sm">{booking.num_guests}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <CheckCircle size={18} className="text-brown-dark mt-1" weight="bold" />
+                  <div className="flex items-start gap-1.5">
+                    <CheckCircle size={16} className="text-brown-dark mt-0.5 hidden md:block" weight="bold" />
                     <div>
-                      <p className="text-sm text-gray-500">Nights</p>
-                      <p className="font-medium text-sm">{booking.total_nights}</p>
+                      <p className="text-xs text-gray-500">Nights</p>
+                      <p className="font-medium text-xs md:text-sm">{booking.total_nights}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Room Details */}
                 {booking.rooms && (
-                  <div className="border-t border-gray-200 pt-4 mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-3 text-sm">Room</h4>
-                    <div className="flex justify-between items-center text-sm">
+                  <div className="border-t border-gray-200 pt-2 md:pt-4 mb-2 md:mb-4">
+                    <div className="flex justify-between items-center text-xs md:text-sm">
                       <div>
                         <span className="font-medium">{booking.rooms.room_type}</span>
-                        <span className="text-gray-500 ml-2">
-                          (Room {booking.rooms.room_number})
+                        <span className="text-gray-500 ml-1 md:ml-2 text-xs">
+                          (Rm {booking.rooms.room_number})
                         </span>
                       </div>
                       <p className="font-medium">{formatCurrency(booking.room_charges)}</p>
@@ -471,50 +470,50 @@ export default function BookingsPage() {
 
                 {/* Special Requests */}
                 {booking.special_requests && (
-                  <div className="border-t border-gray-200 pt-4 mb-4">
-                    <p className="text-sm text-gray-500 mb-1">Special Requests</p>
-                    <p className="text-sm text-gray-900">{booking.special_requests}</p>
+                  <div className="border-t border-gray-200 pt-2 md:pt-4 mb-2 md:mb-4">
+                    <p className="text-xs text-gray-500 mb-0.5">Special Requests</p>
+                    <p className="text-xs md:text-sm text-gray-900">{booking.special_requests}</p>
                   </div>
                 )}
 
                 {/* Payment Details */}
-                <div className="border-t border-gray-200 pt-4 mb-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="border-t border-gray-200 pt-2 md:pt-4 mb-2 md:mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4 text-xs md:text-sm">
                     <div>
-                      <p className="text-gray-500 mb-1">Room Charges</p>
+                      <p className="text-gray-500 mb-0.5">Room Charges</p>
                       <p className="font-medium">{formatCurrency(booking.room_charges)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">GST (12%)</p>
+                      <p className="text-gray-500 mb-0.5">GST (12%)</p>
                       <p className="font-medium">{formatCurrency(booking.gst_amount)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Advance Paid</p>
+                      <p className="text-gray-500 mb-0.5">Advance</p>
                       <p className="font-medium text-green-600">{formatCurrency(booking.advance_paid)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-500 mb-1">Balance</p>
+                      <p className="text-gray-500 mb-0.5">Balance</p>
                       <p className="font-medium text-red-600">{formatCurrency(booking.balance_amount)}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="border-t border-gray-200 pt-4 flex flex-wrap gap-2">
+                <div className="border-t border-gray-200 pt-2 md:pt-4 flex flex-wrap gap-2">
                   <Button
                     onClick={() => handleViewDetails(booking)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm"
                     size="sm"
                   >
-                    <Eye size={16} className="mr-1" weight="bold" />
-                    View Details
+                    <Eye size={14} className="mr-1" weight="bold" />
+                    View
                   </Button>
                   <Button
                     onClick={() => handleEditBooking(booking)}
-                    className="bg-brown-dark hover:bg-brown-dark/90 text-white"
+                    className="bg-brown-dark hover:bg-brown-dark/90 text-white text-xs md:text-sm"
                     size="sm"
                   >
-                    <PencilSimple size={16} className="mr-1" weight="bold" />
+                    <PencilSimple size={14} className="mr-1" weight="bold" />
                     Edit
                   </Button>
                 </div>

@@ -13,6 +13,7 @@ import {
   Bed,
   CheckCircle,
   XCircle,
+  CaretRight,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -381,39 +382,65 @@ export default function ReportsPage() {
     toast.success('Report exported successfully');
   };
 
+  // Mobile Performance Card Component
+  const MobilePerformanceCard = ({ data }: { data: MonthlyData }) => (
+    <div className="bg-gray-50 rounded-xl p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold text-gray-900">{data.month}</span>
+        <span className="text-sm font-bold text-green-600">{formatCurrency(data.revenue)}</span>
+      </div>
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="bg-white rounded-lg p-2">
+          <p className="text-[10px] text-gray-500">Bookings</p>
+          <p className="text-sm font-bold text-gray-900">{data.bookings}</p>
+        </div>
+        <div className="bg-white rounded-lg p-2">
+          <p className="text-[10px] text-gray-500">Occupancy</p>
+          <p className="text-sm font-bold text-gray-900">{data.occupancy}%</p>
+        </div>
+        <div className="bg-white rounded-lg p-2">
+          <p className="text-[10px] text-gray-500">Avg Rate</p>
+          <p className="text-sm font-bold text-gray-900">₹{Math.round(data.avgRate)}</p>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark mx-auto"></div>
-          <p className="text-gray-600 mt-4">Loading reports...</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brown-dark mx-auto"></div>
+          <p className="text-gray-600 mt-4 text-sm">Loading reports...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6 overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600 mt-1">Comprehensive business insights and performance metrics</p>
+          <h1 className="text-xl md:text-3xl font-bold text-gray-900">Reports & Analytics</h1>
+          <p className="text-xs md:text-sm text-gray-600 mt-0.5">Business insights and performance metrics</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="border-gray-300" onClick={exportReport}>
-            <Download size={20} className="mr-2" />
-            Export Report
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="border-gray-300 text-xs md:text-sm h-9 md:h-10 w-full sm:w-auto"
+          onClick={exportReport}
+        >
+          <Download size={16} className="mr-1.5" />
+          Export Report
+        </Button>
       </div>
 
-      {/* Timeframe Selector */}
-      <div className="flex gap-2 bg-white p-2 rounded-lg border border-gray-200 w-fit">
+      {/* Timeframe Selector - Horizontal scroll on mobile */}
+      <div className="flex gap-1.5 md:gap-2 bg-white p-1.5 md:p-2 rounded-xl border border-gray-200 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setTimeframe("week")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
             timeframe === "week"
               ? "bg-brown-dark text-white"
               : "bg-transparent text-gray-700 hover:bg-gray-100"
@@ -424,7 +451,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setTimeframe("month")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
             timeframe === "month"
               ? "bg-brown-dark text-white"
               : "bg-transparent text-gray-700 hover:bg-gray-100"
@@ -435,7 +462,7 @@ export default function ReportsPage() {
         <button
           onClick={() => setTimeframe("year")}
           className={cn(
-            "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+            "px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0",
             timeframe === "year"
               ? "bg-brown-dark text-white"
               : "bg-transparent text-gray-700 hover:bg-gray-100"
@@ -445,36 +472,35 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Key Metrics - 2x2 grid on mobile */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 md:gap-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-lg p-6 border border-gray-200"
+          className="bg-white rounded-xl p-2 md:p-6 border border-gray-200 shadow-sm"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 font-medium">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] md:text-sm text-gray-600 font-medium">Total Revenue</p>
+              <p className="text-sm md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-2 truncate">
                 {formatCurrency(analytics.totalRevenue)}
               </p>
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1 md:mt-2">
                 {analytics.revenueChange >= 0 ? (
-                  <TrendUp size={16} className="text-green-600" weight="bold" />
+                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
                 ) : (
-                  <TrendDown size={16} className="text-red-600" weight="bold" />
+                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
                 )}
                 <span className={cn(
-                  "text-sm font-medium",
+                  "text-[10px] md:text-sm font-medium",
                   analytics.revenueChange >= 0 ? "text-green-600" : "text-red-600"
                 )}>
                   {Math.abs(analytics.revenueChange)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs last period</span>
               </div>
             </div>
-            <div className="p-3 bg-purple-100 rounded-lg">
-              <CurrencyCircleDollar size={24} className="text-purple-600" weight="fill" />
+            <div className="p-1.5 md:p-3 bg-purple-100 rounded-lg w-fit">
+              <CurrencyCircleDollar size={16} className="text-purple-600 md:w-6 md:h-6" weight="fill" />
             </div>
           </div>
         </motion.div>
@@ -483,31 +509,30 @@ export default function ReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-lg p-6 border border-gray-200"
+          className="bg-white rounded-xl p-2 md:p-6 border border-gray-200 shadow-sm"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 font-medium">Total Bookings</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] md:text-sm text-gray-600 font-medium">Total Bookings</p>
+              <p className="text-sm md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-2">
                 {analytics.totalBookings}
               </p>
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1 md:mt-2">
                 {analytics.bookingsChange >= 0 ? (
-                  <TrendUp size={16} className="text-green-600" weight="bold" />
+                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
                 ) : (
-                  <TrendDown size={16} className="text-red-600" weight="bold" />
+                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
                 )}
                 <span className={cn(
-                  "text-sm font-medium",
+                  "text-[10px] md:text-sm font-medium",
                   analytics.bookingsChange >= 0 ? "text-green-600" : "text-red-600"
                 )}>
                   {Math.abs(analytics.bookingsChange)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs last period</span>
               </div>
             </div>
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <CheckCircle size={24} className="text-blue-600" weight="fill" />
+            <div className="p-1.5 md:p-3 bg-blue-100 rounded-lg w-fit">
+              <CheckCircle size={16} className="text-blue-600 md:w-6 md:h-6" weight="fill" />
             </div>
           </div>
         </motion.div>
@@ -516,31 +541,30 @@ export default function ReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-lg p-6 border border-gray-200"
+          className="bg-white rounded-xl p-2 md:p-6 border border-gray-200 shadow-sm"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 font-medium">Avg Occupancy</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] md:text-sm text-gray-600 font-medium">Avg Occupancy</p>
+              <p className="text-sm md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-2">
                 {analytics.avgOccupancy}%
               </p>
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1 md:mt-2">
                 {analytics.occupancyChange >= 0 ? (
-                  <TrendUp size={16} className="text-green-600" weight="bold" />
+                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
                 ) : (
-                  <TrendDown size={16} className="text-red-600" weight="bold" />
+                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
                 )}
                 <span className={cn(
-                  "text-sm font-medium",
+                  "text-[10px] md:text-sm font-medium",
                   analytics.occupancyChange >= 0 ? "text-green-600" : "text-red-600"
                 )}>
                   {Math.abs(analytics.occupancyChange)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs last period</span>
               </div>
             </div>
-            <div className="p-3 bg-green-100 rounded-lg">
-              <Bed size={24} className="text-green-600" weight="fill" />
+            <div className="p-1.5 md:p-3 bg-green-100 rounded-lg w-fit">
+              <Bed size={16} className="text-green-600 md:w-6 md:h-6" weight="fill" />
             </div>
           </div>
         </motion.div>
@@ -549,155 +573,163 @@ export default function ReportsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-lg p-6 border border-gray-200"
+          className="bg-white rounded-xl p-2 md:p-6 border border-gray-200 shadow-sm"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="text-sm text-gray-600 font-medium">Avg Daily Rate</p>
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] md:text-sm text-gray-600 font-medium">Avg Daily Rate</p>
+              <p className="text-sm md:text-2xl font-bold text-gray-900 mt-0.5 md:mt-2 truncate">
                 {formatCurrency(analytics.avgDailyRate)}
               </p>
-              <div className="flex items-center gap-1 mt-2">
+              <div className="flex items-center gap-1 mt-1 md:mt-2">
                 {analytics.rateChange >= 0 ? (
-                  <TrendUp size={16} className="text-green-600" weight="bold" />
+                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
                 ) : (
-                  <TrendDown size={16} className="text-red-600" weight="bold" />
+                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
                 )}
                 <span className={cn(
-                  "text-sm font-medium",
+                  "text-[10px] md:text-sm font-medium",
                   analytics.rateChange >= 0 ? "text-green-600" : "text-red-600"
                 )}>
                   {Math.abs(analytics.rateChange)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs last period</span>
               </div>
             </div>
-            <div className="p-3 bg-orange-100 rounded-lg">
-              <ChartBar size={24} className="text-orange-600" weight="fill" />
+            <div className="p-1.5 md:p-3 bg-orange-100 rounded-lg w-fit">
+              <ChartBar size={16} className="text-orange-600 md:w-6 md:h-6" weight="fill" />
             </div>
           </div>
         </motion.div>
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Revenue Trend Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Revenue Trend</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-              <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`} />
-              <Tooltip
-                formatter={(value: number) => formatCurrency(value)}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#32373c"
-                strokeWidth={2}
-                dot={{ fill: '#32373c', r: 4 }}
-                name="Revenue"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-xl border border-gray-200 p-2 md:p-6 shadow-sm overflow-hidden">
+          <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Revenue Trend</h2>
+          <div className="w-full h-[200px] md:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" stroke="#6b7280" fontSize={10} />
+                <YAxis stroke="#6b7280" fontSize={10} tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  formatter={(value: number) => formatCurrency(value)}
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#32373c"
+                  strokeWidth={2}
+                  dot={{ fill: '#32373c', r: 3 }}
+                  name="Revenue"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Bookings Trend Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Booking Trends</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-              <YAxis stroke="#6b7280" fontSize={12} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Legend />
-              <Bar dataKey="bookings" fill="#DDC9B5" name="Bookings" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-xl border border-gray-200 p-2 md:p-6 shadow-sm overflow-hidden">
+          <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Booking Trends</h2>
+          <div className="w-full h-[200px] md:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" stroke="#6b7280" fontSize={10} />
+                <YAxis stroke="#6b7280" fontSize={10} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Bar dataKey="bookings" fill="#DDC9B5" name="Bookings" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Occupancy Rate Chart */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Occupancy Rate (%)</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" stroke="#6b7280" fontSize={12} />
-              <YAxis stroke="#6b7280" fontSize={12} domain={[0, 100]} />
-              <Tooltip
-                formatter={(value: number) => `${value}%`}
-                contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="occupancy"
-                stroke="#10b981"
-                strokeWidth={2}
-                dot={{ fill: '#10b981', r: 4 }}
-                name="Occupancy %"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-xl border border-gray-200 p-2 md:p-6 shadow-sm overflow-hidden">
+          <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Occupancy Rate (%)</h2>
+          <div className="w-full h-[200px] md:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="month" stroke="#6b7280" fontSize={10} />
+                <YAxis stroke="#6b7280" fontSize={10} domain={[0, 100]} />
+                <Tooltip
+                  formatter={(value: number) => `${value}%`}
+                  contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '12px' }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="occupancy"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ fill: '#10b981', r: 3 }}
+                  name="Occupancy %"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
         {/* Booking Status Breakdown */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Booking Status Distribution</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={statusBreakdown}
-                dataKey="count"
-                nameKey="status"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={(entry: any) => `${entry.status}: ${entry.percentage}%`}
-                labelLine={false}
-              >
-                {statusBreakdown.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value: number, name: string) => [`${value} bookings`, name]} />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="bg-white rounded-xl border border-gray-200 p-2 md:p-6 shadow-sm overflow-hidden">
+          <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Status Distribution</h2>
+          <div className="w-full h-[200px] md:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                <Pie
+                  data={statusBreakdown}
+                  dataKey="count"
+                  nameKey="status"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={70}
+                  label={({ payload }: any) => `${payload.status}: ${payload.percentage}%`}
+                  labelLine={false}
+                  className="text-[10px] md:text-xs"
+                >
+                  {statusBreakdown.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: number, name: string) => [`${value} bookings`, name]}
+                  contentStyle={{ fontSize: '12px' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       {/* Two Column Layout for Additional Reports */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6">
         {/* Top Performing Room Types */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Top Performing Room Types</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-3 md:p-6 border-b border-gray-200">
+            <h2 className="text-base md:text-xl font-bold text-gray-900">Top Performing Room Types</h2>
           </div>
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             {roomTypePerformance.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No booking data available</p>
+              <p className="text-gray-500 text-center py-8 text-sm">No booking data available</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {roomTypePerformance.map((room, index) => (
-                  <div key={room.room_type} className="flex items-center gap-4">
-                    <div className="flex-shrink-0 w-8 h-8 bg-brown-dark text-white rounded-full flex items-center justify-center font-bold text-sm">
+                  <div key={room.room_type} className="flex items-center gap-3">
+                    <div className="flex-shrink-0 w-6 h-6 md:w-8 md:h-8 bg-brown-dark text-white rounded-full flex items-center justify-center font-bold text-xs md:text-sm">
                       {index + 1}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-semibold text-gray-900">{room.room_type}</p>
-                        <p className="text-sm font-bold text-gray-900">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-0.5 md:mb-1">
+                        <p className="font-semibold text-gray-900 text-xs md:text-base truncate pr-2">{room.room_type}</p>
+                        <p className="text-xs md:text-sm font-bold text-gray-900 flex-shrink-0">
                           {formatCurrency(room.revenue)}
                         </p>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 md:gap-4 text-[10px] md:text-sm text-gray-600">
                         <span>{room.bookings} bookings</span>
                         <span>{room.occupancy}% of total</span>
                       </div>
@@ -710,28 +742,28 @@ export default function ReportsPage() {
         </div>
 
         {/* Status Breakdown Table */}
-        <div className="bg-white rounded-lg border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900">Booking Status Breakdown</h2>
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="p-3 md:p-6 border-b border-gray-200">
+            <h2 className="text-base md:text-xl font-bold text-gray-900">Booking Status Breakdown</h2>
           </div>
-          <div className="p-6">
+          <div className="p-3 md:p-6">
             {statusBreakdown.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No booking data available</p>
+              <p className="text-gray-500 text-center py-8 text-sm">No booking data available</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 {statusBreakdown.map((status) => (
                   <div key={status.status}>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900 capitalize">{status.status}</span>
-                      <span className="text-sm font-bold text-gray-900">{status.percentage}%</span>
+                    <div className="flex items-center justify-between mb-1 md:mb-2">
+                      <span className="text-xs md:text-sm font-medium text-gray-900 capitalize">{status.status}</span>
+                      <span className="text-xs md:text-sm font-bold text-gray-900">{status.percentage}%</span>
                     </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5 md:h-2">
                       <div
-                        className="bg-brown-dark h-2 rounded-full transition-all"
+                        className="bg-brown-dark h-1.5 md:h-2 rounded-full transition-all"
                         style={{ width: `${status.percentage}%` }}
                       />
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">{status.count} bookings</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 mt-0.5 md:mt-1">{status.count} bookings</p>
                   </div>
                 ))}
               </div>
@@ -740,12 +772,21 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Monthly Performance Table */}
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Performance Data Table</h2>
+      {/* Monthly Performance - Cards on mobile, Table on desktop */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="p-3 md:p-6 border-b border-gray-200">
+          <h2 className="text-base md:text-xl font-bold text-gray-900">Performance Data</h2>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Mobile View - Cards */}
+        <div className="md:hidden p-3 space-y-2">
+          {monthlyData.map((data) => (
+            <MobilePerformanceCard key={data.month} data={data} />
+          ))}
+        </div>
+
+        {/* Desktop View - Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>

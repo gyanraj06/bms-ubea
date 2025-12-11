@@ -24,7 +24,7 @@ function DashboardContent({ children, userRole }: { children: React.ReactNode; u
         {/* Main Content Area */}
         <main className="flex-1 lg:ml-64 min-h-screen">
           {/* Top Bar */}
-          <div className="h-16 md:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-3 lg:px-8">
+          <div className="sticky top-0 z-20 h-16 md:h-20 bg-white border-b border-gray-200 flex items-center justify-between px-3 lg:px-8">
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-semibold text-gray-900 hidden sm:block">
                 Union Awas Happy Holiday Admin
@@ -38,7 +38,7 @@ function DashboardContent({ children, userRole }: { children: React.ReactNode; u
           </div>
 
           {/* Page Content */}
-          <div className="p-3 lg:p-8">
+          <div className="p-3 lg:p-8 overflow-x-hidden">
             {children}
           </div>
         </main>

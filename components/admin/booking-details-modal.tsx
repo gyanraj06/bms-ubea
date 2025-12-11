@@ -175,87 +175,84 @@ export function BookingDetailsModal({
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="fixed inset-4 md:inset-10 lg:inset-20 z-50 flex items-center justify-center pointer-events-none"
+              className="fixed inset-2 md:inset-10 lg:inset-20 z-50 flex items-center justify-center pointer-events-none"
             >
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-full overflow-hidden pointer-events-auto flex flex-col">
+              <div className="bg-white rounded-xl md:rounded-2xl shadow-2xl w-full max-w-4xl max-h-full overflow-hidden pointer-events-auto flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 bg-gray-50">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                    <h2 className="text-base md:text-2xl font-bold text-gray-900">
                       Booking Details
                     </h2>
-                    <p className="text-sm text-gray-600 mt-1">
-                      Booking #{booking.booking_number}
+                    <p className="text-xs md:text-sm text-gray-600 mt-0.5 md:mt-1">
+                      #{booking.booking_number}
                     </p>
                   </div>
                   <button
                     onClick={onClose}
-                    className="p-2 hover:bg-gray-200 rounded-full transition-colors"
+                    className="p-1.5 md:p-2 hover:bg-gray-200 rounded-full transition-colors"
                   >
-                    <X size={24} weight="bold" className="text-gray-600" />
+                    <X size={20} weight="bold" className="text-gray-600 md:w-6 md:h-6" />
                   </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                <div className="flex-1 overflow-y-auto p-3 md:p-6 space-y-4 md:space-y-6">
                   {/* Booking Summary */}
                   <section>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">
                       Booking Summary
                     </h3>
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-4 p-3 md:p-4 bg-gray-50 rounded-lg">
                       <div>
-                        <p className="text-sm text-gray-600">Guest Name</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-xs md:text-sm text-gray-600">Guest Name</p>
+                        <p className="font-medium text-sm md:text-base text-gray-900">
                           {booking.guest_name}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Email</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-xs md:text-sm text-gray-600">Email</p>
+                        <p className="font-medium text-sm md:text-base text-gray-900 truncate">
                           {booking.guest_email}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Phone</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-xs md:text-sm text-gray-600">Phone</p>
+                        <p className="font-medium text-sm md:text-base text-gray-900">
                           {booking.guest_phone}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs md:text-sm text-gray-600">
                           Check-in / Check-out
                         </p>
-                        <p className="font-medium text-gray-900">
-                          {formatDateTime(new Date(booking.check_in))} -{" "}
-                          {formatDateTime(new Date(booking.check_out))}
+                        <p className="font-medium text-xs md:text-base text-gray-900">
+                          {formatDateTime(new Date(booking.check_in)).split(',')[0]} - {formatDateTime(new Date(booking.check_out)).split(',')[0]}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Total Nights</p>
-                        <p className="font-medium text-gray-900">
-                          {booking.total_nights} night
-                          {booking.total_nights > 1 ? "s" : ""}
+                        <p className="text-xs md:text-sm text-gray-600">Total Nights</p>
+                        <p className="font-medium text-sm md:text-base text-gray-900">
+                          {booking.total_nights} night{booking.total_nights > 1 ? "s" : ""}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs md:text-sm text-gray-600">
                           Number of Guests
                         </p>
-                        <p className="font-medium text-gray-900">
-                          {booking.num_guests} guest
-                          {booking.num_guests > 1 ? "s" : ""}
+                        <p className="font-medium text-sm md:text-base text-gray-900">
+                          {booking.num_guests} guest{booking.num_guests > 1 ? "s" : ""}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Room Type</p>
-                        <p className="font-medium text-gray-900">
+                        <p className="text-xs md:text-sm text-gray-600">Room Type</p>
+                        <p className="font-medium text-sm md:text-base text-gray-900">
                           {booking.rooms?.room_type || "N/A"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Total Amount</p>
-                        <p className="font-medium text-green-600 text-lg">
+                        <p className="text-xs md:text-sm text-gray-600">Total Amount</p>
+                        <p className="font-medium text-green-600 text-base md:text-lg">
                           {formatCurrency(booking.total_amount)}
                         </p>
                       </div>
@@ -265,11 +262,11 @@ export function BookingDetailsModal({
                   {/* Booking For */}
                   {booking.booking_for && (
                     <section>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">
                         Booking Information
                       </h3>
-                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <p className="text-sm text-blue-800">
+                      <div className="p-3 md:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <p className="text-xs md:text-sm text-blue-800">
                           <span className="font-semibold">Booking For:</span>{" "}
                           <span className="capitalize">
                             {booking.booking_for === "self"
@@ -284,12 +281,12 @@ export function BookingDetailsModal({
                   {/* Employee ID Number */}
                   {booking.bank_id_number && (
                     <section>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">
                         Bank Details
                       </h3>
-                      <div className="p-4 bg-gray-50 rounded-lg">
-                        <p className="text-sm text-gray-600">Employee ID Number</p>
-                        <p className="font-mono font-medium text-gray-900 mt-1">
+                      <div className="p-3 md:p-4 bg-gray-50 rounded-lg">
+                        <p className="text-xs md:text-sm text-gray-600">Employee ID Number</p>
+                        <p className="font-mono font-medium text-sm md:text-base text-gray-900 mt-1">
                           {booking.bank_id_number}
                         </p>
                       </div>
@@ -299,22 +296,22 @@ export function BookingDetailsModal({
                   {/* Document Images */}
                   {hasDocuments && (
                     <section>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">
                         Uploaded Documents
                       </h3>
                       {loadingImages ? (
-                        <div className="p-8 text-center">
-                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                          <p className="text-sm text-gray-600 mt-2">Loading documents...</p>
+                        <div className="p-6 md:p-8 text-center">
+                          <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-gray-900 mx-auto"></div>
+                          <p className="text-xs md:text-sm text-gray-600 mt-2">Loading documents...</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-3 md:gap-4">
                           {booking.bank_id_image_url && (
-                            <div className="border border-gray-200 rounded-lg p-4">
-                              <p className="text-sm font-medium text-gray-900 mb-2">
+                            <div className="border border-gray-200 rounded-lg p-3 md:p-4">
+                              <p className="text-xs md:text-sm font-medium text-gray-900 mb-2">
                                 Employee ID
                               </p>
-                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-3">
+                              <div className="relative aspect-video bg-gray-100 rounded overflow-hidden mb-2 md:mb-3">
                                 <img
                                   src={bankIdSignedUrl || booking.bank_id_image_url}
                                   alt="Employee ID"
@@ -329,9 +326,9 @@ export function BookingDetailsModal({
                                       "Employee ID"
                                     )
                                   }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                                  className="flex-1 flex items-center justify-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors"
                                 >
-                                  <Eye size={16} weight="bold" />
+                                  <Eye size={14} weight="bold" className="md:w-4 md:h-4" />
                                   View
                                 </button>
                                 <button
@@ -341,9 +338,9 @@ export function BookingDetailsModal({
                                       `bank_id_${booking.booking_number}.jpg`
                                     )
                                   }
-                                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                                  className="flex-1 flex items-center justify-center gap-1.5 px-2 md:px-3 py-1.5 md:py-2 bg-gray-600 text-white text-xs md:text-sm rounded-lg hover:bg-gray-700 transition-colors"
                                 >
-                                  <Download size={16} weight="bold" />
+                                  <Download size={14} weight="bold" className="md:w-4 md:h-4" />
                                   Download
                                 </button>
                               </div>
@@ -501,20 +498,20 @@ export function BookingDetailsModal({
                   {/* Guest Details */}
                   {guestDetails.length > 0 && (
                     <section>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      <h3 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 md:mb-3">
                         Guest Details
                       </h3>
                       <div className="overflow-x-auto">
                         <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
                           <thead className="bg-gray-50">
                             <tr>
-                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-semibold text-gray-900">
                                 #
                               </th>
-                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-semibold text-gray-900">
                                 Name
                               </th>
-                              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                              <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs md:text-sm font-semibold text-gray-900">
                                 Age
                               </th>
                             </tr>
@@ -522,13 +519,13 @@ export function BookingDetailsModal({
                           <tbody className="divide-y divide-gray-200">
                             {guestDetails.map((guest, index) => (
                               <tr key={index} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 text-sm text-gray-900">
+                                <td className="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-900">
                                   {index + 1}
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-900">
+                                <td className="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-900">
                                   {guest.name}
                                 </td>
-                                <td className="px-4 py-3 text-sm text-gray-600">
+                                <td className="px-2 md:px-4 py-2 md:py-3 text-xs md:text-sm text-gray-600">
                                   {guest.age} years
                                 </td>
                               </tr>
@@ -586,10 +583,10 @@ export function BookingDetailsModal({
                 </div>
 
                 {/* Footer */}
-                <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end">
+                <div className="p-3 md:p-6 border-t border-gray-200 bg-gray-50 flex justify-end">
                   <button
                     onClick={onClose}
-                    className="px-6 py-2 bg-gray-600 text-white rounded-lg font-semibold hover:bg-gray-700 transition-colors"
+                    className="px-4 md:px-6 py-2 bg-gray-600 text-white text-sm md:text-base rounded-lg font-semibold hover:bg-gray-700 transition-colors"
                   >
                     Close
                   </button>

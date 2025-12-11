@@ -86,9 +86,9 @@ export default function PermissionCodeSettings() {
     };
 
     return (
-        <div className="p-6">
+        <div className="p-3 md:p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Permission Code Settings</h2>
-            <div className="max-w-md bg-white p-6 rounded-lg border border-gray-200">
+            <div className="max-w-md bg-white p-4 md:p-6 rounded-lg border border-gray-200">
                 <p className="text-sm text-gray-600 mb-4">
                     This code can be used by customers during checkout if they don't have employee details available.
                     They will contact the admin (9827058059) to get this code.
@@ -101,18 +101,25 @@ export default function PermissionCodeSettings() {
                 ) : (
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="permCode">Current Permission Code</Label>
+                            <Label htmlFor="permCode">Current Permission Code (6 Digits)</Label>
                             <Input
                                 id="permCode"
                                 value={code}
-                                onChange={(e) => setCode(e.target.value)}
+                                onChange={(e) => {
+                                    // Only allow numbers and max 6 digits
+                                    const val = e.target.value.replace(/[^0-9]/g, '');
+                                    if (val.length <= 6) {
+                                        setCode(val);
+                                    }
+                                }}
+                                maxLength={6}
                                 placeholder="e.g. 123456"
                                 className="mt-1 font-mono text-lg tracking-widest"
                             />
                         </div>
                         <Button
                             onClick={handleSave}
-                            disabled={isSaving}
+                            disabled={isSaving || code.length !== 6}
                             className="w-full bg-brown-dark text-white hover:bg-brown-medium"
                         >
                             {isSaving ? "Saving..." : "Update Code"}

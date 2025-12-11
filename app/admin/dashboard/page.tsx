@@ -301,35 +301,35 @@ export default function AdminDashboardPage() {
       </motion.div>
 
       {/* Unified Metrics Grid (Stats + Today's Activity) */}
-      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 md:gap-4">
+      {/* Unified Metrics Section */}
+      {/* Unified Metrics Section - Compact Grid */}
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
         {/* Check-ins */}
-        <div className="bg-green-50 rounded-lg p-2 md:p-4 text-center border border-green-100">
-          <p className="text-xl md:text-2xl font-bold text-green-700">{todaysActivity.checkIns}</p>
-          <p className="text-[10px] md:text-xs text-green-600 font-medium leading-tight">Check-ins</p>
+        <div className="bg-green-50 rounded-lg p-2 text-center border border-green-100">
+          <p className="text-base md:text-2xl font-bold text-green-700 leading-none mb-1">{todaysActivity.checkIns}</p>
+          <p className="text-[10px] md:text-xs text-green-800 font-medium leading-tight">Check-ins</p>
         </div>
-
         {/* Check-outs */}
-        <div className="bg-blue-50 rounded-lg p-2 md:p-4 text-center border border-blue-100">
-          <p className="text-xl md:text-2xl font-bold text-blue-700">{todaysActivity.checkOuts}</p>
-          <p className="text-[10px] md:text-xs text-blue-600 font-medium leading-tight">Check-outs</p>
+        <div className="bg-blue-50 rounded-lg p-2 text-center border border-blue-100">
+          <p className="text-base md:text-2xl font-bold text-blue-700 leading-none mb-1">{todaysActivity.checkOuts}</p>
+          <p className="text-[10px] md:text-xs text-blue-800 font-medium leading-tight">Check-outs</p>
         </div>
-
         {/* Pending */}
-        <div className="bg-yellow-50 rounded-lg p-2 md:p-4 text-center border border-yellow-100">
-          <p className="text-xl md:text-2xl font-bold text-yellow-700">{todaysActivity.pending}</p>
-          <p className="text-[10px] md:text-xs text-yellow-600 font-medium leading-tight">Pending</p>
+        <div className="bg-yellow-50 rounded-lg p-2 text-center border border-yellow-100">
+          <p className="text-base md:text-2xl font-bold text-yellow-700 leading-none mb-1">{todaysActivity.pending}</p>
+          <p className="text-[10px] md:text-xs text-yellow-800 font-medium leading-tight">Pending</p>
         </div>
 
-        {/* Render consolidated Stats */}
-        {stats.map((stat, index) => (
+        {/* Other Stats */}
+        {stats.map((stat) => (
           <div
             key={stat.title}
-            className="bg-white rounded-lg p-2 md:p-4 shadow-sm border border-gray-200 text-center flex flex-col justify-center"
+            className="bg-white rounded-lg p-2 shadow-sm border border-gray-200 text-center flex flex-col justify-center"
           >
-            <p className="text-sm md:text-lg font-bold text-gray-900 leading-tight block">
+            <p className="text-base md:text-lg font-bold text-gray-900 leading-none mb-1 truncate">
               {stat.value}
             </p>
-            <p className="text-[10px] md:text-xs text-gray-500 font-medium leading-tight mt-0.5">
+            <p className="text-[10px] md:text-xs text-gray-500 font-medium leading-tight truncate">
               {stat.title.replace("Total ", "").replace("Monthly ", "")}
             </p>
           </div>
@@ -343,74 +343,99 @@ export default function AdminDashboardPage() {
         transition={{ duration: 0.5, delay: 0.5 }}
         className="bg-white rounded-lg shadow-sm border border-gray-200"
       >
-        <div className="p-3 md:p-6 border-b border-gray-200 hidden md:block">
-          <h2 className="text-xl font-bold text-gray-900">Recent Bookings</h2>
+        <div className="px-3 py-2 border-b border-gray-200 flex justify-between items-center">
+          <h2 className="text-base md:text-xl font-bold text-gray-900">Recent</h2>
+          <span className="text-[10px] md:text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{recentBookings.length} total</span>
         </div>
+
         {recentBookings.length === 0 ? (
           <div className="p-4 text-center text-gray-500 text-sm">
             No bookings found
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Guest
-                  </th>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                    Room
-                  </th>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    In/Out
-                  </th>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                    Amount
-                  </th>
-                  <th className="px-2 py-2 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {recentBookings.slice(0, 5).map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm font-medium text-gray-900">
-                      #{booking.booking_number.slice(-6)}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-900 truncate max-w-[80px] md:max-w-none">
-                      {booking.guest_name}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-600 hidden md:table-cell">
-                      {booking.rooms?.room_number || '-'}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-600">
-                      <div className="flex flex-col">
-                        <span>{formatDateTime(new Date(booking.check_in)).split(',')[0]}</span>
-                        <span className="text-gray-400 text-[9px] md:hidden">{formatDateTime(new Date(booking.check_out)).split(',')[0]}</span>
-                      </div>
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap text-[10px] md:text-sm text-gray-900 font-medium hidden md:table-cell">
-                      {formatCurrency(booking.total_amount)}
-                    </td>
-                    <td className="px-2 py-2 whitespace-nowrap">
-                      <span
-                        className={cn(
-                          "px-1.5 py-0.5 inline-flex text-[9px] md:text-xs leading-4 font-semibold rounded-full capitalize",
-                          getStatusColor(booking.status)
-                        )}
-                      >
-                        {booking.status || 'Unk'}
-                      </span>
-                    </td>
+          <>
+            {/* Mobile: Compact Dense List View */}
+            <div className="md:hidden flex flex-col px-2">
+              {recentBookings.slice(0, 5).map((booking) => (
+                <div key={booking.id} className="py-2 border-b border-gray-100 last:border-0 flex justify-between items-center">
+                  <div className="flex flex-col gap-0.5 overflow-hidden">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-xs text-gray-900 truncate max-w-[120px]">{booking.guest_name}</span>
+                      <span className={cn("text-[9px] px-1.5 py-0.5 rounded-full leading-none", getStatusColor(booking.status))}>{booking.status}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-500 truncate">
+                      {booking.rooms?.room_number || 'No Room'} • {formatDateTime(new Date(booking.check_in)).split(',')[0]}
+                    </div>
+                  </div>
+                  <div className="font-semibold text-xs text-gray-900 whitespace-nowrap pl-2">
+                    {formatCurrency(booking.total_amount)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Guest
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                      Room
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      In/Out
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {recentBookings.slice(0, 5).map((booking) => (
+                    <tr key={booking.id} className="hover:bg-gray-50">
+                      <td className="px-3 py-3 whitespace-nowrap text-xs font-medium text-gray-900">
+                        #{booking.booking_number.slice(-6)}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900 truncate max-w-[100px] md:max-w-none">
+                        {booking.guest_name}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600 hidden md:table-cell">
+                        {booking.rooms?.room_number || '-'}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-600">
+                        <div className="flex flex-col">
+                          <span>{formatDateTime(new Date(booking.check_in)).split(',')[0]}</span>
+                          <span className="text-gray-400 text-[10px] md:hidden">{formatDateTime(new Date(booking.check_out)).split(',')[0]}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap text-xs text-gray-900 font-medium">
+                        {formatCurrency(booking.total_amount)}
+                      </td>
+                      <td className="px-3 py-3 whitespace-nowrap">
+                        <span
+                          className={cn(
+                            "px-2 py-1 inline-flex text-[10px] md:text-xs leading-4 font-semibold rounded-full capitalize",
+                            getStatusColor(booking.status)
+                          )}
+                        >
+                          {booking.status || 'Unk'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </motion.div>
     </div>

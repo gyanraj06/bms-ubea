@@ -693,7 +693,8 @@ export default function PropertyMediaPage() {
                     className="w-full h-auto object-cover"
                     loading="lazy"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  {/* Desktop hover overlay */}
+                  <div className="hidden md:flex absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all items-center justify-center opacity-0 group-hover:opacity-100">
                     <Button
                       onClick={() => handleDeleteGalleryImage(item.id)}
                       className="bg-red-600 hover:bg-red-700 text-white"
@@ -703,6 +704,14 @@ export default function PropertyMediaPage() {
                       Delete
                     </Button>
                   </div>
+                  {/* Mobile delete button - always visible */}
+                  <button
+                    onClick={() => handleDeleteGalleryImage(item.id)}
+                    className="md:hidden absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full shadow-lg active:bg-red-700 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash size={16} weight="bold" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -749,7 +758,7 @@ export default function PropertyMediaPage() {
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {media.map((item) => (
                 <motion.div
                   key={item.id}
@@ -760,9 +769,10 @@ export default function PropertyMediaPage() {
                   <img
                     src={item.file_url}
                     alt={item.alt_text || item.file_name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-36 md:h-48 object-cover"
                   />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all flex items-center justify-center">
+                  {/* Desktop hover overlay */}
+                  <div className="hidden md:flex absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all items-center justify-center">
                     <Button
                       onClick={() => handleDeleteMedia(item.id)}
                       className="opacity-0 group-hover:opacity-100 transition-opacity bg-red-600 hover:bg-red-700"
@@ -772,12 +782,21 @@ export default function PropertyMediaPage() {
                       Delete
                     </Button>
                   </div>
-                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                    <span className="bg-white/90 backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium shadow-sm">
+                  {/* Mobile delete button - always visible */}
+                  <button
+                    onClick={() => handleDeleteMedia(item.id)}
+                    className="md:hidden absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full shadow-lg active:bg-red-700 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash size={14} weight="bold" />
+                  </button>
+                  {/* Category badges */}
+                  <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[calc(100%-50px)] md:max-w-none">
+                    <span className="bg-white/90 backdrop-blur-sm text-[10px] md:text-xs px-1.5 md:px-2 py-0.5 md:py-1 rounded-full font-medium shadow-sm truncate">
                       {item.category}
                     </span>
                     {item.room_id && rooms.find(r => r.id === item.room_id) && (
-                      <span className="bg-white/90 backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium shadow-sm flex items-center gap-1">
+                      <span className="hidden md:flex bg-white/90 backdrop-blur-sm text-xs px-2 py-1 rounded-full font-medium shadow-sm items-center gap-1">
                         <Bed size={12} weight="fill" />
                         Room {rooms.find(r => r.id === item.room_id)?.room_number}
                       </span>

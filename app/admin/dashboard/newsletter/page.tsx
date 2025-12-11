@@ -109,50 +109,112 @@ export default function NewsletterPage() {
         return matchesSearch && matchesType;
     });
 
+    // Mobile Card Component
+    const MobileNewsletterCard = ({ item }: { item: Newsletter }) => (
+        <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-xl border border-gray-200 p-3 space-y-2 shadow-sm"
+        >
+            {/* Header with type and status */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {getTypeIcon(item.type)}
+                    <span className="text-xs font-medium text-gray-900 capitalize">{item.type}</span>
+                </div>
+                <span
+                    className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${item.is_published
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                >
+                    {item.is_published ? "Published" : "Draft"}
+                </span>
+            </div>
+
+            {/* Title and content */}
+            <div>
+                <p className="text-sm font-semibold text-gray-900 line-clamp-2">
+                    {item.title}
+                </p>
+                {item.content && (
+                    <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                        {item.content}
+                    </p>
+                )}
+            </div>
+
+            {/* Date and actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <span className="text-xs text-gray-500">
+                    {formatDate(new Date(item.created_at))}
+                </span>
+                <div className="flex items-center gap-1">
+                    <Link href={`/admin/dashboard/newsletter/${item.id}`}>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <PencilSimple size={16} className="text-blue-600" />
+                        </Button>
+                    </Link>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => handleDelete(item.id)}
+                    >
+                        <Trash size={16} className="text-red-600" />
+                    </Button>
+                </div>
+            </div>
+        </motion.div>
+    );
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brown-dark"></div>
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brown-dark mx-auto"></div>
+                    <p className="text-gray-600 mt-4 text-sm">Loading...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-3 md:space-y-6 overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900">Newsletter & Broadcasts</h1>
-                    <p className="text-gray-600 mt-1">Manage reports, news, and announcements</p>
+                    <h1 className="text-xl md:text-3xl font-bold text-gray-900">Newsletter & Broadcasts</h1>
+                    <p className="text-xs md:text-sm text-gray-600 mt-0.5">Manage reports, news, and announcements</p>
                 </div>
                 <Link href="/admin/dashboard/newsletter/create">
-                    <Button className="bg-brown-dark hover:bg-brown-medium text-white">
-                        <Plus size={20} className="mr-2" />
+                    <Button className="bg-brown-dark hover:bg-brown-medium text-white text-xs md:text-sm h-9 md:h-10 w-full sm:w-auto">
+                        <Plus size={16} className="mr-1.5" />
                         Create New
                     </Button>
                 </Link>
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row gap-4">
+            <div className="bg-white p-2 md:p-4 rounded-xl shadow-sm border border-gray-200 space-y-2 md:space-y-0 md:flex md:gap-4">
                 <div className="flex-1 relative">
                     <MagnifyingGlass
-                        size={20}
+                        size={18}
                         className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                     />
                     <Input
                         placeholder="Search by title..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 h-9 md:h-10 text-sm"
                     />
                 </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0">
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
                     {["all", "report", "news", "pdf", "broadcast", "calendar"].map((type) => (
                         <button
                             key={type}
                             onClick={() => setSelectedType(type)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${selectedType === type
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap flex-shrink-0 transition-colors ${selectedType === type
                                     ? "bg-brown-dark text-white"
                                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                                 }`}
@@ -163,89 +225,104 @@ export default function NewsletterPage() {
                 </div>
             </div>
 
-            {/* List */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Type
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Title
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Date
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Actions
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                        {filteredNewsletters.length === 0 ? (
+            {/* Mobile View - Cards */}
+            <div className="md:hidden space-y-2">
+                {filteredNewsletters.length === 0 ? (
+                    <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+                        <p className="text-gray-500 text-sm">No items found</p>
+                    </div>
+                ) : (
+                    filteredNewsletters.map((item) => (
+                        <MobileNewsletterCard key={item.id} item={item} />
+                    ))
+                )}
+            </div>
+
+            {/* Desktop View - Table */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead className="bg-gray-50 border-b border-gray-200">
                             <tr>
-                                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                    No items found
-                                </td>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Type
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Title
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Date
+                                </th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
                             </tr>
-                        ) : (
-                            filteredNewsletters.map((item) => (
-                                <tr key={item.id} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
-                                            {getTypeIcon(item.type)}
-                                            <span className="text-sm text-gray-900 capitalize">{item.type}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <p className="text-sm font-medium text-gray-900 line-clamp-1">
-                                            {item.title}
-                                        </p>
-                                        {item.content && (
-                                            <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
-                                                {item.content}
-                                            </p>
-                                        )}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {formatDate(new Date(item.created_at))}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span
-                                            className={`px-2 py-1 text-xs font-medium rounded-full ${item.is_published
-                                                    ? "bg-green-100 text-green-800"
-                                                    : "bg-gray-100 text-gray-800"
-                                                }`}
-                                        >
-                                            {item.is_published ? "Published" : "Draft"}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <div className="flex items-center justify-end gap-2">
-                                            <Link href={`/admin/dashboard/newsletter/${item.id}`}>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    <PencilSimple size={18} className="text-blue-600" />
-                                                </Button>
-                                            </Link>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0"
-                                                onClick={() => handleDelete(item.id)}
-                                            >
-                                                <Trash size={18} className="text-red-600" />
-                                            </Button>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                            {filteredNewsletters.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                                        No items found
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : (
+                                filteredNewsletters.map((item) => (
+                                    <tr key={item.id} className="hover:bg-gray-50">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="flex items-center gap-2">
+                                                {getTypeIcon(item.type)}
+                                                <span className="text-sm text-gray-900 capitalize">{item.type}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <p className="text-sm font-medium text-gray-900 line-clamp-1">
+                                                {item.title}
+                                            </p>
+                                            {item.content && (
+                                                <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">
+                                                    {item.content}
+                                                </p>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                            {formatDate(new Date(item.created_at))}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span
+                                                className={`px-2 py-1 text-xs font-medium rounded-full ${item.is_published
+                                                        ? "bg-green-100 text-green-800"
+                                                        : "bg-gray-100 text-gray-800"
+                                                    }`}
+                                            >
+                                                {item.is_published ? "Published" : "Draft"}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Link href={`/admin/dashboard/newsletter/${item.id}`}>
+                                                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                        <PencilSimple size={18} className="text-blue-600" />
+                                                    </Button>
+                                                </Link>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 w-8 p-0"
+                                                    onClick={() => handleDelete(item.id)}
+                                                >
+                                                    <Trash size={18} className="text-red-600" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
