@@ -25,6 +25,8 @@ import {
   ShoppingCart,
   Plus,
   Minus,
+  ShieldCheck,
+  Phone,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { cn, formatDateTime } from "@/lib/utils";
@@ -72,7 +74,11 @@ function CheckoutContent() {
     bankAccountName: "",
     guestIdNumber: "",
     relation: "",
+    permissionCode: "", // Added permission code
   });
+
+  const [usePermissionCode, setUsePermissionCode] = useState(false);
+  const [isPermissionVerified, setIsPermissionVerified] = useState(false);
 
   // Guest Details
   const [guestDetails, setGuestDetails] = useState<Array<{ name: string; age: string }>>([]);
@@ -274,6 +280,35 @@ function CheckoutContent() {
     setGuestDetails(updated);
   };
 
+  const verifyPermissionCode = async () => {
+    if (!formData.permissionCode) {
+      toast.error("Please enter permission code");
+      return;
+    }
+
+    try {
+      const verifyRes = await fetch('/api/bookings/verify-permission-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: formData.permissionCode })
+      });
+      const verifyData = await verifyRes.json();
+
+      if (!verifyData.success || !verifyData.valid) {
+        toast.error("Invalid Permission Code");
+        setIsPermissionVerified(false);
+        return;
+      }
+
+      setIsPermissionVerified(true);
+      toast.success("Permission Code Verified ✅");
+    } catch (err) {
+      console.error("Verification error", err);
+      toast.error("Error verifying code");
+      setIsPermissionVerified(false);
+    }
+  };
+
   const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
     if (e) e.preventDefault();
 
@@ -411,19 +446,28 @@ function CheckoutContent() {
         }
       }
 
-      if (bankIdFile) {
-        try {
-          console.log("[BOOKING DEBUG] Step 3: Uploading Employee ID...", bankIdFile.name, bankIdFile.size, "bytes");
-          toast.info("Uploading Employee ID...");
-          const uploadStart = Date.now();
-          bankIdPath = await uploadDocument(bankIdFile, 'bank_id', authToken);
-          console.log("[BOOKING DEBUG] ✅ Employee ID uploaded in", Date.now() - uploadStart, "ms - Path:", bankIdPath);
-        } catch (err) {
-          console.log("[BOOKING DEBUG] ❌ Employee ID upload FAILED:", err);
-          toast.error("Failed to upload Employee ID");
+      if (usePermissionCode) {
+        if (!isPermissionVerified) {
+          console.log("[BOOKING DEBUG] ❌ FAILED: Permission Code not verified");
           setIsProcessing(false);
-          clearTimeout(safetyTimeout);
+          toast.error("Please verify your permission code");
           return;
+        }
+      } else {
+        if (bankIdFile) {
+          try {
+            console.log("[BOOKING DEBUG] Step 3: Uploading Employee ID...", bankIdFile.name, bankIdFile.size, "bytes");
+            toast.info("Uploading Employee ID...");
+            const uploadStart = Date.now();
+            bankIdPath = await uploadDocument(bankIdFile, 'bank_id', authToken);
+            console.log("[BOOKING DEBUG] ✅ Employee ID uploaded in", Date.now() - uploadStart, "ms - Path:", bankIdPath);
+          } catch (err) {
+            console.log("[BOOKING DEBUG] ❌ Employee ID upload FAILED:", err);
+            toast.error("Failed to upload Employee ID");
+            setIsProcessing(false);
+            clearTimeout(safetyTimeout);
+            return;
+          }
         }
       }
 
@@ -770,34 +814,114 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                {/* Employee ID Section */}
+                {/* Employee ID / Permission Code Section */}
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard size={20} /> Employee ID
+                    <CreditCard size={20} /> Payment / Verification Method
                   </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="bankIdNumber">Employee ID</Label>
+
+                  {/* Selection Radios */}
+                  <div className="flex gap-6 mb-6">
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors", !usePermissionCode ? "border-brown-dark" : "border-gray-300 group-hover:border-brown-medium")}>
+                        {!usePermissionCode && <div className="w-2.5 h-2.5 rounded-full bg-brown-dark" />}
+                      </div>
                       <input
-                        type="text"
-                        name="bankIdNumber"
-                        value={formData.bankIdNumber}
-                        onChange={handleInputChange}
-                        placeholder="Account Number or UPI ID"
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        type="radio"
+                        className="hidden"
+                        checked={!usePermissionCode}
+                        onChange={() => setUsePermissionCode(false)}
                       />
-                    </div>
-                    <div>
-                      <Label>Upload Employee ID Proof</Label>
+                      <span className={cn("font-medium", !usePermissionCode ? "text-gray-900" : "text-gray-600")}>Employee ID</span>
+                    </label>
+
+                    <label className="flex items-center gap-3 cursor-pointer group">
+                      <div className={cn("w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors", usePermissionCode ? "border-brown-dark" : "border-gray-300 group-hover:border-brown-medium")}>
+                        {usePermissionCode && <div className="w-2.5 h-2.5 rounded-full bg-brown-dark" />}
+                      </div>
                       <input
-                        type="file"
-                        accept="image/*,application/pdf"
-                        onChange={(e) => handleFileChange(e, 'bank')}
-                        className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                        type="radio"
+                        className="hidden"
+                        checked={usePermissionCode}
+                        onChange={() => setUsePermissionCode(true)}
                       />
-                      <p className="text-xs text-gray-500 mt-1">.</p>
-                    </div>
+                      <span className={cn("font-medium", usePermissionCode ? "text-gray-900" : "text-gray-600")}>Permission Code</span>
+                    </label>
                   </div>
+
+                  {usePermissionCode ? (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+
+                      <div className="mb-4">
+                        <Label htmlFor="permissionCode">Enter Permission Code</Label>
+                        <div className="flex gap-3 mt-1">
+                          <input
+                            type="text"
+                            name="permissionCode"
+                            value={formData.permissionCode}
+                            onChange={(e) => {
+                              handleInputChange(e);
+                              setIsPermissionVerified(false);
+                            }}
+                            placeholder="6 digit code"
+                            className="flex-1 h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none font-mono tracking-widest text-lg"
+                            maxLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={verifyPermissionCode}
+                            disabled={!formData.permissionCode || isPermissionVerified}
+                            className={cn(
+                              "px-6 h-11 rounded-lg font-medium transition-colors whitespace-nowrap",
+                              isPermissionVerified
+                                ? "bg-green-600 text-white cursor-default"
+                                : "bg-brown-dark text-white hover:bg-brown-medium"
+                            )}
+                          >
+                            {isPermissionVerified ? "Verified ✓" : "Verify Code"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-gray-600">
+                        <p>To get a code, please contact Admin at:</p>
+                        <a href="tel:9827058059" className="font-bold text-brown-dark flex items-center gap-1 mt-1">
+                          <Phone size={14} weight="fill" /> 9827058059
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">
+                          Don't have employee details? You can use a Permission Code instead.
+                        </p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="bankIdNumber">Employee ID</Label>
+                          <input
+                            type="text"
+                            name="bankIdNumber"
+                            value={formData.bankIdNumber}
+                            onChange={handleInputChange}
+                            placeholder="Account Number or UPI ID"
+                            className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                          />
+                        </div>
+                        <div>
+                          <Label>Upload Employee ID Proof</Label>
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={(e) => handleFileChange(e, 'bank')}
+                            className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">.</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Guest Identity Proof Section (Only if Booking for Someone Else) */}
@@ -951,7 +1075,7 @@ function CheckoutContent() {
                         )}
 
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 text-sm truncate">{room.roomType}</h4>
+                          <h4 className="font-medium text-gray-900 text-sm truncate">{details?.room_type || room.roomType}</h4>
                           <p className="text-xs text-gray-500 line-clamp-1">Max Guests: {room.maxGuests}</p>
                           {details?.view_type && (
                             <p className="text-xs text-gray-500 line-clamp-1">{details.view_type} View</p>

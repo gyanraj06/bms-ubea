@@ -388,7 +388,7 @@ export default function PropertyMediaPage() {
       setEditingRoom(null);
       setRoomForm({
         room_number: "",
-        room_type: "Deluxe",
+        room_type: "Com. H.L. Parwana Room",
         floor: 1,
         max_guests: 2,
         base_price: 2500,

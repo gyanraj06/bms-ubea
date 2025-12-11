@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import { usePermissions } from "@/contexts/permission-context";
+import PermissionCodeSettings from "./PermissionCodeSettings";
 
 interface User {
   id: string;
@@ -53,7 +54,7 @@ const AVAILABLE_ROLES = ["Owner", "Manager", "Front Desk", "Accountant"];
 
 export default function SettingsPage() {
   const { permissions, updatePermission, hasPermission } = usePermissions();
-  const [activeTab, setActiveTab] = useState<"users" | "permissions" | "property" | "integrations">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "permissions" | "property" | "integrations" | "permissionCode">("users");
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -415,6 +416,17 @@ export default function SettingsPage() {
               )}
             >
               Integrations
+            </button>
+            <button
+              onClick={() => setActiveTab("permissionCode")}
+              className={cn(
+                "py-4 px-2 border-b-2 font-medium text-sm transition-colors",
+                activeTab === "permissionCode"
+                  ? "border-brown-dark text-brown-dark"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              )}
+            >
+              Permission Code
             </button>
           </nav>
         </div>
@@ -916,6 +928,11 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Permission Code Tab */}
+        {activeTab === "permissionCode" && (
+          <PermissionCodeSettings />
         )}
       </div>
 
