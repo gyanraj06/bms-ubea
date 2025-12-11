@@ -15,16 +15,9 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  CalendarBlank,
-  User,
-  IdentificationCard,
-  Files,
-  Plus,
-  Star,
-  Trash,
 } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatDate, formatDateTime } from "@/lib/utils";
+import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 interface StatCard {
   title: string;
@@ -227,7 +220,7 @@ export default function AdminDashboardPage() {
           pending: pendingBookings,
         });
 
-        // Set recent bookings (last 5)
+        // Set recent bookings (last 5 for desktop, 3 for mobile initially but we fetch all, slice in render)
         setRecentBookings(allBookings.slice(0, 5));
       }
     } catch (error) {
@@ -278,38 +271,7 @@ export default function AdminDashboardPage() {
 
 
 
-  const handleClearExpired = async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("adminToken");
-      if (!token) {
-        toast.error("Unauthorized");
-        return;
-      }
 
-      const response = await fetch('/api/admin/clear-expired-bookings', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success(data.message);
-        // Refresh dashboard data
-        fetchDashboardData();
-      } else {
-        toast.error(data.error || "Failed to clear bookings");
-      }
-    } catch (error) {
-      console.error("Error clearing bookings:", error);
-      toast.error("An error occurred");
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -332,25 +294,14 @@ export default function AdminDashboardPage() {
         className="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             Welcome back, {userRole}!
           </h1>
-          <p className="text-gray-600 mt-1">
-            Here's what's happening with your property today.
-          </p>
         </div>
-
-        <button
-          onClick={handleClearExpired}
-          className="bg-red-50 text-red-600 hover:bg-red-100 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-        >
-          <Trash size={20} />
-          Clear Expired Bookings
-        </button>
       </motion.div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
@@ -359,41 +310,41 @@ export default function AdminDashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-white rounded-lg p-6 shadow-sm border border-gray-200"
+              className="bg-white rounded-lg p-3 md:p-6 shadow-sm border border-gray-200 flex flex-col justify-between"
             >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 font-medium">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-1 md:gap-0">
+                <div className="order-2 md:order-1">
+                  <p className="text-[10px] md:text-sm text-gray-600 font-medium whitespace-nowrap">
                     {stat.title}
                   </p>
-                  <p className="text-2xl font-bold text-gray-900 mt-2">
+                  <p className="text-base md:text-2xl font-bold text-gray-900 mt-0 md:mt-2">
                     {stat.value}
                   </p>
                 </div>
                 <div
                   className={cn(
-                    "p-3 rounded-lg",
+                    "p-1.5 md:p-3 rounded-lg w-fit order-1 md:order-2 mb-1 md:mb-0",
                     getStatColorClass(stat.color)
                   )}
                 >
-                  <Icon size={24} weight="fill" />
+                  <Icon size={16} className="md:w-6 md:h-6" weight="fill" />
                 </div>
               </div>
-              <div className="flex items-center gap-1 mt-4">
+              <div className="flex items-center gap-1 mt-1 md:mt-4">
                 {stat.change > 0 ? (
-                  <TrendUp size={16} className="text-green-600" weight="bold" />
+                  <TrendUp size={12} className="text-green-600 md:w-4 md:h-4" weight="bold" />
                 ) : (
-                  <TrendDown size={16} className="text-red-600" weight="bold" />
+                  <TrendDown size={12} className="text-red-600 md:w-4 md:h-4" weight="bold" />
                 )}
                 <span
                   className={cn(
-                    "text-sm font-medium",
+                    "text-[10px] md:text-sm font-medium",
                     stat.change > 0 ? "text-green-600" : "text-red-600"
                   )}
                 >
                   {Math.abs(stat.change)}%
                 </span>
-                <span className="text-sm text-gray-500 ml-1">vs last month</span>
+                <span className="text-[10px] md:text-sm text-gray-500 ml-1">vs last month</span>
               </div>
             </motion.div>
           );
@@ -405,43 +356,43 @@ export default function AdminDashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
-        className="bg-white rounded-lg p-6 shadow-sm border border-gray-200"
+        className="bg-white rounded-lg p-3 md:p-6 shadow-sm border border-gray-200"
       >
-        <h2 className="text-xl font-bold text-gray-900 mb-4">Today's Activity</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex items-center gap-4 p-4 bg-green-50 rounded-lg">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle size={24} className="text-green-600" weight="fill" />
+        <h2 className="text-base md:text-xl font-bold text-gray-900 mb-3 md:mb-4">Today's Activity</h2>
+        <div className="grid grid-cols-3 gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-green-50 rounded-lg text-center md:text-left">
+            <div className="p-1.5 md:p-3 bg-green-100 rounded-lg">
+              <CheckCircle size={16} className="text-green-600 md:w-6 md:h-6" weight="fill" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-green-900">
+              <p className="text-lg md:text-2xl font-bold text-green-900 leading-tight">
                 {todaysActivity.checkIns}
               </p>
-              <p className="text-sm text-green-700 font-medium">Check-ins Today</p>
+              <p className="text-[10px] md:text-sm text-green-700 font-medium leading-tight">Check-ins</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-4 bg-blue-50 rounded-lg">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <XCircle size={24} className="text-blue-600" weight="fill" />
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-blue-50 rounded-lg text-center md:text-left">
+            <div className="p-1.5 md:p-3 bg-blue-100 rounded-lg">
+              <XCircle size={16} className="text-blue-600 md:w-6 md:h-6" weight="fill" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-blue-900">
+              <p className="text-lg md:text-2xl font-bold text-blue-900 leading-tight">
                 {todaysActivity.checkOuts}
               </p>
-              <p className="text-sm text-blue-700 font-medium">Check-outs Today</p>
+              <p className="text-[10px] md:text-sm text-blue-700 font-medium leading-tight">Check-outs</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 p-4 bg-yellow-50 rounded-lg">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Clock size={24} className="text-yellow-600" weight="fill" />
+          <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-4 p-2 md:p-4 bg-yellow-50 rounded-lg text-center md:text-left">
+            <div className="p-1.5 md:p-3 bg-yellow-100 rounded-lg">
+              <Clock size={16} className="text-yellow-600 md:w-6 md:h-6" weight="fill" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-yellow-900">
+              <p className="text-lg md:text-2xl font-bold text-yellow-900 leading-tight">
                 {todaysActivity.pending}
               </p>
-              <p className="text-sm text-yellow-700 font-medium">Pending Bookings</p>
+              <p className="text-[10px] md:text-sm text-yellow-700 font-medium leading-tight">Pending</p>
             </div>
           </div>
         </div>
@@ -466,54 +417,54 @@ export default function AdminDashboardPage() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Booking ID
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Guest Name
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Room
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Check-in
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Check-out
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 md:px-6 py-3 text-left text-[10px] md:text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {recentBookings.map((booking) => (
+                {recentBookings.slice(0, 3).map((booking) => (
                   <tr key={booking.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm font-medium text-gray-900">
                       {booking.booking_number}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900">
                       {booking.guest_name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
                       {booking.rooms?.room_type || 'N/A'} - {booking.rooms?.room_number || 'N/A'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
                       {formatDateTime(new Date(booking.check_in))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-600">
                       {formatDateTime(new Date(booking.check_out))}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap text-xs md:text-sm text-gray-900 font-medium">
                       {formatCurrency(booking.total_amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 md:px-6 py-3 md:py-4 whitespace-nowrap">
                       <span
                         className={cn(
-                          "px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize",
+                          "px-2 md:px-3 py-0.5 md:py-1 inline-flex text-[10px] md:text-xs leading-5 font-semibold rounded-full capitalize",
                           getStatusColor(booking.status)
                         )}
                       >
