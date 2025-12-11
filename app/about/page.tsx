@@ -14,6 +14,9 @@ interface PropertySettings {
   property_name: string;
   address: string;
   phone: string;
+  phone2?: string;
+  phone3?: string;
+  phone4?: string;
   email: string;
   check_in_time: string;
   check_out_time: string;
@@ -100,7 +103,7 @@ export default function AboutPage() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: `url('/hero1.png')`,
+            backgroundImage: `url('/l1.png')`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
@@ -111,8 +114,7 @@ export default function AboutPage() {
             Our Story: A Home for Our Members
           </h1>
           <p className="text-xl md:text-2xl text-white/90 leading-relaxed">
-            A dedicated initiative by UBEA and AIBEA to provide a comfortable,
-            secure, and affordable haven for our members
+             A dedicated initiative by Union Bank Employees Association MP (UBEA) to provide a comfortable, secure, and affordable haven for all members of UBEA , AIUBEA , MPBEA and AIBEA
           </p>
         </div>
       </div>
@@ -126,8 +128,7 @@ export default function AboutPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed mb-8">
               The Union Awas in Bhopal is more than just a guest house; it's a dedicated
-              initiative by the Union Bank Employees' Association, MP (UBEA) and the All India
-              Bank Employees' Association (AIBEA) to provide a comfortable, secure, and
+              initiative by the Union Bank Employees' Association, MP (UBEA) under the guidance of All India Union Bank Employees Association (AIUBEA) and All India Bank Employees Association (AIBEA) to provide a comfortable, secure, and
               affordable haven for our esteemed members and their families.
             </p>
 
@@ -138,7 +139,7 @@ export default function AboutPage() {
               Our journey began with a clear vision: to create a dedicated facility that caters
               specifically to the needs of our union members – serving officers, employees, and
               retirees alike. Recognizing the challenges of finding suitable accommodation during
-              travel or official visits, UBEA and AIBEA collaborated to establish a space where
+              travel or official visits, UBEA established a space where
               members could feel truly at home, away from the complexities of commercial hotels.
             </p>
 
@@ -157,7 +158,7 @@ export default function AboutPage() {
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
               As we continue to serve our growing family of members, we remain dedicated to enhancing
-              the Union Awas experience. We invite all eligible UBEA and AIBEA members to experience
+              the Union Awas experience. We invite all eligible AIBEA members to experience
               the comfort, convenience, and community spirit of their very own holiday home in Bhopal.
             </p>
           </div>
@@ -357,12 +358,21 @@ export default function AboutPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white mb-1">Phone</h3>
-                    <a
-                      href={`tel:${settings.phone.replace(/\s/g, '')}`}
-                      className="text-white/80 hover:text-white"
-                    >
-                      {settings.phone}
-                    </a>
+                    <span className="text-white/80">
+                      {[settings.phone, settings.phone2, settings.phone3, settings.phone4]
+                        .filter(Boolean)
+                        .map((num, i, arr) => (
+                          <span key={i}>
+                            <a
+                              href={`tel:${num?.replace(/\s/g, '')}`}
+                              className="hover:text-white transition-colors"
+                            >
+                              {num}
+                            </a>
+                            {i < arr.length - 1 && ", "}
+                          </span>
+                        ))}
+                    </span>
                   </div>
                 </div>
 
@@ -396,9 +406,7 @@ export default function AboutPage() {
                       Check-in / Check-out
                     </h3>
                     <p className="text-white/70">
-                      {new Date(`2000-01-01T${settings.check_in_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
-                      {' / '}
-                      {new Date(`2000-01-01T${settings.check_out_time}`).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+                      24 hours from arrival
                     </p>
                   </div>
                 </div>

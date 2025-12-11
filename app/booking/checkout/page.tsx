@@ -1244,7 +1244,7 @@ function CheckoutContent() {
                       className="w-5 h-5 text-brown-dark rounded focus:ring-brown-dark border-gray-300"
                     />
                     <div className="flex-1">
-                      <span className="font-medium text-gray-900">Are you a UBEA MPCG member?</span>
+                      <span className="font-medium text-gray-900">Are you a AIBEA MPCG member?</span>
                       <p className="text-xs text-gray-500"></p>
                     </div>
                   </label>
