@@ -56,8 +56,10 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
     try {
       // Close menu immediately before signing out
       setShowUserMenu(false);
+      localStorage.removeItem("booking_cart"); // Clear cart on user logout
       await signOut();
       toast.success("Signed out successfully");
+      router.push("/");
     } catch (error) {
       toast.error("Failed to sign out");
     }
@@ -66,6 +68,7 @@ export function ChaletHeader({ forceLight = false }: { forceLight?: boolean }) {
   const handleAdminLogout = () => {
     setShowUserMenu(false);
     localStorage.removeItem("adminUser");
+    localStorage.removeItem("booking_cart"); // Clear cart on admin logout
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminPermissions");
     setAdminUser(null);

@@ -105,7 +105,7 @@ export function AdminSidebar({ userRole }: AdminSidebarProps) {
   const handleLogout = () => {
     localStorage.removeItem("adminUser");
     toast.success("Logged out successfully");
-    router.push("/admin/login");
+    router.push("/");
   };
 
   return (

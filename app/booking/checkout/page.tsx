@@ -49,8 +49,7 @@ function CheckoutContent() {
   const [isSuccess, setIsSuccess] = useState(false);
 
 
-  const { user: realUser, session } = useAuth();
-  const user = realUser || { full_name: "Debug User", email: "debug@example.com", phone: "+919876543210", id: "debug-id" };
+  const { user, session } = useAuth();
 
   // Cart Hook
   const { cart, updateCart, totalItems, clearCart, isLoaded } = useCart();
@@ -96,6 +95,9 @@ function CheckoutContent() {
   const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
   const [bankIdFile, setBankIdFile] = useState<File | null>(null);
   const [guestIdFile, setGuestIdFile] = useState<File | null>(null);
+
+  // Validation Errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
 
 
@@ -178,15 +180,9 @@ function CheckoutContent() {
   // Check user login and pre-fill data
   useEffect(() => {
     // START DEBUG BYPASS RE-ENABLED
-    const debugUser = {
-      full_name: "Debug User",
-      email: "debug@example.com",
-      phone: "+919876543210"
-    };
-    const currentUser = user || debugUser;
+    const currentUser = user;
 
     console.log("[Checkout] Syncing user data. Current User:", currentUser);
-    console.log("[Checkout] User Phone:", currentUser?.phone);
 
     if (currentUser) {
       setFormData(prev => {
@@ -204,22 +200,22 @@ function CheckoutContent() {
           phone: phone,
         };
       });
-
-      if (currentUser.phone) {
-        setIsPhoneVerified(true);
-      }
+      // STRICT REQUIREMENT: Do not auto-verify phone from profile. 
+      // User must verify via inline OTP always, as requested.
+      // setIsPhoneVerified(true); 
     }
   }, [user]);
 
-  // Initialize guest details
+  // Initialize guest details based on search params
   useEffect(() => {
-    if (isLoaded && selectedRooms.length > 0 && guestDetails.length === 0) {
-      setGuestDetails([{ name: "", age: "" }]);
-      setIsLoading(false);
-    } else if (isLoaded && selectedRooms.length === 0) {
+    if (isLoaded && guestDetails.length === 0) {
+      // Initialize with exact number of guests from search params
+      const numberOfGuests = parseInt(String(guests || "1"), 10);
+      const initialGuests = Array(numberOfGuests).fill(null).map(() => ({ name: "", age: "" }));
+      setGuestDetails(initialGuests);
       setIsLoading(false);
     }
-  }, [isLoaded, selectedRooms.length]);
+  }, [isLoaded, guests]);
 
   // Calculations
   const calculateTotal = () => {
@@ -250,24 +246,27 @@ function CheckoutContent() {
 
   // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
   };
 
   const handlePhoneChange = (value: string) => {
     console.log("[Checkout] handlePhoneChange:", value);
     setFormData(prev => ({ ...prev, phone: value }));
+    setIsPhoneVerified(false); // Reset verification when number changes
   };
 
   // Guest Management
   const addGuest = () => {
-    // Calculate total capacity
-    const totalCapacity = selectedRooms.reduce((acc, room) => acc + (room.maxGuests * room.quantity), 0);
-
-    if (guestDetails.length >= totalCapacity) {
-      toast.error(`Maximum capacity reached (${totalCapacity} guests)`);
-      return;
-    }
-    setGuestDetails([...guestDetails, { name: "", age: "" }]);
+    toast.info("To add more guests, please update your search criteria on the home page.");
   };
 
   const removeGuest = (index: number) => {
@@ -325,34 +324,110 @@ function CheckoutContent() {
     if (!isPhoneVerified) {
       console.log("[BOOKING DEBUG] ❌ FAILED: Phone not verified");
       setIsProcessing(false);
-      toast.error("Please verify your phone number");
+      toast.error("Please verify your phone number first");
+      // Scroll to phone field
+      const phoneField = document.querySelector('input[type="tel"]');
+      if (phoneField) phoneField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
     console.log("[BOOKING DEBUG] ✅ Phone verified");
 
-    // Basic validation
-    if (guestDetails.some(g => !g.name || !g.age)) {
-      console.log("[BOOKING DEBUG] ❌ FAILED: Missing guest details");
+    // Strict Permission Code Verification Check
+    if (usePermissionCode && !isPermissionVerified) {
+      console.log("[BOOKING DEBUG] ❌ FAILED: Permission Code not verified");
       setIsProcessing(false);
+      toast.error("Please verify your permission code before proceeding");
+      const permField = document.querySelector('input[name="permissionCode"]');
+      if (permField) permField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    // Validation
+    const newErrors: Record<string, string> = {};
+
+    // 1. Personal Details
+    if (!formData.firstName.trim()) newErrors.firstName = "First Name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = "Invalid email format";
+
+    // Phone validation (already verified but check existence)
+    if (!formData.phone) newErrors.phone = "Phone number is required";
+
+    // 2. Address Details
+    if (!formData.address.trim()) newErrors.address = "Address is required";
+    if (!formData.city.trim()) newErrors.city = "City is required";
+    if (!formData.state.trim()) newErrors.state = "State is required";
+    if (!formData.pincode.trim()) newErrors.pincode = "Pincode is required";
+
+    // 3. ID Proof Validation
+    if (!formData.idType) newErrors.idType = "ID Type is required";
+    if (!formData.idNumber.trim()) newErrors.idNumber = "ID Number is required";
+
+    if (formData.idType === 'aadhaar') {
+      if (!/^\d{12}$/.test(formData.idNumber)) {
+        newErrors.idNumber = "Aadhaar must be exactly 12 digits";
+      }
+    }
+
+    if (!govtIdFile) {
+      newErrors.govtIdFile = "Government ID file is required";
+      // toast.error("Please upload Government ID"); // relying on inline error now
+    }
+
+    // Permission Code / Employee ID Validation
+    if (usePermissionCode) {
+      if (!isPermissionVerified) {
+        newErrors.permissionCode = "Please verify your permission code";
+      }
+    } else {
+      if (!formData.bankIdNumber?.trim()) {
+        newErrors.bankIdNumber = "Employee ID is required";
+      }
+      if (!bankIdFile) {
+        newErrors.bankIdFile = "Employee ID file is required";
+      }
+    }
+
+    // 4. Guest Details Validation
+    // 4. Guest Details Validation
+    guestDetails.forEach((guest, index) => {
+      if (!guest.name.trim()) {
+        newErrors[`guest_${index}_name`] = "Name is required";
+      }
+      if (!guest.age || isNaN(Number(guest.age))) {
+        newErrors[`guest_${index}_age`] = "Age is required";
+      }
+    });
+
+    if (Object.keys(newErrors).some(k => k.startsWith('guest_'))) {
       toast.error("Please fill all guest details");
-      return;
     }
-    console.log("[BOOKING DEBUG] ✅ Guest details valid");
 
-    if (!formData.address || !formData.city || !formData.state || !formData.pincode) {
-      console.log("[BOOKING DEBUG] ❌ FAILED: Missing address", { address: formData.address, city: formData.city, state: formData.state, pincode: formData.pincode });
-      setIsProcessing(false);
-      toast.error("Please fill all address details");
-      return;
-    }
-    console.log("[BOOKING DEBUG] ✅ Address valid");
+    // 5. Booking For Others Validation
+    if (formData.bookingFor === 'relative') {
+      if (!formData.guestIdNumber) newErrors.guestIdNumber = "Guest ID Number is required";
+      else if (!/^\d{12}$/.test(formData.guestIdNumber)) newErrors.guestIdNumber = "Guest Aadhaar must be 12 digits";
 
-    if (!formData.idType || !formData.idNumber) {
-      console.log("[BOOKING DEBUG] ❌ FAILED: Missing ID proof");
+      if (!formData.relation) newErrors.relation = "Relation is required";
+      if (!guestIdFile) {
+        newErrors.guestIdFile = "Guest ID file is required";
+        toast.error("Please upload Guest ID");
+      }
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      console.log("[BOOKING DEBUG] ❌ Validation Errors:", newErrors);
       setIsProcessing(false);
-      toast.error("Please provide ID proof details");
+      toast.error("Please fix the errors highlighted in red");
+
+      const firstErrorField = document.querySelector(`[name="${Object.keys(newErrors)[0]}"]`);
+      if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
       return;
     }
+    console.log("[BOOKING DEBUG] ✅ Field validation passed");
     console.log("[BOOKING DEBUG] ✅ ID type/number present");
 
     if (formData.idType === 'aadhaar' && !/^\d{12}$/.test(formData.idNumber)) {
@@ -523,6 +598,7 @@ function CheckoutContent() {
           city: formData.city || '',
           state: formData.state || '',
           pincode: formData.pincode || '',
+          email: formData.email || '', // Send email to API
           id_type: formData.idType || '',
           id_number: formData.idNumber || '',
           govt_id_image_url: govtIdPath || null,
@@ -671,8 +747,9 @@ function CheckoutContent() {
                       value={formData.firstName}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                      className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.firstName ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                     />
+                    {errors.firstName && <span className="text-red-500 text-xs mt-1 block">{errors.firstName}</span>}
                   </div>
                   <div>
                     <Label htmlFor="lastName">
@@ -684,8 +761,9 @@ function CheckoutContent() {
                       value={formData.lastName}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                      className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.lastName ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                     />
+                    {errors.lastName && <span className="text-red-500 text-xs mt-1 block">{errors.lastName}</span>}
                   </div>
                   <div>
                     <Label htmlFor="email">Email *</Label>
@@ -695,8 +773,9 @@ function CheckoutContent() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
-                      className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                      className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                     />
+                    {errors.email && <span className="text-red-500 text-xs mt-1 block">{errors.email}</span>}
                   </div>
                   <div>
                     <InlinePhoneVerification
@@ -704,6 +783,7 @@ function CheckoutContent() {
                       onChange={(val) => handlePhoneChange(val)}
                       onVerifiedChange={(isVerified) => setIsPhoneVerified(isVerified)}
                     />
+                    {errors.phone && <span className="text-red-500 text-xs mt-1 block">{errors.phone}</span>}
                   </div>
                 </div>
 
@@ -721,8 +801,9 @@ function CheckoutContent() {
                         value={formData.address}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.address ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                       />
+                      {errors.address && <span className="text-red-500 text-xs mt-1 block">{errors.address}</span>}
                     </div>
                     <div>
                       <Label htmlFor="city">City *</Label>
@@ -732,8 +813,9 @@ function CheckoutContent() {
                         value={formData.city}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.city ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                       />
+                      {errors.city && <span className="text-red-500 text-xs mt-1 block">{errors.city}</span>}
                     </div>
                     <div>
                       <Label htmlFor="state">State *</Label>
@@ -743,8 +825,9 @@ function CheckoutContent() {
                         value={formData.state}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.state ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                       />
+                      {errors.state && <span className="text-red-500 text-xs mt-1 block">{errors.state}</span>}
                     </div>
                     <div>
                       <Label htmlFor="pincode">Pincode *</Label>
@@ -754,8 +837,9 @@ function CheckoutContent() {
                         value={formData.pincode}
                         onChange={handleInputChange}
                         required
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.pincode ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                       />
+                      {errors.pincode && <span className="text-red-500 text-xs mt-1 block">{errors.pincode}</span>}
                     </div>
                   </div>
                 </div>
@@ -773,11 +857,12 @@ function CheckoutContent() {
                         name="idType"
                         value={formData.idType}
                         onChange={handleInputChange}
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none bg-white"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.idType ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none bg-white`}
                       >
                         <option value="">Select ID Type</option>
                         <option value="aadhaar">Aadhaar Card</option>
                       </select>
+                      {errors.idType && <span className="text-red-500 text-xs mt-1 block">{errors.idType}</span>}
                     </div>
                     <div>
                       <Label htmlFor="idNumber">ID Number *</Label>
@@ -796,10 +881,11 @@ function CheckoutContent() {
                             handleInputChange(e);
                           }
                         }}
-                        className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                        className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.idNumber ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                         maxLength={formData.idType === 'aadhaar' ? 12 : undefined}
                         placeholder={formData.idType === 'aadhaar' ? '12 digit Aadhaar Number' : ''}
                       />
+                      {errors.idNumber && <span className="text-red-500 text-xs mt-1 block">{errors.idNumber}</span>}
                     </div>
                     <div className="md:col-span-2">
                       <Label>Upload ID Document (Image/PDF) *</Label>
@@ -807,8 +893,9 @@ function CheckoutContent() {
                         type="file"
                         accept="image/*,application/pdf"
                         onChange={(e) => handleFileChange(e, 'govt')}
-                        className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                        className={`mt-1 w-full p-2 border rounded-lg ${errors.govtIdFile ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                       />
+                      {errors.govtIdFile && <span className="text-red-500 text-xs mt-1 block">{errors.govtIdFile}</span>}
                       <p className="text-xs text-gray-500 mt-1">Please upload a clear copy of your Govt ID.</p>
                     </div>
                   </div>
@@ -817,7 +904,7 @@ function CheckoutContent() {
                 {/* Employee ID / Permission Code Section */}
                 <div className="pt-4 border-t border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <CreditCard size={20} /> Payment / Verification Method
+                    <CreditCard size={20} /> Employee ID / Permission Code
                   </h3>
 
                   {/* Selection Radios */}
@@ -853,7 +940,7 @@ function CheckoutContent() {
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
 
                       <div className="mb-4">
-                        <Label htmlFor="permissionCode">Enter Permission Code</Label>
+                        <Label htmlFor="permissionCode">Enter Permission Code *</Label>
                         <div className="flex gap-3 mt-1">
                           <input
                             type="text"
@@ -881,6 +968,7 @@ function CheckoutContent() {
                             {isPermissionVerified ? "Verified ✓" : "Verify Code"}
                           </button>
                         </div>
+                        {errors.permissionCode && <span className="text-red-500 text-xs mt-1 block">{errors.permissionCode}</span>}
                       </div>
 
                       <div className="text-xs text-gray-600">
@@ -899,24 +987,26 @@ function CheckoutContent() {
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="bankIdNumber">Employee ID</Label>
+                          <Label htmlFor="bankIdNumber">Employee ID *</Label>
                           <input
                             type="text"
                             name="bankIdNumber"
                             value={formData.bankIdNumber}
                             onChange={handleInputChange}
                             placeholder="Account Number or UPI ID"
-                            className="mt-1 w-full h-11 px-4 rounded-lg border-2 border-gray-300 focus:border-brown-dark outline-none"
+                            className={`mt-1 w-full h-11 px-4 rounded-lg border-2 ${errors.bankIdNumber ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
                           />
+                          {errors.bankIdNumber && <span className="text-red-500 text-xs mt-1 block">{errors.bankIdNumber}</span>}
                         </div>
                         <div>
-                          <Label>Upload Employee ID Proof</Label>
+                          <Label>Upload Employee ID Proof *</Label>
                           <input
                             type="file"
                             accept="image/*,application/pdf"
                             onChange={(e) => handleFileChange(e, 'bank')}
-                            className="mt-1 w-full p-2 border border-gray-300 rounded-lg"
+                            className={`mt-1 w-full p-2 border rounded-lg ${errors.bankIdFile ? 'border-red-500 bg-red-50' : 'border-gray-300'}`}
                           />
+                          {errors.bankIdFile && <span className="text-red-500 text-xs mt-1 block">{errors.bankIdFile}</span>}
                           <p className="text-xs text-gray-500 mt-1">.</p>
                         </div>
                       </div>
@@ -928,7 +1018,7 @@ function CheckoutContent() {
                 {formData.bookingFor === 'relative' && (
                   <div className="pt-4 border-t border-gray-100">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <Users size={20} /> Identity Proof for Guest (Aadhaar Only)
+                      <Users size={20} /> Identity Proof for Guest (Aadhaar Only) *
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -978,36 +1068,37 @@ function CheckoutContent() {
                 {/* Guest List */}
                 <div className="pt-4 border-t border-gray-100">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-gray-900">Guest List</h3>
-                    <button type="button" onClick={addGuest} className="text-sm text-brown-dark font-medium hover:underline">
-                      + Add Guest
-                    </button>
+                    <h3 className="font-semibold text-gray-900">Guest List ({guestDetails.length} Guests)</h3>
+                    <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      Count matched to search
+                    </div>
                   </div>
                   <div className="space-y-3">
                     {guestDetails.map((guest, index) => (
                       <div key={index} className="flex gap-2 items-start p-3 bg-gray-50 rounded-lg">
                         <div className="flex-1 grid grid-cols-2 gap-2">
-                          <input
-                            placeholder="Name"
-                            value={guest.name}
-                            onChange={(e) => updateGuest(index, "name", e.target.value)}
-                            className="h-10 px-3 rounded border border-gray-300"
-                            required
-                          />
-                          <input
-                            placeholder="Age"
-                            type="number"
-                            value={guest.age}
-                            onChange={(e) => updateGuest(index, "age", e.target.value)}
-                            className="h-10 px-3 rounded border border-gray-300"
-                            required
-                          />
+                          <div className="flex flex-col">
+                            <input
+                              placeholder="Name"
+                              value={guest.name}
+                              onChange={(e) => updateGuest(index, "name", e.target.value)}
+                              className={`h-10 px-3 rounded border ${errors[`guest_${index}_name`] ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
+                              required
+                            />
+                            {errors[`guest_${index}_name`] && <span className="text-red-500 text-[10px] mt-1">{errors[`guest_${index}_name`]}</span>}
+                          </div>
+                          <div className="flex flex-col">
+                            <input
+                              placeholder="Age"
+                              type="number"
+                              value={guest.age}
+                              onChange={(e) => updateGuest(index, "age", e.target.value)}
+                              className={`h-10 px-3 rounded border ${errors[`guest_${index}_age`] ? 'border-red-500' : 'border-gray-300'} focus:border-brown-dark outline-none`}
+                              required
+                            />
+                            {errors[`guest_${index}_age`] && <span className="text-red-500 text-[10px] mt-1">{errors[`guest_${index}_age`]}</span>}
+                          </div>
                         </div>
-                        {guestDetails.length > 1 && (
-                          <button type="button" onClick={() => removeGuest(index)} className="p-2 text-red-500 hover:bg-red-50 rounded">
-                            <Trash size={18} />
-                          </button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -1044,6 +1135,10 @@ function CheckoutContent() {
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Nights</span>
                   <span className="font-medium">{nights}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Guests</span>
+                  <span className="font-medium">{guestDetails.length}</span>
                 </div>
               </div>
 
@@ -1174,10 +1269,44 @@ function CheckoutContent() {
               </div>
 
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-xs text-yellow-800">
-                <p className="font-semibold mb-1">Terms and Conditions</p>
-                <p>
-                  You are liable for cancellation in case there are any issues with details and payment.
-                </p>
+                <p className="font-semibold mb-2">Terms and Conditions</p>
+                <div className="space-y-2">
+                  <div>
+                    <p className="font-semibold">1. Cancellations & Refunds</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>Full refund for cancellations made 3 days before check-in.</li>
+                      <li>No refund for cancellations within 3 days of check-in.</li>
+                      <li>Refunds are processed within 30 working days.</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold">2. Guest Identification</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>Only valid Government ID must be uploaded.</li>
+                      <li>Incorrect or misleading documents will lead to cancellation.</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold">3. Rules & Conduct</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>No alcohol is allowed on the premises.</li>
+                      <li>Guests must maintain decorum and avoid disturbance.</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold">4. Property Damage</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>Any damage to property or amenities will be chargeable to the guest.</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <p className="font-semibold">5. Management Rights</p>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>Management may deny or cancel bookings for policy violations.</li>
+                      <li>Unauthorised guests are not permitted.</li>
+                    </ul>
+                  </div>
+                </div>
               </div>
 
               <div

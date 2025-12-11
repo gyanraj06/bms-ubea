@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       special_requests,
       booking_for,
       phone, // Phone from checkout form
+      email, // Email from checkout form (PRIORITY)
       // New Comprehensive Fields
       bank_id_number,
       govt_id_image_url,
@@ -273,7 +274,7 @@ export async function POST(request: NextRequest) {
             user_id: userId,
             room_id: roomToBook.id,
             guest_name: userData.full_name,
-            guest_email: userData.email,
+            guest_email: email || userData.email, // USE FORM EMAIL IF AVAILABLE
             guest_phone: phone || userData.phone || 'Not provided',
             check_in: checkInDate.toISOString(),
             check_out: checkOutDate.toISOString(),
@@ -333,7 +334,7 @@ export async function POST(request: NextRequest) {
       
       const emailData = {
         user_name: userData.full_name || 'Guest',
-        user_email: userData.email,
+        user_email: email || userData.email, // PRIORITY: Checkout Form Email
         // If multiple rooms, show the booking number of the first one or a combined ref if available
         // The booking number is unique per room booking in this schema, so maybe show the first one
         booking_reference: createdBookings.map(b => b.booking_number).join(', '), 

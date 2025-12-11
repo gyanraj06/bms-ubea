@@ -78,7 +78,7 @@ const formatTime = (time: string) => {
 // Main function to send booking confirmation email
 export async function sendBookingConfirmationEmail(bookingData: BookingEmailData) {
   try {
-    const zeptoUrl = process.env.ZEPTO_MAIL_URL;
+    let zeptoUrl = process.env.ZEPTO_MAIL_URL;
     const zeptoToken = process.env.ZEPTO_MAIL_TOKEN;
     const senderEmail = process.env.ZEPTO_MAIL_SENDER_EMAIL;
     const senderName = process.env.ZEPTO_MAIL_SENDER_NAME || 'Union Awas Happy Holiday';
@@ -88,231 +88,31 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
       return { success: false, error: 'Email configuration missing' };
     }
 
+    // Adjust URL for template sending implementation
+    if (!zeptoUrl.includes('/template')) {
+        zeptoUrl = zeptoUrl.endsWith('/') ? `${zeptoUrl}template` : `${zeptoUrl}/template`;
+    }
+
     // Get property settings for dynamic values
     const settings = await getPropertySettings();
 
-    // Load the HTML template (embedded here for simplicity, or read from file if preferred/possible in edge)
-    // Using the template artifact we created. 
-    // Ideally this should be imported or read, but for a serverless function, inline or imported string is best.
-    // I will include the template string here to ensure it works without file system access issues in production.
-    
-    const emailTemplate = `<!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <title>Booking Confirmation</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 0;
-        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-        background-color: #f2ede8;
-        color: #32373c;
-      }
-      .container {
-        max-width: 600px;
-        margin: 40px auto;
-        background-color: #ffffff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-      }
-      .header {
-        background-color: #32373c;
-        padding: 40px 20px;
-        text-align: center;
-        color: #ffffff;
-      }
-      .logo {
-        max-height: 80px;
-        margin-bottom: 20px;
-      }
-      .content {
-        padding: 40px;
-      }
-      .h1 {
-        font-size: 28px;
-        font-weight: 300;
-        margin: 0 0 10px 0;
-        letter-spacing: 1px;
-      }
-      .h2 {
-        font-size: 20px;
-        font-weight: 600;
-        margin: 30px 0 15px 0;
-        color: #32373c;
-      }
-      .p {
-        line-height: 1.6;
-        color: #555555;
-        margin-bottom: 20px;
-      }
-      .booking-card {
-        background-color: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 8px;
-        padding: 25px;
-        margin: 30px 0;
-        border-left: 5px solid #ddc9b5;
-      }
-      .detail-row {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-        border-bottom: 1px dashed #e0e0e0;
-        padding-bottom: 10px;
-      }
-      .detail-row:last-child {
-        border-bottom: none;
-        margin-bottom: 0;
-        padding-bottom: 0;
-      }
-      .label {
-        font-size: 13px;
-        text-transform: uppercase;
-        color: #888;
-        letter-spacing: 0.5px;
-      }
-      .value {
-        font-size: 16px;
-        font-weight: 600;
-        color: #32373c;
-      }
-      .btn {
-        display: inline-block;
-        background-color: #32373c;
-        color: #ffffff;
-        text-decoration: none;
-        padding: 12px 30px;
-        border-radius: 6px;
-        font-weight: bold;
-        margin-top: 20px;
-      }
-      .footer {
-        background-color: #32373c;
-        color: #adb5bd;
-        padding: 20px;
-        text-align: center;
-        font-size: 12px;
-      }
-      .footer a {
-        color: #ddc9b5;
-        text-decoration: none;
-      }
-      .contact-box {
-        background-color: #fff8f0;
-        border: 1px solid #ddc9b5;
-        border-radius: 8px;
-        padding: 15px;
-        text-align: center;
-        margin-top: 30px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <!-- Header -->
-      <div class="header">
-        <!-- Replace with actual logo URL for production -->
-        <img
-          src="https://bms-clientside.vercel.app/logo.png"
-          alt="Union Awas Happy Holiday"
-          class="logo"
-          style="display: block; margin: 0 auto 20px auto; max-width: 150px"
-        />
-        <h1 class="h1">Booking Confirmed</h1>
-        <p style="opacity: 0.9; margin: 0">We can't wait to host you!</p>
-      </div>
-
-      <!-- Content -->
-      <div class="content">
-        <p class="p">Hi <strong>{{user_name}}</strong>,</p>
-        <p class="p">
-          Thank you for choosing Union Awas Happy Holiday! Your booking has been
-          successfully created. We have received your request and the rooms have
-          been reserved for you.
-        </p>
-
-        <!-- Booking Details Card -->
-        <div class="booking-card">
-          <div class="detail-row">
-            <span class="label">Booking Reference</span>
-            <span class="value" style="color: #ddc9b5"
-              >{{booking_reference}}</span
-            >
-          </div>
-          <div class="detail-row">
-            <span class="label">Check-in</span>
-            <span class="value"
-              >{{check_in_date}}
-              <span style="font-size: 12px; font-weight: normal; color: #666"
-                >({{check_in_time}})</span
-              ></span
-            >
-          </div>
-          <div class="detail-row">
-            <span class="label">Check-out</span>
-            <span class="value"
-              >{{check_out_date}}
-              <span style="font-size: 12px; font-weight: normal; color: #666"
-                >({{check_out_time}})</span
-              ></span
-            >
-          </div>
-          <div class="detail-row">
-            <span class="label">Rooms</span>
-            <span class="value">{{room_count}}</span>
-          </div>
-          <div class="detail-row">
-            <span class="label">Total Amount</span>
-            <span class="value">₹{{total_amount}}</span>
-          </div>
-        </div>
-
-        <p class="p">
-          <strong>Next Steps:</strong> You will receive a formal confirmation
-          once your payment is verified (usually within 24-48 hours).
-        </p>
-
-        <div class="contact-box">
-          <p style="margin: 0; color: #5a4a3a">
-            Need assistance? Contact us on WhatsApp
-          </p>
-          <p
-            style="
-              margin: 5px 0 0 0;
-              font-size: 18px;
-              font-weight: bold;
-              color: #32373c;
-            "
-          >
-            {{support_whatsapp}}
-          </p>
-        </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="footer">
-        <p>&copy; Union Awas Happy Holiday. All rights reserved.</p>
-        <p>{{property_address}}</p>
-        <p><a href="{{website_url}}">Visit our website</a></p>
-      </div>
-    </div>
-  </body>
-</html>`;
-
-    // Prepare data with dynamic settings
-    const emailData = {
-      ...bookingData,
+    // Prepare merge info
+    const mergeInfo = {
+      user_name: bookingData.user_name,
+      booking_reference: bookingData.booking_reference,
+      check_in_date: bookingData.check_in_date,
+      check_out_date: bookingData.check_out_date,
+      room_count: bookingData.room_count,
+      total_amount: bookingData.total_amount,
+      website_url: bookingData.website_url,
       support_whatsapp: settings.phone,
       check_in_time: settings.check_in_time,
       check_out_time: settings.check_out_time,
-      property_address: '94, Hanuman Nagar, Narmadapuram Road, Bhopal' // Could also be fetched
+      property_address: '94, Hanuman Nagar, Narmadapuram Road, Bhopal'
     };
 
-    const htmlBody = fillTemplate(emailTemplate, emailData);
-
     const payload = {
+      template_key: "2518b.623682b2828bdc79.k1.2ba98670-d45e-11f0-9873-ae9c7e0b6a9f.19aff14b057",
       from: {
         address: senderEmail,
         name: senderName
@@ -325,11 +125,10 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
           }
         }
       ],
-      subject: `Booking Confirmation - ${bookingData.booking_reference}`,
-      htmlbody: htmlBody
+      merge_info: mergeInfo
     };
 
-    console.log('Sending email with Zepto Mail...', { to: bookingData.user_email });
+    console.log('Sending booking confirmation email (Template)...', { to: bookingData.user_email });
 
     const response = await fetch(zeptoUrl, {
       method: 'POST',
@@ -344,10 +143,11 @@ export async function sendBookingConfirmationEmail(bookingData: BookingEmailData
     const result = await response.json();
 
     if (!response.ok) {
-      console.error('Zepto Mail API Error:', result);
+      console.error('Zepto Mail API Error (Booking Confirmed):', result);
       return { success: false, error: result.message || 'Failed to send email' };
     }
 
+    console.log('Booking confirmation email sent successfully:', result);
     return { success: true, data: result };
 
   } catch (error) {
