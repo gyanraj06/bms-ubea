@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
       guest_id_number,
       guest_id_image_url,
       guest_relation,
+      // Discount fields
+      is_ubea_member,
+      discount_amount,
       // Legacy support
       room_id,
       num_guests,
@@ -162,6 +165,10 @@ export async function POST(request: NextRequest) {
     // Supabase JS client doesn't support transactions directly yet without RPC.
     // We will process sequentially and hope for the best for now.
 
+    // Initialize discount tracking
+    // Note: Discount is now calculated per-booking (per room per night) inside the loop
+    // let remainingDiscount = is_ubea_member ? (parseFloat(discount_amount) || 0) : 0;
+
     for (const item of bookingsToCreate) {
       const { room_id: targetRoomId, quantity = 1 } = item;
 
@@ -246,9 +253,14 @@ export async function POST(request: NextRequest) {
 
       for (const roomToBook of roomsToBook) {
         const roomCharges = roomToBook.base_price * totalNights;
-        const totalAmount = roomCharges;
+        
+        // Apply discount logic: ₹100 per room per night if member
+        // We calculate this per booking to ensure it is distributed correctly
+        const discountPerBooking = is_ubea_member ? (100 * totalNights) : 0;
+        
+        const totalAmount = Math.max(0, roomCharges - discountPerBooking);
 
-        // For now, assume 100% advance or whatever logic
+        // Advance is full amount
         const advancePaid = totalAmount;
         const balanceAmount = 0;
 
@@ -288,6 +300,9 @@ export async function POST(request: NextRequest) {
             guest_id_number: guest_id_number || null,
             guest_id_image_url: guest_id_image_url || null,
             guest_relation: guest_relation || null,
+            // Discount Fields
+            is_ubea_member: !!is_ubea_member,
+            discount_amount: discountPerBooking
           })
           .select()
           .single();

@@ -83,6 +83,9 @@ function CheckoutContent() {
   // Extended Room Details (Images, etc.)
   const [roomDetailsMap, setRoomDetailsMap] = useState<Record<string, any>>({});
 
+  // UBEA Member Discount
+  const [isUbeaMember, setIsUbeaMember] = useState(false);
+
   // New State for Files & Extras
   const [govtIdFile, setGovtIdFile] = useState<File | null>(null);
   const [bankIdFile, setBankIdFile] = useState<File | null>(null);
@@ -215,25 +218,29 @@ function CheckoutContent() {
   // Calculations
   const calculateTotal = () => {
     if (!checkInDate || !checkOutDate || selectedRooms.length === 0)
-      return { nights: 0, subtotal: 0, grandTotal: 0 };
+      return { nights: 0, subtotal: 0, grandTotal: 0, discount: 0 };
 
     // Calculate nights as 24-hour slots
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
     let subtotal = 0;
+    let totalRoomsCount = 0;
 
     selectedRooms.forEach(room => {
       const roomTotal = room.price * nights * room.quantity;
       subtotal += roomTotal;
+      totalRoomsCount += room.quantity;
     });
 
-    const grandTotal = subtotal;
+    const discountPerNightPerRoom = 100;
+    const discount = isUbeaMember ? (discountPerNightPerRoom * totalRoomsCount * nights) : 0;
+    const grandTotal = Math.max(0, subtotal - discount);
 
-    return { nights, subtotal, grandTotal };
+    return { nights, subtotal, grandTotal, discount };
   };
 
-  const { nights, subtotal, grandTotal } = calculateTotal();
+  const { nights, subtotal, grandTotal, discount } = calculateTotal();
 
   // Handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -484,6 +491,8 @@ function CheckoutContent() {
           num_cots: 0,
           needs_extra_bed: false,
           num_extra_beds: 0,
+          is_ubea_member: isUbeaMember,
+          discount_amount: discount
         }),
       });
 
@@ -1007,10 +1016,32 @@ function CheckoutContent() {
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <label className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-100 transition-colors bg-white border border-gray-200 w-full">
+                    <input
+                      type="checkbox"
+                      checked={isUbeaMember}
+                      onChange={(e) => setIsUbeaMember(e.target.checked)}
+                      className="w-5 h-5 text-brown-dark rounded focus:ring-brown-dark border-gray-300"
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium text-gray-900">Are you a UBEA MPCG member?</span>
+                      <p className="text-xs text-gray-500">Get ₹100 off per room per night</p>
+                    </div>
+                  </label>
+                </div>
+
                 <div className="flex justify-between mb-2 text-sm">
                   <span className="text-gray-600">Subtotal</span>
                   <span>₹{subtotal.toLocaleString()}</span>
                 </div>
+
+                {isUbeaMember && (
+                  <div className="flex justify-between mb-2 text-sm text-green-600">
+                    <span>Member Discount (₹100 x {Object.values(roomDetailsMap).length > 0 ? selectedRooms.reduce((acc, r) => acc + r.quantity, 0) : 0} rooms x {nights} nights)</span>
+                    <span>-₹{discount.toLocaleString()}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
@@ -1049,7 +1080,7 @@ function CheckoutContent() {
 
 
       <Footer />
-    </main>
+    </main >
   );
 }
 
