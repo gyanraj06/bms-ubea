@@ -603,16 +603,8 @@ export default function SettingsPage() {
                           </div>
 
                           {/* Actions */}
-                          <div className="flex justify-end gap-3 pt-3 border-t border-gray-200 mt-2">
-                            <button
-                              className="flex items-center gap-1.5 text-blue-600 hover:text-blue-800 text-xs font-medium px-3 py-1.5 bg-blue-50 rounded-lg"
-                              title="Edit user"
-                            >
-                              <PencilSimple size={14} weight="bold" />
-                              Edit
-                            </button>
-
-                            {user.role !== "Owner" && (
+                          {user.role !== "Owner" && (
+                            <div className="flex justify-end gap-3 pt-3 border-t border-gray-200 mt-2">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -624,8 +616,8 @@ export default function SettingsPage() {
                                 <Trash size={14} weight="bold" />
                                 Delete
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -706,11 +698,8 @@ export default function SettingsPage() {
                           {formatDate(new Date(user.created_at))}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
-                            <button className="text-blue-600 hover:text-blue-900" title="Edit user (coming soon)">
-                              <PencilSimple size={18} weight="bold" />
-                            </button>
-                            {user.role !== "Owner" && (
+                          {user.role !== "Owner" && (
+                            <div className="flex justify-end gap-2">
                               <button
                                 onClick={() => handleDeleteUser(user.id, user.full_name)}
                                 className="text-red-600 hover:text-red-900"
@@ -718,8 +707,8 @@ export default function SettingsPage() {
                               >
                                 <Trash size={18} weight="bold" />
                               </button>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))
