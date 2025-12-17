@@ -20,9 +20,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import type { Room, Media, GalleryImage } from "@/types";
+import type { Room, Media, GalleryImage, RoomBlock } from "@/types";
 
-type TabType = "rooms" | "media" | "gallery";
+type TabType = "rooms" | "media" | "gallery" | "blocks";
 
 export default function PropertyMediaPage() {
   const [adminUserId, setAdminUserId] = useState<string>("");
@@ -30,14 +30,25 @@ export default function PropertyMediaPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [media, setMedia] = useState<Media[]>([]);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [roomBlocks, setRoomBlocks] = useState<RoomBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [uploadingFiles, setUploadingFiles] = useState<File[]>([]);
   const [uploadCategory, setUploadCategory] = useState<string>("Rooms");
   const [selectedRoomForUpload, setSelectedRoomForUpload] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
+
+  // Room block form state
+  const [blockForm, setBlockForm] = useState({
+    room_id: "",
+    start_date: "",
+    end_date: "",
+    reason: "Personal Booking" as RoomBlock["reason"],
+    notes: "",
+  });
 
   // Room form state
   const [roomForm, setRoomForm] = useState({
@@ -119,6 +130,19 @@ export default function PropertyMediaPage() {
     }
   };
 
+  // Fetch room blocks
+  const fetchRoomBlocks = async () => {
+    try {
+      const response = await fetch("/api/admin/room-blocks");
+      const data = await response.json();
+      if (data.success) {
+        setRoomBlocks(data.blocks);
+      }
+    } catch (error) {
+      console.error("Error fetching room blocks:", error);
+    }
+  };
+
   useEffect(() => {
     // Load admin user ID from localStorage
     const adminUser = localStorage.getItem("adminUser");
@@ -134,6 +158,7 @@ export default function PropertyMediaPage() {
     fetchRooms();
     fetchMedia();
     fetchGalleryImages();
+    fetchRoomBlocks();
   }, []);
 
   const getAuthHeaders = () => {
@@ -416,6 +441,83 @@ export default function PropertyMediaPage() {
     setSelectedRoomForUpload("");
   };
 
+  // Room block handlers
+  const handleSaveBlock = async () => {
+    if (!blockForm.room_id || !blockForm.start_date || !blockForm.end_date) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate dates
+    const startDate = new Date(blockForm.start_date);
+    const endDate = new Date(blockForm.end_date);
+
+    if (endDate < startDate) {
+      toast.error("End date must be after start date");
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/admin/room-blocks", {
+        method: "POST",
+        headers: getAuthHeaders(),
+        body: JSON.stringify({
+          ...blockForm,
+          created_by: adminUserId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchRoomBlocks();
+        handleCloseBlockModal();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error("Failed to create room block");
+    }
+  };
+
+  const handleDeleteBlock = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this block?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/room-blocks?id=${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message);
+        fetchRoomBlocks();
+      } else {
+        toast.error(data.error);
+      }
+    } catch (error) {
+      toast.error("Failed to delete room block");
+    }
+  };
+
+  const handleOpenBlockModal = () => {
+    setBlockForm({
+      room_id: "",
+      start_date: "",
+      end_date: "",
+      reason: "Personal Booking",
+      notes: "",
+    });
+    setShowBlockModal(true);
+  };
+
+  const handleCloseBlockModal = () => {
+    setShowBlockModal(false);
+  };
+
   const toggleAmenity = (amenity: string) => {
     setRoomForm((prev) => ({
       ...prev,
@@ -492,6 +594,23 @@ export default function PropertyMediaPage() {
         >
           Main Gallery ({galleryImages.length}/20)
           {activeTab === "gallery" && (
+            <motion.div
+              layoutId="activeTab"
+              className="absolute bottom-0 left-0 right-0 h-0.5 bg-brown-dark"
+            />
+          )}
+        </button>
+        <button
+          onClick={() => setActiveTab("blocks")}
+          className={cn(
+            "px-6 py-3 font-medium text-sm transition-colors relative",
+            activeTab === "blocks"
+              ? "text-brown-dark"
+              : "text-gray-500 hover:text-gray-700"
+          )}
+        >
+          Room Blocks ({roomBlocks.length})
+          {activeTab === "blocks" && (
             <motion.div
               layoutId="activeTab"
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-brown-dark"
@@ -809,7 +928,234 @@ export default function PropertyMediaPage() {
         </div>
       )}
 
-      {/* Room Modal - Continue in next message due to length */}
+      {/* Room Blocks Tab */}
+      {activeTab === "blocks" && (
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Room Blocks
+              </h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Block rooms for specific date ranges (personal bookings, maintenance, etc.)
+              </p>
+            </div>
+            <Button
+              onClick={handleOpenBlockModal}
+              className="bg-brown-dark hover:bg-brown-medium text-white"
+            >
+              <Plus size={20} className="mr-2" />
+              Add Block
+            </Button>
+          </div>
+
+          {roomBlocks.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+              <X size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No room blocks yet
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Block rooms for specific dates when they're unavailable
+              </p>
+              <Button
+                onClick={handleOpenBlockModal}
+                className="bg-brown-dark hover:bg-brown-medium text-white"
+              >
+                <Plus size={20} className="mr-2" />
+                Add Block
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {roomBlocks.map((block) => (
+                <motion.div
+                  key={block.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-white rounded-lg shadow-md p-4 border border-gray-200 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900">
+                        {block.rooms?.room_type || "Unknown Room"}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        Room #{block.rooms?.room_number || "N/A"}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => handleDeleteBlock(block.id)}
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-50"
+                    >
+                      <Trash size={16} />
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="font-medium">Start:</span>
+                      <span>{new Date(block.start_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-gray-600">
+                      <span className="font-medium">End:</span>
+                      <span>{new Date(block.end_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-3">
+                      <span className="inline-block bg-brown-dark/10 text-brown-dark text-xs px-2 py-1 rounded-full font-medium">
+                        {block.reason}
+                      </span>
+                    </div>
+                    {block.notes && (
+                      <p className="text-gray-600 mt-2 text-xs italic">
+                        {block.notes}
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Room Block Modal */}
+      <AnimatePresence>
+        {showBlockModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={handleCloseBlockModal}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto"
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900">Add Room Block</h2>
+                  <button
+                    onClick={handleCloseBlockModal}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Room Selection */}
+                  <div>
+                    <Label htmlFor="block-room">Room *</Label>
+                    <select
+                      id="block-room"
+                      className="flex h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+                      value={blockForm.room_id}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, room_id: e.target.value })
+                      }
+                    >
+                      <option value="">Select a room</option>
+                      {rooms.map((room) => (
+                        <option key={room.id} value={room.id}>
+                          Room {room.room_number} - {room.room_type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Start Date */}
+                  <div>
+                    <Label htmlFor="block-start">Start Date *</Label>
+                    <Input
+                      id="block-start"
+                      type="date"
+                      value={blockForm.start_date}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, start_date: e.target.value })
+                      }
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+
+                  {/* End Date */}
+                  <div>
+                    <Label htmlFor="block-end">End Date *</Label>
+                    <Input
+                      id="block-end"
+                      type="date"
+                      value={blockForm.end_date}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, end_date: e.target.value })
+                      }
+                      min={blockForm.start_date || new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+
+                  {/* Reason */}
+                  <div>
+                    <Label htmlFor="block-reason">Reason *</Label>
+                    <select
+                      id="block-reason"
+                      className="flex h-11 w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+                      value={blockForm.reason}
+                      onChange={(e) =>
+                        setBlockForm({
+                          ...blockForm,
+                          reason: e.target.value as RoomBlock["reason"],
+                        })
+                      }
+                    >
+                      <option value="Personal Booking">Personal Booking</option>
+                      <option value="Maintenance">Maintenance</option>
+                      <option value="Renovation">Renovation</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+
+                  {/* Notes */}
+                  <div>
+                    <Label htmlFor="block-notes">Notes (Optional)</Label>
+                    <textarea
+                      id="block-notes"
+                      className="flex min-h-[80px] w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm"
+                      placeholder="Add any additional notes..."
+                      value={blockForm.notes}
+                      onChange={(e) =>
+                        setBlockForm({ ...blockForm, notes: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    onClick={handleCloseBlockModal}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveBlock}
+                    className="flex-1 bg-brown-dark hover:bg-brown-medium text-white"
+                  >
+                    Create Block
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Room Modal */}
       <AnimatePresence>
         {showRoomModal && (
           <motion.div
@@ -1024,148 +1370,151 @@ export default function PropertyMediaPage() {
                     {editingRoom ? "Update Room" : "Create Room"}
                   </Button>
                 </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              </div >
+            </motion.div >
+          </motion.div >
+        )
+        }
+      </AnimatePresence >
 
       {/* Upload Modal */}
       <AnimatePresence>
-        {showUploadModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-            onClick={handleCloseUploadModal}
-          >
+        {
+          showUploadModal && (
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-lg shadow-xl max-w-lg w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+              onClick={handleCloseUploadModal}
             >
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    Upload Images
-                  </h2>
-                  <button
-                    onClick={handleCloseUploadModal}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Category Select */}
-                  <div>
-                    <Label htmlFor="upload_category">Category</Label>
-                    <select
-                      id="upload_category"
-                      value={uploadCategory}
-                      onChange={(e) => setUploadCategory(e.target.value)}
-                      className="w-full h-10 px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brown-dark"
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.9, y: 20 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-white rounded-lg shadow-xl max-w-lg w-full"
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      Upload Images
+                    </h2>
+                    <button
+                      onClick={handleCloseUploadModal}
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      <option value="Rooms">Rooms</option>
-                      <option value="Facilities">Facilities</option>
-                      <option value="Exterior">Exterior</option>
-                      <option value="Events">Events</option>
-                      <option value="Other">Other</option>
-                    </select>
+                      <X size={24} />
+                    </button>
                   </div>
 
-                  {/* Room Select (only for Rooms category) */}
-                  {uploadCategory === "Rooms" && (
+                  <div className="space-y-4">
+                    {/* Category Select */}
                     <div>
-                      <Label htmlFor="room_select">Select Room</Label>
+                      <Label htmlFor="upload_category">Category</Label>
                       <select
-                        id="room_select"
-                        value={selectedRoomForUpload}
-                        onChange={(e) => setSelectedRoomForUpload(e.target.value)}
+                        id="upload_category"
+                        value={uploadCategory}
+                        onChange={(e) => setUploadCategory(e.target.value)}
                         className="w-full h-10 px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brown-dark"
                       >
-                        <option value="">Choose a room...</option>
-                        {rooms.map((room) => (
-                          <option key={room.id} value={room.id}>
-                            {room.room_type} - Room #{room.room_number}
-                          </option>
-                        ))}
+                        <option value="Rooms">Rooms</option>
+                        <option value="Facilities">Facilities</option>
+                        <option value="Exterior">Exterior</option>
+                        <option value="Events">Events</option>
+                        <option value="Other">Other</option>
                       </select>
                     </div>
-                  )}
 
-                  {/* File Input */}
-                  <div>
-                    <Label htmlFor="file_upload">Select Images</Label>
-                    <Input
-                      id="file_upload"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => {
-                        if (e.target.files) {
-                          const files = Array.from(e.target.files);
-                          const validFiles = files.filter(file => {
-                            if (file.size > 1.5 * 1024 * 1024) {
-                              toast.error(`File ${file.name} is too large. Max size is 1.5MB.`);
-                              return false;
-                            }
-                            return true;
-                          });
-
-                          if (files.length !== validFiles.length) {
-                            // Clear input if needed, but for now just setting valid files
-                            e.target.value = ''; // Reset input to allow re-selection if all failed
-                          }
-
-                          if (validFiles.length > 0) {
-                            setUploadingFiles(validFiles);
-                          }
-                        }
-                      }}
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Max file size: 1.5 MB per image
-                    </p>
-                    {uploadingFiles.length > 0 && (
-                      <p className="text-sm text-gray-500 mt-2">
-                        {uploadingFiles.length} file(s) selected
-                      </p>
+                    {/* Room Select (only for Rooms category) */}
+                    {uploadCategory === "Rooms" && (
+                      <div>
+                        <Label htmlFor="room_select">Select Room</Label>
+                        <select
+                          id="room_select"
+                          value={selectedRoomForUpload}
+                          onChange={(e) => setSelectedRoomForUpload(e.target.value)}
+                          className="w-full h-10 px-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-brown-dark"
+                        >
+                          <option value="">Choose a room...</option>
+                          {rooms.map((room) => (
+                            <option key={room.id} value={room.id}>
+                              {room.room_type} - Room #{room.room_number}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     )}
+
+                    {/* File Input */}
+                    <div>
+                      <Label htmlFor="file_upload">Select Images</Label>
+                      <Input
+                        id="file_upload"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          if (e.target.files) {
+                            const files = Array.from(e.target.files);
+                            const validFiles = files.filter(file => {
+                              if (file.size > 1.5 * 1024 * 1024) {
+                                toast.error(`File ${file.name} is too large. Max size is 1.5MB.`);
+                                return false;
+                              }
+                              return true;
+                            });
+
+                            if (files.length !== validFiles.length) {
+                              // Clear input if needed, but for now just setting valid files
+                              e.target.value = ''; // Reset input to allow re-selection if all failed
+                            }
+
+                            if (validFiles.length > 0) {
+                              setUploadingFiles(validFiles);
+                            }
+                          }
+                        }}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Max file size: 1.5 MB per image
+                      </p>
+                      {uploadingFiles.length > 0 && (
+                        <p className="text-sm text-gray-500 mt-2">
+                          {uploadingFiles.length} file(s) selected
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6">
+                    <Button onClick={handleCloseUploadModal} variant="outline">
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={handleUploadImages}
+                      className="bg-brown-dark hover:bg-brown-medium text-white"
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={16} className="mr-2" />
+                          Upload
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
-
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button onClick={handleCloseUploadModal} variant="outline">
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={handleUploadImages}
-                    className="bg-brown-dark hover:bg-brown-medium text-white"
-                    disabled={isUploading}
-                  >
-                    {isUploading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload size={16} className="mr-2" />
-                        Upload
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+          )
+        }
+      </AnimatePresence >
+    </div >
   );
 }

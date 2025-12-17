@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { supabase, supabaseAdmin } from '@/lib/supabase';
+import { NextRequest, NextResponse } from "next/server";
+import { supabase, supabaseAdmin } from "@/lib/supabase";
 
 /**
  * POST /api/rooms/check-availability
@@ -17,18 +17,18 @@ export async function POST(request: NextRequest) {
     try {
       const expirationThreshold = new Date(Date.now() - 30 * 60 * 1000); // 30 minutes ago
       await supabaseAdmin
-        .from('bookings')
+        .from("bookings")
         .delete() // Or .update({ status: 'cancelled' }) if you prefer soft delete
-        .eq('status', 'pending')
-        .eq('payment_status', 'pending')
-        .lt('created_at', expirationThreshold.toISOString());
-      
-      // We don't await this to block the response, but for data consistency in this request, 
-      // we generally should. However, for speed, we can make it fire-and-forget 
+        .eq("status", "pending")
+        .eq("payment_status", "pending")
+        .lt("created_at", expirationThreshold.toISOString());
+
+      // We don't await this to block the response, but for data consistency in this request,
+      // we generally should. However, for speed, we can make it fire-and-forget
       // or just await it since it's a quick indexed delete.
       // Let's await it to ensure the current search sees the rooms as free.
     } catch (cleanupError) {
-      console.error('Passive cleanup failed:', cleanupError);
+      console.error("Passive cleanup failed:", cleanupError);
       // Continue execution - don't fail the search just because cleanup failed
     }
     // -------------------------------------------------
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Check-in and check-out dates are required',
+          error: "Check-in and check-out dates are required",
         },
         { status: 400 }
       );
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Invalid date format. Use ISO timestamp format',
+          error: "Invalid date format. Use ISO timestamp format",
         },
         { status: 400 }
       );
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: 'Check-out time must be after check-in time',
+          error: "Check-out time must be after check-in time",
         },
         { status: 400 }
       );
@@ -74,27 +74,34 @@ export async function POST(request: NextRequest) {
     const now = new Date();
     // Allow booking 1 min in past to avoid strict blocking
     if (checkInDate < new Date(now.getTime() - 60000)) {
-       // Optional: Enforce this? Or strictly allow?
-       // For now, let's just warn or allow close calls.
-       // Actually user requirement says "system lock applied".
-       // Let's keep it strict for future dates, but allow "now".
+      // Optional: Enforce this? Or strictly allow?
+      // For now, let's just warn or allow close calls.
+      // Actually user requirement says "system lock applied".
+      // Let's keep it strict for future dates, but allow "now".
     }
 
     // Find all bookings that overlap with the requested timestamp range
     // Overlap: existing.check_in < req.check_out AND existing.check_out > req.check_in
-    const { data: overlappingBookings, error: bookingError } = await supabaseAdmin
-      .from('bookings')
-      .select('room_id')
-      .lt('check_in', checkOutDate.toISOString()) // booking starts before requested end
-      .gt('check_out', checkInDate.toISOString()) // booking ends after requested start
-      .in('status', ['Confirmed', 'Pending', 'confirmed', 'pending', 'verification_pending']); 
+    const { data: overlappingBookings, error: bookingError } =
+      await supabaseAdmin
+        .from("bookings")
+        .select("room_id")
+        .lt("check_in", checkOutDate.toISOString()) // booking starts before requested end
+        .gt("check_out", checkInDate.toISOString()) // booking ends after requested start
+        .in("status", [
+          "Confirmed",
+          "Pending",
+          "confirmed",
+          "pending",
+          "verification_pending",
+        ]);
 
     if (bookingError) {
-      console.error('Error fetching bookings:', bookingError);
+      console.error("Error fetching bookings:", bookingError);
       return NextResponse.json(
         {
           success: false,
-          error: 'Failed to check room availability',
+          error: "Failed to check room availability",
           details: bookingError.message,
         },
         { status: 500 }
@@ -102,40 +109,97 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract booked room IDs
-    const bookedRoomIds = overlappingBookings?.map((booking) => booking.room_id) || [];
+    const bookedRoomIds =
+      overlappingBookings?.map((booking) => booking.room_id) || [];
+
+    // Check for room blocks (date-specific unavailability)
+    // Convert timestamps to dates for comparison with room_blocks table
+    const checkInDateOnly = checkInDate.toISOString().split("T")[0];
+    const checkOutDateOnly = checkOutDate.toISOString().split("T")[0];
+
+    // Format dates as YYYY-MM-DD for DATE column comparison
+    console.log("Checking blocks for range (DATE only):", {
+      checkIn: checkInDateOnly,
+      checkOut: checkOutDateOnly,
+    });
+
+    // Fetch ALL blocks that might overlap (wider range check) or just all blocks for now to be safe
+    const { data: allBlocks, error: blockError } = await supabaseAdmin
+      .from("room_blocks")
+      .select("room_id, start_date, end_date");
+
+    if (blockError) {
+      console.error("Error fetching blocked rooms:", blockError);
+    }
+
+    // Filter in Javascript to be absolutely sure about date comparisons
+    const checkInTime = new Date(checkInDateOnly).getTime();
+    const checkOutTime = new Date(checkOutDateOnly).getTime();
+
+    const blockedRooms =
+      allBlocks?.filter((block) => {
+        const blockStart = new Date(block.start_date).getTime();
+        const blockEnd = new Date(block.end_date).getTime();
+
+        // Standard overlap check: BlockStart <= RequestEnd AND BlockEnd >= RequestStart
+        // Using < and > to match inclusive date logic
+        const isOverlapping =
+          blockStart <= checkOutTime && blockEnd >= checkInTime;
+
+        console.log(
+          `Block Check - Room: ${block.room_id}, Date: ${block.start_date} to ${block.end_date}, Overlap: ${isOverlapping}`
+        );
+
+        return isOverlapping;
+      }) || [];
+
+    console.log("Filtered blocked rooms:", blockedRooms);
+
+    // Extract blocked room IDs
+    const blockedRoomIds = blockedRooms?.map((block) => block.room_id) || [];
+
+    // Combine booked and blocked room IDs (remove duplicates)
+    const unavailableRoomIds = Array.from(
+      new Set([...bookedRoomIds, ...blockedRoomIds])
+    );
+
+    console.log("Total unavailable room IDs:", unavailableRoomIds);
 
     // Build query for available rooms
     let query = supabase
-      .from('rooms')
-      .select('*')
-      .eq('is_active', true)
-      .eq('is_available', true);
+      .from("rooms")
+      .select("*")
+      .eq("is_active", true)
+      .eq("is_available", true);
 
-    // Filter by room type if provided
+    // Filter by room_type if provided in request
     if (room_type) {
-      query = query.eq('room_type', room_type);
+      query = query.eq("room_type", room_type);
     }
 
-    // Exclude booked rooms
-    if (bookedRoomIds.length > 0) {
-      query = query.not('id', 'in', `(${bookedRoomIds.join(',')})`);
-    }
-
-    query = query.order('base_price', { ascending: true });
-
-    const { data: availableRooms, error: roomsError } = await query;
+    const { data: allRooms, error: roomsError } = await query;
 
     if (roomsError) {
-      console.error('Error fetching rooms:', roomsError);
+      console.error("Error fetching rooms:", roomsError);
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Failed to fetch available rooms',
-          details: roomsError.message,
-        },
+        { success: false, error: "Failed to fetch rooms" },
         { status: 500 }
       );
     }
+
+    // MANUALLY FILTER OUT UNAVAILABLE ROOMS IN JAVASCRIPT
+    // This is bulletproof compared to SQL 'not.in' syntax
+    const availableRooms =
+      allRooms?.filter((room) => !unavailableRoomIds.includes(room.id)) || [];
+
+    console.log(
+      `Total Rooms: ${allRooms?.length || 0}, Unavailable: ${
+        unavailableRoomIds.length
+      }, Final Available: ${availableRooms.length}`
+    );
+
+    // Update total count
+    const totalAvailable = availableRooms.length;
 
     // Calculate number of 24-hour slots (previously 'nights')
     // 1 ms to 24 hours = 1 slot. 24h 1ms = 2 slots.
@@ -146,8 +210,11 @@ export async function POST(request: NextRequest) {
     // Check guest capacity if num_guests provided
     // We want to return ALL rooms to allow multi-room booking, but we'll calculate
     // strictly matching rooms to generate appropriate headers/warnings.
-    const strictMatchingRooms = availableRooms?.filter(room => (room.max_guests * (num_rooms || 1)) >= (num_guests || 0)) || [];
-    
+    const strictMatchingRooms =
+      availableRooms?.filter(
+        (room) => room.max_guests * (num_rooms || 1) >= (num_guests || 0)
+      ) || [];
+
     // Always return all available rooms so users can book multiple
     let roomsMatchingGuestCapacity = availableRooms || [];
 
@@ -156,26 +223,35 @@ export async function POST(request: NextRequest) {
     const hasEnoughRooms = roomsMatchingGuestCapacity.length >= requestedRooms;
 
     // Build appropriate message
-    let message = '';
-    let warning = '';
+    let message = "";
+    let warning = "";
 
-
-    if (strictMatchingRooms.length === 0 && availableRooms && availableRooms.length > 0) {
+    if (
+      strictMatchingRooms.length === 0 &&
+      availableRooms &&
+      availableRooms.length > 0
+    ) {
       // Rooms available but none fit the guest count individually
-      const maxCapacity = Math.max(...availableRooms.map(r => r.max_guests));
-      message = `${availableRooms.length} room${availableRooms.length === 1 ? '' : 's'} available`;
+      const maxCapacity = Math.max(...availableRooms.map((r) => r.max_guests));
+      message = `${availableRooms.length} room${
+        availableRooms.length === 1 ? "" : "s"
+      } available`;
       warning = `Note: Each room accommodates up to ${maxCapacity} guests. For ${num_guests} guests, please book multiple rooms.`;
     } else if (!hasEnoughRooms && requestedRooms > 1) {
       // Not enough rooms for the requested quantity
-      message = `Only ${roomsMatchingGuestCapacity.length} room${roomsMatchingGuestCapacity.length === 1 ? '' : 's'} available`;
+      message = `Only ${roomsMatchingGuestCapacity.length} room${
+        roomsMatchingGuestCapacity.length === 1 ? "" : "s"
+      } available`;
       warning = `You requested ${requestedRooms} rooms, but we only have ${roomsMatchingGuestCapacity.length} available for your dates. Please reduce the number of rooms or adjust your dates.`;
     } else if (roomsMatchingGuestCapacity.length > 0) {
-      message = `${roomsMatchingGuestCapacity.length} room${roomsMatchingGuestCapacity.length === 1 ? '' : 's'} available for ${nights} night${nights === 1 ? '' : 's'}`;
+      message = `${roomsMatchingGuestCapacity.length} room${
+        roomsMatchingGuestCapacity.length === 1 ? "" : "s"
+      } available for ${nights} night${nights === 1 ? "" : "s"}`;
       if (num_guests) {
-        message += ` (${num_guests} guest${num_guests === 1 ? '' : 's'})`;
+        message += ` (${num_guests} guest${num_guests === 1 ? "" : "s"})`;
       }
     } else {
-      message = 'No rooms available for the selected dates';
+      message = "No rooms available for the selected dates";
     }
 
     return NextResponse.json({
@@ -190,19 +266,19 @@ export async function POST(request: NextRequest) {
         check_in,
         check_out,
         nights,
-        room_type: room_type || 'All',
-        num_guests: num_guests || 'Not specified',
+        room_type: room_type || "All",
+        num_guests: num_guests || "Not specified",
         num_rooms: requestedRooms,
       },
       message,
       warning: warning || undefined,
     });
   } catch (error: any) {
-    console.error('Check availability error:', error);
+    console.error("Check availability error:", error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to check room availability',
+        error: "Failed to check room availability",
         details: error.message,
       },
       { status: 500 }
