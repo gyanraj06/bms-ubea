@@ -72,7 +72,7 @@ export default function PropertyMediaPage() {
     "Com. H.L. Parwana Room",
     "Dada Tarkakeshwar Chakraborti Room",
     "Com. Prabhatkar Room",
-    "Standard Room",
+    "Com. K. K. Mandal",
   ];
   const bedTypes = ["Single Bed", "Queen Bed", "King Bed", "Twin Beds"];
   const viewTypes = ["Garden View", "Mountain View", "City View", "Pool View"];
