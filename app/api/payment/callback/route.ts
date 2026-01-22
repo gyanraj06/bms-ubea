@@ -50,27 +50,8 @@ function verifyHash(params: Record<string, string>, salt: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    // Dynamic Domain Resolution (Same as initiate route)
-    let baseUrl = process.env.NEXT_PUBLIC_DOMAIN;
-    const host =
-      request.headers.get("x-forwarded-host") || request.headers.get("host");
-    if (host) {
-      // Force HTTPS on Vercel/Production to prevent 308 Redirects
-      const protocol = host.includes("localhost") ? "http" : "https";
-      baseUrl = `${protocol}://${host}`;
-    }
-    if (!baseUrl) baseUrl = "http://localhost:3000";
-
-    // Sanity Fix for Vercel (fix truncated hostnames)
-    try {
-      const urlObj = new URL(baseUrl);
-      if (
-        !urlObj.hostname.includes(".") &&
-        !urlObj.hostname.includes("localhost")
-      ) {
-        baseUrl = `${baseUrl}.vercel.app`;
-      }
-    } catch (e) {}
+    // Use baseUrl from env - fixes TypeError: Invalid URL
+    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000";
 
     // Parse form data from Easebuzz callback
     const formData = await request.formData();
@@ -341,43 +322,10 @@ export async function POST(request: NextRequest) {
 }
 
 // Also handle GET for testing
-// Also handle GET for testing or Redirect Fallback
 export async function GET(request: NextRequest) {
-  let baseUrl = process.env.NEXT_PUBLIC_DOMAIN;
-  const host =
-    request.headers.get("x-forwarded-host") || request.headers.get("host");
-  if (host) {
-    const protocol = host.includes("localhost") ? "http" : "https";
-    baseUrl = `${protocol}://${host}`;
-  }
-  if (!baseUrl) baseUrl = "http://localhost:3000";
-
-  try {
-    const urlObj = new URL(baseUrl);
-    if (
-      !urlObj.hostname.includes(".") &&
-      !urlObj.hostname.includes("localhost")
-    ) {
-      baseUrl = `${baseUrl}.vercel.app`;
-    }
-  } catch (e) {}
-
-  // Log details to debug
-  const searchParams = request.nextUrl.searchParams;
-  const paramsObj = Object.fromEntries(searchParams.entries());
-  console.log("=".repeat(60));
-  console.log("[Callback GET] Hit with Params:", paramsObj);
-  console.log(
-    "[Callback GET] Headers:",
-    Object.fromEntries(request.headers.entries()),
-  );
-  console.log("=".repeat(60));
-
-  // If we somehow got params in GET (e.g. rare gateway redirect), we might want to know.
-  // But usually this means the POST body was lost and no params transferred.
-  // Return explicit reason so we know it hit GET.
+  const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000";
   return Response.redirect(
-    `${baseUrl}/booking/failure?reason=invalid_method_got_GET&debug_host=${encodeURIComponent(host || "null")}`,
+    `${baseUrl}/booking/failure?reason=invalid_method`,
     302,
   );
 }

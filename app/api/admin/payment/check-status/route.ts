@@ -49,18 +49,7 @@ export async function POST(request: NextRequest) {
     const EASEBUZZ_KEY = process.env.EASEBUZZ_KEY!;
     const EASEBUZZ_SALT = process.env.EASEBUZZ_SALT!;
 
-    // Determine API URL: Use dashboard URL for API calls, not payment URL
-    let EASEBUZZ_API_BASE =
-      process.env.EASEBUZZ_URL || "https://testdashboard.easebuzz.in";
-    if (EASEBUZZ_API_BASE.includes("testpay.easebuzz.in")) {
-      console.log(
-        "[Status Check] switching from testpay to testdashboard for API call",
-      );
-      EASEBUZZ_API_BASE = EASEBUZZ_API_BASE.replace(
-        "testpay.easebuzz.in",
-        "testdashboard.easebuzz.in",
-      );
-    }
+    const EASEBUZZ_API_BASE = process.env.EASEBUZZ_TRANS_URL!;
 
     const API_URL = `${EASEBUZZ_API_BASE}/transaction/v2.1/retrieve`;
 
@@ -70,10 +59,6 @@ export async function POST(request: NextRequest) {
     payload.append("key", EASEBUZZ_KEY);
     payload.append("txnid", transaction_id);
     payload.append("hash", hash);
-
-    console.log(
-      `[Status Check] Checking status for ${transaction_id} at ${API_URL}`,
-    );
 
     // 3. Call Easebuzz API
     const response = await fetch(API_URL, {
@@ -86,10 +71,6 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
-    console.log(
-      "[Status Check] Easebuzz Response:",
-      JSON.stringify(data, null, 2),
-    );
 
     if (!data.status || !data.msg) {
       return NextResponse.json(
@@ -118,8 +99,6 @@ export async function POST(request: NextRequest) {
     const easepayid = transactionData.easepayid;
     const amount = transactionData.amount;
     const email = transactionData.email;
-
-    console.log(`[Status Check] Gateway Status: ${gatewayStatus}`);
 
     // 4. Update Database (Replicating Callback Logic)
 
@@ -188,9 +167,6 @@ export async function POST(request: NextRequest) {
         }
       } else if (gatewayStatus === "dropped" || gatewayStatus === "pending") {
         // Do NOTHING to booking status (keep as PENDING) - per user rule
-        console.log(
-          `[Status Check] Status is ${gatewayStatus}. Booking remains PENDING.`,
-        );
       } else {
         // Mark as FAILED
         const { error: failError } = await supabase
@@ -202,9 +178,6 @@ export async function POST(request: NextRequest) {
           .eq("id", targetBookingId);
 
         if (!failError) {
-          console.log(
-            `[Status Check] Booking ${targetBookingId} marked as FAILED.`,
-          );
         }
       }
     }
