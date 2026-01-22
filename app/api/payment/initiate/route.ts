@@ -58,18 +58,32 @@ export async function POST(request: NextRequest) {
     // Configured Domain
     let DOMAIN = process.env.NEXT_PUBLIC_DOMAIN;
 
-    // Dynamic Domain Resolution (Overrides static config to support Vercel Previews)
-    // This ensures the callback always returns to the exact same domain that initiated the request
-    const host = request.headers.get("host");
+    // Dynamic Domain Resolution
+    const host =
+      request.headers.get("x-forwarded-host") || request.headers.get("host");
     if (host) {
       const protocol =
         request.headers.get("x-forwarded-proto") ||
         (host.includes("localhost") ? "http" : "https");
       DOMAIN = `${protocol}://${host}`;
-      console.log(`[Easebuzz] Detected Vercel/Dynamic Domain: ${DOMAIN}`);
+      console.log(`[Easebuzz] Detected Host: ${host} -> ${DOMAIN}`);
     }
 
     if (!DOMAIN) DOMAIN = "http://localhost:3000"; // Fallback
+
+    // Sanity Fix: If domain is a bare hostname (no dot) and not localhost, it's likely a broken Vercel slug.
+    try {
+      const urlObj = new URL(DOMAIN);
+      if (
+        !urlObj.hostname.includes(".") &&
+        !urlObj.hostname.includes("localhost")
+      ) {
+        console.log(`[Easebuzz] Fixing malformed hostname: ${DOMAIN}`);
+        DOMAIN = `${DOMAIN}.vercel.app`;
+      }
+    } catch (e) {
+      // invalid url, ignore
+    }
 
     if (!EASEBUZZ_KEY || !EASEBUZZ_SALT || !EASEBUZZ_URL) {
       console.error("[Easebuzz] Missing environment variables");
