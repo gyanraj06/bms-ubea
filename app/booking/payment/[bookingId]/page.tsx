@@ -220,6 +220,7 @@ export default function PaymentPage() {
     }
   };
 
+
   if (isLoading) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -254,6 +255,8 @@ export default function PaymentPage() {
                   ₹{booking.total_amount.toLocaleString()}
                 </p>
               </div>
+
+
 
               {/* QR Code Section */}
               <div className="flex flex-col items-center space-y-4">

@@ -1,5 +1,8 @@
 "use client";
 
+// Force dynamic rendering to fix URL parsing issues
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -9,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, CalendarCheck } from "@phosphor-icons/react";
 
 import { Suspense } from "react";
+import { useCart } from "@/hooks/use-cart";
 
 function BookingSuccessContent() {
   const router = useRouter();
@@ -16,17 +20,25 @@ function BookingSuccessContent() {
   const bookingId = searchParams.get("bookingId");
   const bookingNumber = searchParams.get("bookingNumber");
   const bookingIds = searchParams.get("bookingIds");
+  const txnid = searchParams.get("txnid"); // Payment portal transaction ID
+
+  const { clearCart } = useCart();
 
   useEffect(() => {
-    // Don't redirect immediately - show success message even without params
-    if (!bookingId && !bookingNumber && !bookingIds) {
+    // Clear cart on success page load
+    clearCart();
+  }, []);
+
+  useEffect(() => {
+    // Don't redirect if we have any valid params (including txnid from payment portal)
+    if (!bookingId && !bookingNumber && !bookingIds && !txnid) {
       const timer = setTimeout(() => {
         router.push("/");
       }, 5000); // Redirect after 5 seconds if no booking info
 
       return () => clearTimeout(timer);
     }
-  }, [bookingId, bookingNumber, bookingIds, router]);
+  }, [bookingId, bookingNumber, bookingIds, txnid, router]);
 
   return (
     <main className="min-h-screen bg-gray-50">

@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
         { success: false, error: "Please login to book a room" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json(
         { success: false, error: "Invalid token. Please login again" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
             error: "User profile creation failed",
             details: createError.message,
           },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
       console.error("User data still null after creation attempt");
       return NextResponse.json(
         { success: false, error: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -152,27 +152,27 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json(
         { success: false, error: "No rooms selected" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!check_in || !check_out) {
       return NextResponse.json(
         { success: false, error: "Check-in and check-out dates are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
     const totalNights = Math.ceil(
-      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     if (totalNights <= 0) {
       return NextResponse.json(
         { success: false, error: "Invalid date range" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -215,11 +215,11 @@ export async function POST(request: NextRequest) {
       console.log(`[BOOKING DEBUG] Room type: ${targetRoom.room_type}`);
       console.log(
         `[BOOKING DEBUG] All rooms of this type:`,
-        allRoomsOfType?.length || 0
+        allRoomsOfType?.length || 0,
       );
       console.log(
         `[BOOKING DEBUG] Rooms:`,
-        allRoomsOfType?.map((r) => ({ id: r.id, number: r.room_number }))
+        allRoomsOfType?.map((r) => ({ id: r.id, number: r.room_number })),
       );
 
       if (typeError || !allRoomsOfType) {
@@ -264,11 +264,11 @@ export async function POST(request: NextRequest) {
 
       console.log(
         `[BOOKING DEBUG] Available rooms after check:`,
-        availableRoomIds.length
+        availableRoomIds.length,
       );
       console.log(
         `[BOOKING DEBUG] Available room IDs:`,
-        availableRoomIds.map((r) => r.id)
+        availableRoomIds.map((r) => r.id),
       );
 
       if (availableRoomIds.length < quantity) {
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
             check_out: checkOutDate.toISOString(),
             total_nights: totalNights,
             num_guests: Math.ceil(
-              (parseInt(num_guests) || 1) / bookingsToCreate.length
+              (parseInt(num_guests) || 1) / bookingsToCreate.length,
             ), // Distribute guests roughly
             room_charges: roomCharges,
             gst_amount: 0,
@@ -351,7 +351,7 @@ export async function POST(request: NextRequest) {
         if (createError) {
           console.error("Error creating booking:", createError);
           errors.push(
-            `Failed to book room ${roomToBook.room_number}: ${createError.message} (${createError.code})`
+            `Failed to book room ${roomToBook.room_number}: ${createError.message} (${createError.code})`,
           );
         } else {
           createdBookings.push(newBooking);
@@ -362,7 +362,7 @@ export async function POST(request: NextRequest) {
     if (createdBookings.length === 0 && errors.length > 0) {
       return NextResponse.json(
         { success: false, error: "Booking failed", details: errors },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -374,7 +374,7 @@ export async function POST(request: NextRequest) {
       // Calculate total amount for all bookings
       const totalBookingAmount = createdBookings.reduce(
         (sum, b) => sum + b.total_amount,
-        0
+        0,
       );
 
       const emailData = {
@@ -401,6 +401,7 @@ export async function POST(request: NextRequest) {
           request.headers.get("origin") || "https://unionawasholidayhome.com",
       };
 
+      /*
       // Import dynamically to avoid top-level await issues or circular deps if any
       const { sendBookingConfirmationEmail, sendAdminNewBookingNotification } =
         await import("@/lib/email-service");
@@ -428,6 +429,7 @@ export async function POST(request: NextRequest) {
         .catch((err) => {
           console.error("Failed to initiate admin notification sending:", err);
         });
+      */
     }
 
     return NextResponse.json(
@@ -438,13 +440,13 @@ export async function POST(request: NextRequest) {
         booking_ids: createdBookings.map((b) => b.id),
         errors: errors.length > 0 ? errors : undefined,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("POST booking error:", error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
