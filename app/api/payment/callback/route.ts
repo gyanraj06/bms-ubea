@@ -50,8 +50,28 @@ function verifyHash(params: Record<string, string>, salt: string): boolean {
 
 export async function POST(request: NextRequest) {
   try {
-    // Use baseUrl from env - fixes TypeError: Invalid URL
-    const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000";
+    // Dynamic Domain Resolution (Same as initiate route)
+    let baseUrl = process.env.NEXT_PUBLIC_DOMAIN;
+    const host =
+      request.headers.get("x-forwarded-host") || request.headers.get("host");
+    if (host) {
+      const protocol =
+        request.headers.get("x-forwarded-proto") ||
+        (host.includes("localhost") ? "http" : "https");
+      baseUrl = `${protocol}://${host}`;
+    }
+    if (!baseUrl) baseUrl = "http://localhost:3000";
+
+    // Sanity Fix for Vercel (fix truncated hostnames)
+    try {
+      const urlObj = new URL(baseUrl);
+      if (
+        !urlObj.hostname.includes(".") &&
+        !urlObj.hostname.includes("localhost")
+      ) {
+        baseUrl = `${baseUrl}.vercel.app`;
+      }
+    } catch (e) {}
 
     // Parse form data from Easebuzz callback
     const formData = await request.formData();
@@ -323,7 +343,28 @@ export async function POST(request: NextRequest) {
 
 // Also handle GET for testing
 export async function GET(request: NextRequest) {
-  const baseUrl = process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000";
+  let baseUrl = process.env.NEXT_PUBLIC_DOMAIN;
+  const host =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
+  if (host) {
+    const protocol =
+      request.headers.get("x-forwarded-proto") ||
+      (host.includes("localhost") ? "http" : "https");
+    baseUrl = `${protocol}://${host}`;
+  }
+  if (!baseUrl) baseUrl = "http://localhost:3000";
+
+  // Sanity Fix for Vercel
+  try {
+    const urlObj = new URL(baseUrl);
+    if (
+      !urlObj.hostname.includes(".") &&
+      !urlObj.hostname.includes("localhost")
+    ) {
+      baseUrl = `${baseUrl}.vercel.app`;
+    }
+  } catch (e) {}
+
   return Response.redirect(
     `${baseUrl}/booking/failure?reason=invalid_method`,
     302,
