@@ -62,9 +62,8 @@ export async function POST(request: NextRequest) {
     const host =
       request.headers.get("x-forwarded-host") || request.headers.get("host");
     if (host) {
-      const protocol =
-        request.headers.get("x-forwarded-proto") ||
-        (host.includes("localhost") ? "http" : "https");
+      // Force HTTPS on Vercel/Production to prevent 308 Redirects
+      const protocol = host.includes("localhost") ? "http" : "https";
       DOMAIN = `${protocol}://${host}`;
       console.log(`[Easebuzz] Detected Host: ${host} -> ${DOMAIN}`);
     }
