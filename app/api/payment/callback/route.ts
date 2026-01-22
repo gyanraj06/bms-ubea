@@ -341,19 +341,17 @@ export async function POST(request: NextRequest) {
 }
 
 // Also handle GET for testing
+// Also handle GET for testing or Redirect Fallback
 export async function GET(request: NextRequest) {
   let baseUrl = process.env.NEXT_PUBLIC_DOMAIN;
   const host =
     request.headers.get("x-forwarded-host") || request.headers.get("host");
   if (host) {
-    const protocol =
-      request.headers.get("x-forwarded-proto") ||
-      (host.includes("localhost") ? "http" : "https");
+    const protocol = host.includes("localhost") ? "http" : "https";
     baseUrl = `${protocol}://${host}`;
   }
   if (!baseUrl) baseUrl = "http://localhost:3000";
 
-  // Sanity Fix for Vercel
   try {
     const urlObj = new URL(baseUrl);
     if (
@@ -364,8 +362,22 @@ export async function GET(request: NextRequest) {
     }
   } catch (e) {}
 
+  // Log details to debug
+  const searchParams = request.nextUrl.searchParams;
+  const paramsObj = Object.fromEntries(searchParams.entries());
+  console.log("=".repeat(60));
+  console.log("[Callback GET] Hit with Params:", paramsObj);
+  console.log(
+    "[Callback GET] Headers:",
+    Object.fromEntries(request.headers.entries()),
+  );
+  console.log("=".repeat(60));
+
+  // If we somehow got params in GET (e.g. rare gateway redirect), we might want to know.
+  // But usually this means the POST body was lost and no params transferred.
+  // Return explicit reason so we know it hit GET.
   return Response.redirect(
-    `${baseUrl}/booking/failure?reason=invalid_method`,
+    `${baseUrl}/booking/failure?reason=invalid_method_got_GET&debug_host=${encodeURIComponent(host || "null")}`,
     302,
   );
 }
