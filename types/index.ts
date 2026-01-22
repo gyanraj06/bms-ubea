@@ -134,3 +134,32 @@ export interface RoomBlock {
     room_type: string;
   };
 }
+
+export interface Payment {
+  id: string;
+  transaction_id: string;
+  booking_id: string;
+  user_id: string;
+  amount: number;
+  payment_method: string;
+  payment_type: string;
+  payment_gateway?: string;
+  gateway_transaction_id?: string;
+  gateway_response?: any;
+  status: "pending" | "processing" | "completed" | "failed" | "refunded";
+  remarks?: string;
+  processed_by?: string;
+  processed_at?: string;
+  created_at?: string;
+}
+
+export interface PaymentLog {
+  id: string;
+  payment_id?: string;
+  booking_id?: string;
+  event_type: "INITIATE" | "WEBHOOK" | "STATUS_CHECK" | "REDIRECT";
+  request_payload?: any;
+  response_payload?: any;
+  status?: string;
+  created_at?: string;
+}

@@ -444,6 +444,45 @@ export function BookingDetailsModal({
                     </section>
                   )}
 
+                  {/* Payment Logs Section (New) */}
+                  {booking.payment_logs && booking.payment_logs.length > 0 && (
+                    <section>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Transaction History
+                      </h3>
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                        <table className="w-full text-xs md:text-sm text-left">
+                          <thead className="bg-gray-100 border-b border-gray-200 font-semibold text-gray-700">
+                            <tr>
+                              <th className="p-2">Date</th>
+                              <th className="p-2">Transaction ID</th>
+                              <th className="p-2">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {booking.payment_logs
+                              .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                              .map((log: any, i: number) => (
+                                <tr key={i}>
+                                  <td className="p-2 text-gray-600">{formatDateTime(new Date(log.created_at))}</td>
+                                  <td className="p-2 font-mono text-gray-900">{log.transaction_id}</td>
+                                  <td className="p-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${log.status === 'PAID' || log.status === 'success' ? 'bg-green-100 text-green-800' :
+                                        log.status === 'FAILED' ? 'bg-red-100 text-red-800' :
+                                          log.status === 'INITIATED' ? 'bg-blue-100 text-blue-800' :
+                                            'bg-gray-200 text-gray-800'
+                                      }`}>
+                                      {log.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </section>
+                  )}
+
                   {/* Payment Screenshot */}
                   {booking.payment_screenshot_url && (
                     <section>

@@ -217,6 +217,136 @@ function CheckoutContent() {
     }
   }, [isLoaded, guests]);
 
+  // Restore cart from booking ID (for failed payments)
+  useEffect(() => {
+    const restoreCartFromBooking = async () => {
+      const restoreId = searchParams.get('restoreId');
+      if (!restoreId || !user || !isLoaded) return;
+
+      try {
+        toast.loading("Restoring your booking...", { id: "restore-cart" });
+        const token = session?.access_token;
+        if (!token) return;
+
+        const res = await fetch("/api/user/bookings", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        if (data.success && data.bookings) {
+          const targetBooking = data.bookings.find((b: any) => b.id === restoreId);
+
+          if (targetBooking) {
+            // 1. Restore Cart Items (Only if empty to prevent duplication)
+            if (Object.keys(cart).length === 0) {
+              // Find all bookings with same booking number
+              const relatedBookings = data.bookings.filter(
+                (b: any) => b.booking_number === targetBooking.booking_number
+              );
+
+              // Restore cart items
+              const newCart: any = {};
+              relatedBookings.forEach((b: any) => {
+                if (b.rooms && b.rooms.id) {
+                  newCart[b.rooms.id] = {
+                    roomId: b.rooms.id,
+                    quantity: b.quantity || 1, // Default to 1 if quantity hidden
+                    roomType: b.rooms.room_type,
+                    price: b.amount / (b.quantity || 1) / 1, // Approx price per unit (ignoring nights division here, but updateCart will fix)
+                    // We might need to fetch fresh room details to get accurate price/maxGuests
+                    maxGuests: 2, // Fallback
+                    maxAvailable: 10 // Fallback
+                  };
+                }
+              });
+
+              // Restore Cart via dedicated update loop or state hack
+              // Since we can't easily access setCart directly from here without exposing it in useCart,
+              // we will iterate and use updateCart. 
+              // BUT updateCart relies on previous state.
+              // Better to iterate:
+              Object.values(newCart).forEach((item: any) => {
+                updateCart(item.roomId, item.quantity, {
+                  roomType: item.roomType,
+                  price: item.price,
+                  maxGuests: item.maxGuests,
+                  maxAvailable: item.maxAvailable
+                });
+              });
+            }
+
+            // Restore Form Data
+            setFormData(prev => ({
+              ...prev,
+              firstName: targetBooking.guest_name?.split(' ')[0] || prev.firstName,
+              lastName: targetBooking.guest_name?.split(' ').slice(1).join(' ') || prev.lastName,
+              email: targetBooking.email || prev.email,
+              phone: targetBooking.phone || prev.phone,
+              address: targetBooking.address || prev.address,
+              city: targetBooking.city || prev.city,
+              state: targetBooking.state || prev.state,
+              pincode: targetBooking.pincode || prev.pincode,
+              specialRequests: targetBooking.special_requests || prev.specialRequests,
+              bookingFor: targetBooking.booking_for || "self",
+              // guestIdNumber, bankIdNumber might be lost if not in list response, but basics are here
+            }));
+
+            // Restore Guests
+            // We lose guest details array structure in simple booking list usually
+            // But we can set count
+            // setGuestDetails(...)
+
+            toast.success("Booking details restored", { id: "restore-cart" });
+
+            // Remove param to prevent loop
+            const newParams = new URLSearchParams(searchParams.toString());
+            newParams.delete('restoreId');
+
+            // Ensure dates are restored so calculations work
+            if (targetBooking.check_in && !newParams.has('checkIn')) {
+              newParams.set('checkIn', targetBooking.check_in);
+            }
+            if (targetBooking.check_out && !newParams.has('checkOut')) {
+              newParams.set('checkOut', targetBooking.check_out);
+            }
+
+            // Ensure guests count is restored
+            // If num_guests is stored in booking, use it. Otherwise existing logic or default 2
+            if (!newParams.has('guests')) {
+              // Assuming 'num_guests' or similar might exist, or derive from room capacity
+              // For now, if we can't find explicit field, we default to what was in search or 1
+              // Looking at payload in handleSubmit: num_guests is sent.
+              // It should be in the booking object if backend returns it.
+              if (targetBooking.num_guests) {
+                newParams.set('guests', targetBooking.num_guests.toString());
+              }
+            }
+
+            // FORCE Reload with new params to ensure clean state
+            // router.replace(...) can sometimes fail to refetch or rehydrate initial props correctly 
+            // especially when searchParams are read at the very top level
+            // FORCE Reload with new params to ensure clean state ONLY if we added params
+            // If just removing ID, replace is fine.
+            let needsHardReload = false;
+            if (targetBooking.check_in && !searchParams.has('checkIn')) needsHardReload = true;
+            if (targetBooking.check_out && !searchParams.has('checkOut')) needsHardReload = true;
+
+            if (needsHardReload) {
+              window.location.href = `/booking/checkout?${newParams.toString()}`;
+            } else {
+              router.replace(`/booking/checkout?${newParams.toString()}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to restore cart", error);
+        toast.error("Could not restore booking details", { id: "restore-cart" });
+      }
+    };
+
+    restoreCartFromBooking();
+  }, [searchParams, user, isLoaded, cart, session]);
+
   // Calculations
   const calculateTotal = () => {
     if (!checkInDate || !checkOutDate || selectedRooms.length === 0)
@@ -308,7 +438,7 @@ function CheckoutContent() {
     }
   };
 
-  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+  const handleSubmit = async (e?: React.FormEvent | React.MouseEvent, paymentMode: 'qr' | 'gateway' = 'qr') => {
     if (e) e.preventDefault();
 
     if (!isProcessing) setIsProcessing(true);
@@ -624,11 +754,56 @@ function CheckoutContent() {
 
       if (data.success) {
         console.log("[BOOKING DEBUG] ✅ SUCCESS! Booking IDs:", data.booking_ids);
-        console.log("[BOOKING DEBUG] Redirecting to payment page...");
-        setIsSuccess(true);
-        toast.success("Booking initiated! Please complete payment.");
-        clearCart(); // Clear cart after successful booking
-        router.push(`/booking/payment/${data.booking_ids[0]}`);
+
+        // Handle next step based on mode
+        if (paymentMode === 'gateway') {
+          console.log("[BOOKING DEBUG] Initiating Payment Gateway...");
+          toast.loading("Initiating payment gateway...");
+
+          // Initiate Easebuzz Payment
+          try {
+            const roomNumbers = selectedRooms.map(r => r.roomType).join(",");
+
+            const response = await fetch("/api/payment/initiate", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                amount: grandTotal,
+                firstname: formData.firstName,
+                email: formData.email,
+                phone: formData.phone.replace(/\D/g, "").slice(-10),
+                roomNumber: roomNumbers,
+                bookingId: data.booking_ids[0] // Pass the newly created booking ID
+              }),
+            });
+
+            const paymentData = await response.json();
+            console.log("[Payment Portal] API Response:", paymentData);
+
+            if (paymentData.status === 1 && paymentData.paymentUrl) {
+              toast.success("Redirecting to payment gateway...");
+              window.location.href = paymentData.paymentUrl;
+            } else {
+              toast.error("Payment initiation failed");
+              setIsProcessing(false);
+            }
+
+          } catch (err) {
+            console.error("Payment Gateway Error:", err);
+            toast.error("Failed to initiate payment");
+            setIsProcessing(false);
+          }
+
+        } else {
+          // QR Mode (Default)
+          console.log("[BOOKING DEBUG] Redirecting to QR payment page...");
+          setIsSuccess(true);
+          toast.success("Booking initiated! Please complete payment.");
+          router.push(`/booking/payment/${data.booking_ids[0]}`);
+        }
+
       } else {
         console.log("[BOOKING DEBUG] ❌ API returned error:", data.error);
         console.log("[BOOKING DEBUG] Full error response:", JSON.stringify(data, null, 2));
@@ -1316,15 +1491,36 @@ function CheckoutContent() {
                   if (isProcessing) return;
 
                   try {
-                    await handleSubmit(e);
+                    await handleSubmit(e, 'qr');
                   } catch (err) {
                     console.error("CRITICAL ERROR IN SUBMIT: " + String(err));
                     console.error(err);
                   }
                 }}
-                className={`w-full h-12 bg-brown-dark text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer relative z-50 pointer-events-auto ${isProcessing ? 'opacity-50' : 'hover:bg-brown-medium'}`}
+                className={`w-full h-12 bg-brown-dark text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer relative z-50 pointer-events-auto hidden ${isProcessing ? 'opacity-50' : 'hover:bg-brown-medium'}`}
               >
                 {isProcessing ? "Processing..." : user ? "Proceed to QR Payment" : "Login to Book"}
+              </div>
+
+              {/* Payment Portal Button */}
+              <div
+                role="button"
+                onClick={async () => {
+                  if (isProcessing) return;
+                  if (!user) {
+                    toast.error("Please login first");
+                    return;
+                  }
+
+                  try {
+                    await handleSubmit(undefined, 'gateway');
+                  } catch (err) {
+                    console.error("CRITICAL ERROR IN GATEWAY SUBMIT: " + String(err));
+                  }
+                }}
+                className={`mt-3 w-full h-12 bg-brown-dark text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer hover:bg-brown-medium relative z-50 ${isProcessing ? 'opacity-50' : ''}`}
+              >
+                {isProcessing ? "Processing..." : "Proceed to Payment Portal"}
               </div>
             </div>
           </div>

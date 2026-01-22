@@ -51,6 +51,12 @@ interface Booking {
     full_name: string;
     phone: string;
   };
+  payment_logs?: {
+    transaction_id: string;
+    status: string;
+    created_at: string;
+    data?: any;
+  }[];
 }
 
 export default function BookingsPage() {
@@ -392,6 +398,32 @@ export default function BookingsPage() {
                     <p className="text-xs md:text-sm text-gray-500">
                       {formatDate(new Date(booking.created_at))}
                     </p>
+
+                    {/* Transaction Details */}
+                    {booking.payment_logs && booking.payment_logs.length > 0 && (
+                      <div className="mt-2 text-xs text-gray-500 bg-gray-50 p-1.5 rounded inline-block">
+                        {(() => {
+                          // Sort to find latest log
+                          const lastLog = [...booking.payment_logs].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+                          return (
+                            <>
+                              <p><span className="font-semibold">Txn:</span> {lastLog.transaction_id}</p>
+                              <p className="mt-0.5">
+                                <span className="font-semibold">Gateway:</span>{" "}
+                                <span className={
+                                  lastLog.status === 'PAID' ? 'text-green-600 font-medium' :
+                                    lastLog.status === 'success' ? 'text-green-600 font-medium' :
+                                      lastLog.status === 'FAILED' ? 'text-red-600' :
+                                        'text-gray-600'
+                                }>
+                                  {lastLog.status}
+                                </span>
+                              </p>
+                            </>
+                          );
+                        })()}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-2 md:mt-0">

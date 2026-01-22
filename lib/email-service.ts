@@ -76,7 +76,7 @@ const formatTime = (time: string) => {
 
 // Main function to send booking confirmation email
 export async function sendBookingConfirmationEmail(
-  bookingData: BookingEmailData
+  bookingData: BookingEmailData,
 ) {
   try {
     let zeptoUrl = process.env.ZEPTO_MAIL_URL;
@@ -273,6 +273,7 @@ interface PaymentRejectedEmailData extends BookingEmailData {
   // No extra fields needed specifically, but interface keeps it structured
 }
 
+// Email for Payment Failed / Booking Failed
 export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
   try {
     let zeptoUrl = process.env.ZEPTO_MAIL_URL;
@@ -286,8 +287,6 @@ export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
       return { success: false, error: "Email configuration missing" };
     }
 
-    // Adjust URL for template sending implementation
-    // Standard URL ends in /email, template URL ends in /email/template
     if (!zeptoUrl.includes("/template")) {
       zeptoUrl = zeptoUrl.endsWith("/")
         ? `${zeptoUrl}template`
@@ -296,19 +295,24 @@ export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
 
     const settings = await getPropertySettings();
 
-    // Prepare merge info (must match placeholders in Zepto template)
+    // Prepare merge info matching standard structure
     const mergeInfo = {
       user_name: data.user_name,
       booking_reference: data.booking_reference,
       check_in_date: data.check_in_date,
+      check_out_date: data.check_out_date,
+      room_count: data.room_count,
       total_amount: data.total_amount,
+      website_url: data.website_url,
       support_whatsapp: settings.phone,
-      support_whatsapp_number: settings.phone.replace(/[^0-9]/g, ""),
+      check_in_time: settings.check_in_time,
+      check_out_time: settings.check_out_time,
+      property_address: "94, Hanuman Nagar, Narmadapuram Road, Bhopal",
     };
 
     const payload = {
       template_key:
-        "2518b.623682b2828bdc79.k1.ccc6a7a0-d462-11f0-9873-ae9c7e0b6a9f.19aff33071a",
+        "2518b.623682b2828bdc79.k1.3c6d6540-f7bc-11f0-89cb-cabf48e1bf81.19be6dd6994", // New Template Key
       from: {
         address: senderEmail,
         name: senderName,
@@ -324,7 +328,7 @@ export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
       merge_info: mergeInfo,
     };
 
-    console.log("Sending payment rejection email (Template)...", {
+    console.log("Sending booking failed email (Template)...", {
       to: data.user_email,
     });
 
@@ -341,17 +345,17 @@ export async function sendPaymentRejectedEmail(data: PaymentRejectedEmailData) {
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Zepto Mail API Error (Payment Rejected):", result);
+      console.error("Zepto Mail API Error (Booking Failed):", result);
       return {
         success: false,
         error: result.message || "Failed to send email",
       };
     }
 
-    console.log("Payment rejection email sent successfully:", result);
+    console.log("Booking failed email sent successfully:", result);
     return { success: true, data: result };
   } catch (error) {
-    console.error("Error sending payment rejection email:", error);
+    console.error("Error sending booking failed email:", error);
     return {
       success: false,
       error: "Internal server error while sending email",
@@ -368,7 +372,7 @@ interface AdminNotificationData {
 }
 
 export async function sendAdminNewBookingNotification(
-  data: AdminNotificationData
+  data: AdminNotificationData,
 ) {
   try {
     let zeptoUrl = process.env.ZEPTO_MAIL_URL;

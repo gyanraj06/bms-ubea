@@ -17,6 +17,7 @@ import {
   Eye,
   EnvelopeSimple,
   ArrowCounterClockwise,
+  ArrowClockwise,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ export default function PaymentsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [screenshotSignedUrl, setScreenshotSignedUrl] = useState<string>("");
   const [loadingScreenshot, setLoadingScreenshot] = useState(false);
+  const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
 
   // Confirmation State
   const [confirmation, setConfirmation] = useState<{
@@ -164,6 +166,52 @@ export default function PaymentsPage() {
     if (filterStatus === "pending") return booking.payment_status === "pending";
     return true;
   });
+
+  const handleCheckStatus = async (booking: any) => {
+    const latestTxnId = booking.payment_logs && booking.payment_logs.length > 0
+      ? [...booking.payment_logs].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].transaction_id
+      : null;
+
+    if (!latestTxnId) {
+      toast.error("No transaction ID found to check.");
+      return;
+    }
+
+    try {
+      setCheckingStatusId(booking.id);
+      const sessionStr = localStorage.getItem("adminSession");
+      if (!sessionStr) return;
+      const session = JSON.parse(sessionStr);
+      const token = session.token;
+
+      const response = await fetch("/api/admin/payment/check-status", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          transaction_id: latestTxnId,
+          booking_id: booking.id
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success(`Status updated: ${data.status}`);
+        fetchBookings(); // Refresh UI
+        if (isModalOpen) setIsModalOpen(false); // Close modal to avoid stale data
+      } else {
+        toast.error(data.error || "Check failed");
+      }
+
+    } catch (e: any) {
+      toast.error(e.message || "Failed to check status");
+    } finally {
+      setCheckingStatusId(null);
+    }
+  };
 
   const handleResendEmail = async (bookingId: string) => {
     try {
@@ -581,6 +629,12 @@ export default function PaymentsPage() {
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{booking.booking_number}</div>
                       <div className="text-xs text-gray-500">{booking.rooms?.room_type}</div>
+                      {/* Show Latest Transaction ID */}
+                      {booking.payment_logs && booking.payment_logs.length > 0 && (
+                        <div className="text-[10px] text-gray-400 mt-1 font-mono">
+                          Txn: {[...booking.payment_logs].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0].transaction_id.substring(0, 10)}...
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{booking.guest_name}</div>
@@ -611,6 +665,16 @@ export default function PaymentsPage() {
                     </td>
                     <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => handleCheckStatus(booking)}
+                          disabled={checkingStatusId === booking.id}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-lg text-xs font-medium transition-colors disabled:opacity-50"
+                          title="Check Gateway Status"
+                        >
+                          <ArrowClockwise size={14} className={checkingStatusId === booking.id ? "animate-spin" : ""} />
+                          Check
+                        </button>
+
                         <button
                           onClick={() => {
                             setSelectedBooking(booking);
@@ -839,6 +903,45 @@ export default function PaymentsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Transaction History (New) */}
+              {selectedBooking.payment_logs && selectedBooking.payment_logs.length > 0 && (
+                <div>
+                  <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <CurrencyCircleDollar className="w-4 h-4 text-amber-700" weight="fill" />
+                    Transaction History
+                  </h3>
+                  <div className="bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
+                    <table className="w-full text-xs md:text-sm text-left">
+                      <thead className="bg-gray-100 border-b border-gray-200 font-semibold text-gray-700">
+                        <tr>
+                          <th className="p-2 md:p-3">Date</th>
+                          <th className="p-2 md:p-3">Txn ID</th>
+                          <th className="p-2 md:p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {selectedBooking.payment_logs
+                          .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .map((log: any, i: number) => (
+                            <tr key={i}>
+                              <td className="p-2 md:p-3 text-gray-600 whitespace-nowrap">{new Date(log.created_at).toLocaleDateString()}</td>
+                              <td className="p-2 md:p-3 font-mono text-gray-900 break-all w-24 md:w-auto">{log.transaction_id}</td>
+                              <td className="p-2 md:p-3">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-full text-[10px] md:text-xs font-bold capitalize",
+                                  getStatusColor(log.status === 'PAID' || log.status === 'success' ? 'paid' : 'failed')
+                                )}>
+                                  {log.status}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* Booking For Info */}
               {selectedBooking.booking_for && (
