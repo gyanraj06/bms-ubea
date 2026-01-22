@@ -54,7 +54,22 @@ export async function POST(request: NextRequest) {
     const EASEBUZZ_KEY = process.env.EASEBUZZ_KEY;
     const EASEBUZZ_SALT = process.env.EASEBUZZ_SALT;
     const EASEBUZZ_URL = process.env.EASEBUZZ_URL;
-    const DOMAIN = process.env.NEXT_PUBLIC_DOMAIN || "http://localhost:3000";
+
+    // Configured Domain
+    let DOMAIN = process.env.NEXT_PUBLIC_DOMAIN;
+
+    // Dynamic Domain Resolution (Overrides static config to support Vercel Previews)
+    // This ensures the callback always returns to the exact same domain that initiated the request
+    const host = request.headers.get("host");
+    if (host) {
+      const protocol =
+        request.headers.get("x-forwarded-proto") ||
+        (host.includes("localhost") ? "http" : "https");
+      DOMAIN = `${protocol}://${host}`;
+      console.log(`[Easebuzz] Detected Vercel/Dynamic Domain: ${DOMAIN}`);
+    }
+
+    if (!DOMAIN) DOMAIN = "http://localhost:3000"; // Fallback
 
     if (!EASEBUZZ_KEY || !EASEBUZZ_SALT || !EASEBUZZ_URL) {
       console.error("[Easebuzz] Missing environment variables");
