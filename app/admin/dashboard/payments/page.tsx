@@ -843,29 +843,48 @@ export default function PaymentsPage() {
                   </svg>
                   Booking Information
                 </h3>
-                <div className="bg-gray-50 rounded-xl p-3 md:p-4 space-y-2">
-                  <div className="flex justify-between text-xs md:text-sm">
-                    <span className="text-gray-600">Room:</span>
-                    <span className="font-medium text-gray-900">{selectedBooking.rooms?.room_number} - {selectedBooking.rooms?.room_type}</span>
+                <div className="bg-gray-50 rounded-xl p-3 md:p-4 space-y-3">
+                  {/* Rooms - Vertical List */}
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Room(s):</p>
+                    <div className="space-y-1">
+                      {Array.isArray(selectedBooking.rooms) && selectedBooking.rooms.length > 0
+                        ? selectedBooking.rooms.map((r: any, i: number) => (
+                          <div key={i} className="text-sm font-medium text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
+                            Room {r.room_number} — <span className="text-amber-700">{r.room_type}</span>
+                          </div>
+                        ))
+                        : selectedBooking.rooms?.room_number
+                          ? <div className="text-sm font-medium text-gray-900 bg-white px-2 py-1 rounded border border-gray-200">
+                            Room {selectedBooking.rooms.room_number} — <span className="text-amber-700">{selectedBooking.rooms.room_type}</span>
+                          </div>
+                          : <span className="text-sm text-gray-400">-</span>}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex justify-between text-xs md:text-sm">
-                      <span className="text-gray-600">Check-in:</span>
-                      <span className="font-medium text-gray-900">{new Date(selectedBooking.check_in).toLocaleDateString()}</span>
+
+                  {/* Dates Grid */}
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-200">
+                    <div className="bg-white p-2 rounded border border-gray-200">
+                      <p className="text-xs text-gray-500">Check-in</p>
+                      <p className="text-sm font-semibold text-gray-900">{new Date(selectedBooking.check_in).toLocaleDateString()}</p>
+                      <p className="text-xs text-amber-700 font-medium">{new Date(selectedBooking.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
-                    <div className="flex justify-between text-xs md:text-sm">
-                      <span className="text-gray-600">Check-out:</span>
-                      <span className="font-medium text-gray-900">{new Date(selectedBooking.check_out).toLocaleDateString()}</span>
+                    <div className="bg-white p-2 rounded border border-gray-200">
+                      <p className="text-xs text-gray-500">Check-out</p>
+                      <p className="text-sm font-semibold text-gray-900">{new Date(selectedBooking.check_out).toLocaleDateString()}</p>
+                      <p className="text-xs text-amber-700 font-medium">{new Date(selectedBooking.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex justify-between text-xs md:text-sm">
-                      <span className="text-gray-600">Nights:</span>
-                      <span className="font-medium text-gray-900">{selectedBooking.total_nights}</span>
+
+                  {/* Stats Row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white p-2 rounded border border-gray-200 text-center">
+                      <p className="text-xs text-gray-500">Nights</p>
+                      <p className="text-lg font-bold text-gray-900">{selectedBooking.total_nights}</p>
                     </div>
-                    <div className="flex justify-between text-xs md:text-sm">
-                      <span className="text-gray-600">Guests:</span>
-                      <span className="font-medium text-gray-900">{selectedBooking.num_adults}A, {selectedBooking.num_children}C</span>
+                    <div className="bg-white p-2 rounded border border-gray-200 text-center">
+                      <p className="text-xs text-gray-500">Total Guests</p>
+                      <p className="text-lg font-bold text-gray-900">{selectedBooking.num_guests || '-'}</p>
                     </div>
                   </div>
                 </div>

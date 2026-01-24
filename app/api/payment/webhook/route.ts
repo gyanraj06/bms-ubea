@@ -87,7 +87,9 @@ export async function POST(request: Request) {
             // balance_amount should be updated?
             // If full payment, balance is 0.
             balance_amount: 0,
-            advance_paid: payment.amount, // Simple logic for now
+            advance_paid: payment.amount,
+            room_charges: payment.amount,
+            discount_amount: 0,
           })
           .eq("id", payment.booking_id);
       }

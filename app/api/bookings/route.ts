@@ -188,8 +188,21 @@ export async function POST(request: NextRequest) {
     // Note: Discount is now calculated per-booking (per room per night) inside the loop
     // let remainingDiscount = is_ubea_member ? (parseFloat(discount_amount) || 0) : 0;
 
+    // Generate ONE Booking Number for the entire group/cart
+    const sharedBookingNumber = `BK${Date.now()}${Math.floor(
+      Math.random() * 1000,
+    )
+      .toString()
+      .padStart(3, "0")}`;
+
     for (const item of bookingsToCreate) {
       const { room_id: targetRoomId, quantity = 1 } = item;
+
+      // ... (rest of logic) ...
+
+      // SKIP lines to inside the roomToBook loop
+
+      // [NOTE: I need to replace the loop content slightly to use sharedBookingNumber]
 
       // If quantity > 1, we need to find other available rooms of the same type
       // 1. Get the room type of the requested room
@@ -204,71 +217,75 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // 2. Find ALL available rooms of this type
-      // We need to check availability for all rooms of this type
-      const { data: allRoomsOfType, error: typeError } = await supabaseAdmin
-        .from("rooms")
-        .select("id, room_number, base_price")
-        .eq("room_type", targetRoom.room_type)
-        .eq("is_available", true);
-
-      console.log(`[BOOKING DEBUG] Room type: ${targetRoom.room_type}`);
-      console.log(
-        `[BOOKING DEBUG] All rooms of this type:`,
-        allRoomsOfType?.length || 0,
-      );
-      console.log(
-        `[BOOKING DEBUG] Rooms:`,
-        allRoomsOfType?.map((r) => ({ id: r.id, number: r.room_number })),
-      );
-
-      if (typeError || !allRoomsOfType) {
-        console.error(`[BOOKING DEBUG] Error finding rooms:`, typeError);
-        errors.push(`Failed to find rooms of type ${targetRoom.room_type}`);
-        continue;
-      }
-
-      // 3. Check availability for each room of this type
+      // 2. Strict Room Check
+      // First, check if the SPECIFIC requested room is available.
       const availableRoomIds = [];
 
-      for (const room of allRoomsOfType) {
-        const { data: overlaps } = await supabaseAdmin
-          .from("bookings")
-          .select("id, check_in, check_out, status, booking_number")
-          .eq("room_id", room.id)
-          .lt("check_in", checkOutDate.toISOString())
-          .gt("check_out", checkInDate.toISOString())
-          .in("status", [
-            "Confirmed",
-            "Pending",
-            "confirmed",
-            "pending",
-            "verification_pending",
-          ]);
+      const { data: targetRoomOverlaps } = await supabaseAdmin
+        .from("bookings")
+        .select("id")
+        .eq("room_id", targetRoomId)
+        .lt("check_in", checkOutDate.toISOString())
+        .gt("check_out", checkInDate.toISOString())
+        .in("status", [
+          "Confirmed",
+          "Pending",
+          "confirmed",
+          "pending",
+          "verification_pending",
+        ]);
 
-        console.log(`[BOOKING DEBUG] Room ${room.room_number} (${room.id}):`, {
-          has_overlaps: overlaps && overlaps.length > 0,
-          overlap_count: overlaps?.length || 0,
-          overlaps: overlaps?.map((o) => ({
-            booking: o.booking_number,
-            check_in: o.check_in,
-            check_out: o.check_out,
-            status: o.status,
-          })),
-        });
+      const isTargetAvailable =
+        !targetRoomOverlaps || targetRoomOverlaps.length === 0;
 
-        if (!overlaps || overlaps.length === 0) {
-          availableRoomIds.push(room);
+      if (isTargetAvailable) {
+        availableRoomIds.push(targetRoom);
+      } else {
+        // If the specific room user wanted is booked, we should probably fail
+        // unless they asked for "any room of this type" (which our API implies by quantity).
+        // But for quantity=1, user expects THAT room.
+        console.log(
+          `[BOOKING] Requested room ${targetRoom.room_number} is busy.`,
+        );
+      }
+
+      // 3. If we need more rooms (quantity > 1), look for siblings
+      // Only do this confusing "find others" logic if the user EXPLICITLY asked for multiple rooms.
+      if (quantity > 1) {
+        const { data: allRoomsOfType } = await supabaseAdmin
+          .from("rooms")
+          .select("id, room_number, base_price, room_type") // select needed fields including room_type
+          .eq("room_type", targetRoom.room_type)
+          .eq("is_available", true)
+          .neq("id", targetRoomId); // Don't re-fetch target
+
+        if (allRoomsOfType) {
+          for (const room of allRoomsOfType) {
+            if (availableRoomIds.length >= quantity) break;
+
+            const { data: overlaps } = await supabaseAdmin
+              .from("bookings")
+              .select("id")
+              .eq("room_id", room.id)
+              .lt("check_in", checkOutDate.toISOString())
+              .gt("check_out", checkInDate.toISOString())
+              .in("status", [
+                "Confirmed",
+                "Pending",
+                "confirmed",
+                "pending",
+                "verification_pending",
+              ]);
+
+            if (!overlaps || overlaps.length === 0) {
+              availableRoomIds.push(room);
+            }
+          }
         }
       }
 
       console.log(
-        `[BOOKING DEBUG] Available rooms after check:`,
-        availableRoomIds.length,
-      );
-      console.log(
-        `[BOOKING DEBUG] Available room IDs:`,
-        availableRoomIds.map((r) => r.id),
+        `[BOOKING DEBUG] Available rooms: ${availableRoomIds.map((r) => r.id)}`,
       );
 
       if (availableRoomIds.length < quantity) {
@@ -279,7 +296,6 @@ export async function POST(request: NextRequest) {
           available: availableRoomIds.length,
           check_in,
           check_out,
-          all_rooms_of_type: allRoomsOfType?.length || 0,
         });
         errors.push(errorMsg);
         continue;
@@ -301,9 +317,8 @@ export async function POST(request: NextRequest) {
         const advancePaid = totalAmount;
         const balanceAmount = 0;
 
-        const bookingNumber = `BK${Date.now()}${Math.floor(Math.random() * 1000)
-          .toString()
-          .padStart(3, "0")}`;
+        // Use SHARED booking number
+        const bookingNumber = sharedBookingNumber;
 
         const { data: newBooking, error: createError } = await supabaseAdmin
           .from("bookings")

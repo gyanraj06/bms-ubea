@@ -66,7 +66,7 @@ export default function PaymentPage() {
 
       if (response.ok) {
         const data = await response.json();
-        const found = data.bookings.find((b: any) => b.id === bookingId);
+        const found = data.bookings.find((b: any) => b.id === bookingId || b.booking_number === bookingId);
         if (found) {
           setBooking(found);
           console.log("[Payment] Booking loaded:", found.booking_number);

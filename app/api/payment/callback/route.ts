@@ -124,29 +124,58 @@ export async function POST(request: NextRequest) {
     console.log("[Callback] Easepay ID:", easepayid);
     console.log("[Callback] Associated Booking ID:", bookingId);
 
-    // CRITICAL: Update Booking Status
+    // CRITICAL: Update Booking Status (Support Multiple Bookings)
     if (status === "success" && bookingId) {
-      console.log(`[Callback] Updating booking ${bookingId} to CONFIRMED...`);
+      console.log(`[Callback] Updating bookings associated with: ${bookingId}`);
 
-      // 1. Update Booking
-      const { data: bookingData, error: bookingError } = await supabase
+      const bookingIds = bookingId
+        .split(",")
+        .map((id: string) => id.trim())
+        .filter((id: string) => id.length > 0);
+      const amountPerBooking = parseFloat(amount) / bookingIds.length;
+
+      for (const bId of bookingIds) {
+        console.log(`[Callback] Processing booking ${bId}...`);
+
+        // 1. Update Booking
+        const { data: bookingData, error: bookingError } = await supabase
+          .from("bookings")
+          .update({
+            status: "confirmed",
+            payment_status: "paid",
+            advance_paid: amountPerBooking, // Distribute amount
+            room_charges: amountPerBooking, // Sync charges for test bookings
+            discount_amount: 0,
+          })
+          .eq("id", bId)
+          .select()
+          .single();
+
+        if (bookingError) {
+          console.error(
+            `[Callback] Failed to update Booking ${bId}:`,
+            bookingError,
+          );
+        } else {
+          console.log(
+            `[Callback] Booking ${bId} confirmed with amount ${amountPerBooking}`,
+          );
+        }
+      }
+
+      // Fetch ONE booking for email context (usually the primary one)
+      const { data: primaryBooking } = await supabase
         .from("bookings")
-        .update({
-          status: "confirmed",
-          payment_status: "paid",
-          advance_paid: parseFloat(amount) || 0,
-        })
-        .eq("id", bookingId)
-        .select()
+        .select("*")
+        .eq("id", bookingIds[0])
         .single();
 
-      if (bookingError) {
-        console.error(
-          "[Callback] Failed to update Booking status:",
-          bookingError,
+      const bookingData = primaryBooking; // Alias for email logic below
+
+      if (bookingData) {
+        console.log(
+          "[Callback] Booking status updated successfully (Email logic follows)",
         );
-      } else if (bookingData) {
-        console.log("[Callback] Booking status updated successfully");
 
         // 2. Send Emails (Booking Confirmation + Admin Notification + Payment Verified)
         try {

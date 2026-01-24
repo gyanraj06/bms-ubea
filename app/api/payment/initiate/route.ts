@@ -40,7 +40,15 @@ export async function POST(request: NextRequest) {
     console.log(JSON.stringify(body, null, 2));
     console.log("=".repeat(60));
 
-    const { amount, firstname, email, phone, roomNumber, bookingId } = body;
+    const {
+      amount,
+      firstname,
+      email,
+      phone,
+      roomNumber,
+      bookingId,
+      booking_number,
+    } = body;
 
     // Validate required fields
     if (!amount || !firstname || !email || !phone) {
@@ -161,16 +169,16 @@ export async function POST(request: NextRequest) {
     console.log(JSON.stringify(easebuzzData, null, 2));
     console.log("=".repeat(60));
 
-    // ============================================
-    // CHECKPOINT: Save to Supabase if status === 1
-    // ============================================
+    // ... (lines 45-169) ...
+
     if (easebuzzData.status === 1) {
       console.log("[Easebuzz] Status 1 - Saving to payment_logs...");
 
       const { data: insertData, error: insertError } = await supabase
         .from("payment_logs")
         .insert({
-          booking_id: bookingId || null,
+          booking_id: bookingId || null, // Stores UUIDs (or comma-separated UUIDs if column type changed)
+          booking_number: booking_number || null, // Stores Shared Order ID
           room_number: roomNumber || null,
           transaction_id: txnid,
           data: easebuzzData,

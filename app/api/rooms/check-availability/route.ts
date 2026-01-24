@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Check-in and check-out dates are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Invalid date format. Use ISO timestamp format",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
           success: false,
           error: "Check-out time must be after check-in time",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -93,6 +93,8 @@ export async function POST(request: NextRequest) {
           "Pending",
           "confirmed",
           "pending",
+          "paid",
+          "checked-in",
           "verification_pending",
         ]);
 
@@ -104,7 +106,7 @@ export async function POST(request: NextRequest) {
           error: "Failed to check room availability",
           details: bookingError.message,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
           blockStart <= checkOutTime && blockEnd >= checkInTime;
 
         console.log(
-          `Block Check - Room: ${block.room_id}, Date: ${block.start_date} to ${block.end_date}, Overlap: ${isOverlapping}`
+          `Block Check - Room: ${block.room_id}, Date: ${block.start_date} to ${block.end_date}, Overlap: ${isOverlapping}`,
         );
 
         return isOverlapping;
@@ -160,7 +162,7 @@ export async function POST(request: NextRequest) {
 
     // Combine booked and blocked room IDs (remove duplicates)
     const unavailableRoomIds = Array.from(
-      new Set([...bookedRoomIds, ...blockedRoomIds])
+      new Set([...bookedRoomIds, ...blockedRoomIds]),
     );
 
     console.log("Total unavailable room IDs:", unavailableRoomIds);
@@ -183,7 +185,7 @@ export async function POST(request: NextRequest) {
       console.error("Error fetching rooms:", roomsError);
       return NextResponse.json(
         { success: false, error: "Failed to fetch rooms" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -195,7 +197,7 @@ export async function POST(request: NextRequest) {
     console.log(
       `Total Rooms: ${allRooms?.length || 0}, Unavailable: ${
         unavailableRoomIds.length
-      }, Final Available: ${availableRooms.length}`
+      }, Final Available: ${availableRooms.length}`,
     );
 
     // Update total count
@@ -212,7 +214,7 @@ export async function POST(request: NextRequest) {
     // strictly matching rooms to generate appropriate headers/warnings.
     const strictMatchingRooms =
       availableRooms?.filter(
-        (room) => room.max_guests * (num_rooms || 1) >= (num_guests || 0)
+        (room) => room.max_guests * (num_rooms || 1) >= (num_guests || 0),
       ) || [];
 
     // Always return all available rooms so users can book multiple
@@ -281,7 +283,7 @@ export async function POST(request: NextRequest) {
         error: "Failed to check room availability",
         details: error.message,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

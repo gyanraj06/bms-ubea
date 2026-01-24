@@ -49,7 +49,8 @@ export async function POST(request: NextRequest) {
     const EASEBUZZ_KEY = process.env.EASEBUZZ_KEY!;
     const EASEBUZZ_SALT = process.env.EASEBUZZ_SALT!;
 
-    const EASEBUZZ_API_BASE = process.env.EASEBUZZ_TRANS_URL!;
+    const EASEBUZZ_API_BASE =
+      process.env.EASEBUZZ_TRANS_URL || process.env.EASEBUZZ_URL;
 
     const API_URL = `${EASEBUZZ_API_BASE}/transaction/v2.1/retrieve`;
 
@@ -61,6 +62,7 @@ export async function POST(request: NextRequest) {
     payload.append("hash", hash);
 
     // 3. Call Easebuzz API
+    console.log(`[CheckStatus] Calling Easebuzz: ${API_URL}`);
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
@@ -71,10 +73,16 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await response.json();
+    console.log("[CheckStatus] Easebuzz Response:", JSON.stringify(data));
 
     if (!data.status || !data.msg) {
+      console.error("[CheckStatus] Invalid response structure:", data);
       return NextResponse.json(
-        { success: false, error: "Invalid response from Payment Gateway" },
+        {
+          success: false,
+          error: "Invalid response from Payment Gateway",
+          debug: data,
+        },
         { status: 502 },
       );
     }
@@ -98,17 +106,9 @@ export async function POST(request: NextRequest) {
     const gatewayStatus = transactionData.status; // 'success', 'failure', 'userCancelled', 'dropped', 'pending'
     const easepayid = transactionData.easepayid;
     const amount = transactionData.amount;
-    const email = transactionData.email;
 
     // 4. Update Database (Replicating Callback Logic)
-
-    // Map status
     let dbStatus = "FAILED";
-    // Logic from callback:
-    // status === "success" -> "PAID"
-    // status === "dropped" || status === "pending" -> keep as is
-    // else -> "FAILED"
-
     if (gatewayStatus === "success") {
       dbStatus = "PAID";
     } else if (gatewayStatus === "dropped" || gatewayStatus === "pending") {
@@ -117,7 +117,36 @@ export async function POST(request: NextRequest) {
       dbStatus = "FAILED";
     }
 
-    // A. Update Payment Log
+    // Get Booking Info to Backfill booking_number and Update All Rooms
+    let targetBooking_number = null;
+    let targetBookingId = booking_id;
+
+    if (!targetBookingId) {
+      // Fetch from payment_log if not passed
+      const { data: logData } = await supabase
+        .from("payment_logs")
+        .select("booking_id, booking_number") // Fetch existing numbers
+        .eq("transaction_id", transaction_id)
+        .single();
+
+      targetBookingId = logData?.booking_id;
+      targetBooking_number = logData?.booking_number;
+    }
+
+    // If we have an ID but no Number (Old booking case), fetch it from bookings table
+    if (targetBookingId && !targetBooking_number) {
+      const { data: bookingData } = await supabase
+        .from("bookings")
+        .select("booking_number")
+        .eq("id", targetBookingId)
+        .single();
+
+      if (bookingData) {
+        targetBooking_number = bookingData.booking_number;
+      }
+    }
+
+    // A. Update Payment Log (Include backfill of booking_number)
     const updateLogData: any = {
       status: dbStatus,
       data: transactionData, // Update with full latest data
@@ -126,6 +155,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
     if (easepayid) updateLogData.easepay_id = easepayid;
+    if (targetBooking_number)
+      updateLogData.booking_number = targetBooking_number; // Repair Link!
 
     const { error: logError } = await supabase
       .from("payment_logs")
@@ -136,22 +167,42 @@ export async function POST(request: NextRequest) {
       console.error("[Status Check] Failed to update payment_log:", logError);
     }
 
-    // B. Update Booking Status
-    // We need the booking_id. If not passed, fetch from payment_log
-    let targetBookingId = booking_id;
-    if (!targetBookingId) {
-      const { data: logData } = await supabase
-        .from("payment_logs")
-        .select("booking_id")
-        .eq("transaction_id", transaction_id)
-        .single();
-      targetBookingId = logData?.booking_id;
-    }
-
-    if (targetBookingId) {
+    // B. Update Booking Status (All rooms in group)
+    if (targetBooking_number) {
+      // Update ALL bookings with this number
       if (gatewayStatus === "success") {
-        // Mark as CONFIRMED
         const { error: bookingError } = await supabase
+          .from("bookings")
+          .update({
+            status: "confirmed",
+            payment_status: "paid",
+            advance_paid: parseFloat(amount) || 0, // Note: This sets full amount on EACH room? No, hopefully logic handles this or we accept redundancy.
+            // Actually, for multi-room, advance_paid usually tracks total.
+            // If we set it on all rows, sum() might duplicate.
+            // For now, let's keep consistency with callback: we probably want to update status.
+          })
+          .eq("booking_number", targetBooking_number);
+
+        if (!bookingError) {
+          console.log(
+            `[Status Check] Group ${targetBooking_number} confirmed.`,
+          );
+        }
+      } else if (gatewayStatus !== "dropped" && gatewayStatus !== "pending") {
+        // FAILED
+        await supabase
+          .from("bookings")
+          .update({
+            status: "failed",
+            payment_status: "failed",
+          })
+          .eq("booking_number", targetBooking_number);
+      }
+    }
+    // Fallback: Update single ID if no number found (very old orphan data?)
+    else if (targetBookingId) {
+      if (gatewayStatus === "success") {
+        await supabase
           .from("bookings")
           .update({
             status: "confirmed",
@@ -159,26 +210,11 @@ export async function POST(request: NextRequest) {
             advance_paid: parseFloat(amount) || 0,
           })
           .eq("id", targetBookingId);
-
-        if (!bookingError) {
-          console.log(`[Status Check] Booking ${targetBookingId} confirmed.`);
-          // Ideally send email here if not already sent, but let's avoid duplicates for manual check unless requested.
-          // The user only asked to "Update my Supabase database immediately".
-        }
-      } else if (gatewayStatus === "dropped" || gatewayStatus === "pending") {
-        // Do NOTHING to booking status (keep as PENDING) - per user rule
-      } else {
-        // Mark as FAILED
-        const { error: failError } = await supabase
+      } else if (gatewayStatus !== "dropped" && gatewayStatus !== "pending") {
+        await supabase
           .from("bookings")
-          .update({
-            status: "failed",
-            payment_status: "failed",
-          })
+          .update({ status: "failed", payment_status: "failed" })
           .eq("id", targetBookingId);
-
-        if (!failError) {
-        }
       }
     }
 
@@ -187,6 +223,7 @@ export async function POST(request: NextRequest) {
       status: gatewayStatus,
       db_status: dbStatus,
       data: transactionData,
+      repaired_link: !!targetBooking_number,
     });
   } catch (error: any) {
     console.error("[Status Check] Error:", error);

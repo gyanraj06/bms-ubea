@@ -19,14 +19,14 @@ export async function GET(request: NextRequest) {
       if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
         return NextResponse.json(
           { success: false, error: "Invalid date format" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
       if (checkOutDate <= checkInDate) {
         return NextResponse.json(
           { success: false, error: "Check-out must be after check-in" },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
             "Pending",
             "confirmed",
             "pending",
+            "paid",
+            "checked-in",
             "verification_pending",
           ]);
 
@@ -50,7 +52,7 @@ export async function GET(request: NextRequest) {
         console.error("Error fetching bookings:", bookingError);
         return NextResponse.json(
           { success: false, error: "Failed to check availability" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
@@ -111,18 +113,18 @@ export async function GET(request: NextRequest) {
         console.error("Error fetching rooms:", error);
         return NextResponse.json(
           { success: false, error: "Failed to fetch rooms" },
-          { status: 500 }
+          { status: 500 },
         );
       }
 
       // Manually filter out blocked/booked rooms
       const allRooms = rooms || [];
       const filteredRooms = allRooms.filter(
-        (room) => !unavailableRoomIds.includes(room.id)
+        (room) => !unavailableRoomIds.includes(room.id),
       );
 
       console.log(
-        `GET /api/rooms: Total ${allRooms.length}, Unavailable ${unavailableRoomIds.length}, Returning ${filteredRooms.length}`
+        `GET /api/rooms: Total ${allRooms.length}, Unavailable ${unavailableRoomIds.length}, Returning ${filteredRooms.length}`,
       );
 
       return NextResponse.json({
@@ -152,7 +154,7 @@ export async function GET(request: NextRequest) {
       console.error("Error fetching rooms:", error);
       return NextResponse.json(
         { success: false, error: "Failed to fetch rooms" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -164,7 +166,7 @@ export async function GET(request: NextRequest) {
     console.error("GET rooms error:", error);
     return NextResponse.json(
       { success: false, error: "Failed to fetch rooms" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

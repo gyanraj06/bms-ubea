@@ -775,7 +775,8 @@ function CheckoutContent() {
                 email: formData.email,
                 phone: formData.phone.replace(/\D/g, "").slice(-10),
                 roomNumber: roomNumbers,
-                bookingId: data.booking_ids[0] // Pass the newly created booking ID
+                bookingId: data.booking_ids.join(","), // Keep for legacy/verification
+                booking_number: data.bookings[0].booking_number // New Shared ID
               }),
             });
 

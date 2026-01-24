@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { ChaletHeader } from "@/components/shared/chalet-header";
 import { Footer } from "@/components/shared/footer";
 import { useAuth } from "@/contexts/auth-context";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; // Add Import
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { Button } from "@/components/ui/button";
 
 const supabase = createClientComponentClient();
@@ -22,28 +22,12 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
-interface Booking {
+interface BookingItem {
   id: string;
-  booking_number: string;
-  check_in: string;
-  check_out: string;
-  total_nights: number;
-  num_guests: number;
-  num_adults: number;
-  num_children: number;
-  room_charges: number;
-  gst_amount: number;
-  total_amount: number;
-  advance_paid: number;
-  balance_amount: number;
+  room_id: string;
   status: string;
   payment_status: string;
-  guest_name: string;
-  guest_email: string;
-  guest_phone: string;
-  special_requests: string;
-  created_at: string;
-  rooms: {
+  room: {
     id: string;
     room_number: string;
     room_type: string;
@@ -51,27 +35,49 @@ interface Booking {
   };
 }
 
+interface BookingOrder {
+  booking_number: string;
+  check_in: string;
+  check_out: string;
+  total_nights: number;
+  num_guests: number;
+
+  // Aggregated amounts
+  room_charges: number;
+  gst_amount: number;
+  total_amount: number;
+  advance_paid: number;
+  balance_amount: number;
+
+  status: string;
+  payment_status: string;
+
+  guest_name: string;
+  guest_email: string;
+  guest_phone: string;
+  special_requests: string;
+  created_at: string;
+
+  items: BookingItem[];
+}
+
 export default function MyBookingsPage() {
   const router = useRouter();
   const { user, loading: authLoading, session } = useAuth();
-  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [bookings, setBookings] = useState<BookingOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
   useEffect(() => {
-    // Wait for auth check to complete
     if (authLoading) return;
 
     if (!user) {
-      // Fallback: Check session directly one last time before kicking them out
       const checkSession = async () => {
         const { data } = await supabase.auth.getSession();
         if (!data.session) {
           toast.error("Please login to view your bookings");
           router.push(`/login?next=${encodeURIComponent("/my-bookings")}`);
         }
-        // If session exists, AuthContext will eventually update via listener or we can force it
-        // But preventing the immediate redirect is key
       };
       checkSession();
       return;
@@ -235,7 +241,7 @@ export default function MyBookingsPage() {
             <div className="space-y-6">
               {filteredBookings.map((booking, index) => (
                 <motion.div
-                  key={booking.id}
+                  key={booking.booking_number}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05 }}
@@ -268,7 +274,7 @@ export default function MyBookingsPage() {
                       </div>
 
                       <div className="mt-4 md:mt-0 text-left md:text-right">
-                        <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                        <p className="text-sm text-gray-500 mb-1">Total Order Amount</p>
                         <p className="text-2xl font-bold text-brown-dark">
                           ₹{booking.total_amount.toLocaleString()}
                         </p>
@@ -282,42 +288,49 @@ export default function MyBookingsPage() {
                       </div>
                     </div>
 
-                    {/* Room Info */}
-                    {booking.rooms && (
-                      <div className="mb-6 p-4 bg-gray-50 rounded-xl">
-                        <div className="flex items-start gap-4">
-                          {booking.rooms.images?.[0] && (
-                            <img
-                              src={booking.rooms.images[0]}
-                              alt={booking.rooms.room_type}
-                              className="w-24 h-24 object-cover rounded-lg"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <div className="flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h4 className="font-semibold text-gray-900 text-lg mb-1">
-                                  {booking.rooms.room_type}
-                                </h4>
-                                <p className="text-sm text-gray-600 flex items-center gap-1">
-                                  <MapPin size={14} weight="fill" />
-                                  Room {booking.rooms.room_number}
-                                </p>
+                    {/* Rooms List */}
+                    <div className="space-y-4 mb-6">
+                      <h4 className="font-semibold text-gray-700 text-sm uppercase tracking-wider">Reserved Rooms ({booking.items.length})</h4>
+
+                      {booking.items.map((item) => (
+                        <div key={item.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-brown-light/30 transition-colors">
+                          <div className="flex items-start gap-4">
+                            {item.room.images?.[0] && (
+                              <img
+                                src={item.room.images[0]}
+                                alt={item.room.room_type}
+                                className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                <div>
+                                  <h4 className="font-semibold text-gray-900 text-lg">
+                                    {item.room.room_type}
+                                  </h4>
+                                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
+                                    <MapPin size={14} weight="fill" className="text-brown-dark" />
+                                    Room {item.room.room_number}
+                                  </p>
+                                </div>
+                                <div className="text-sm text-gray-500 bg-white px-3 py-1 rounded-md border border-gray-200">
+                                  Status: <span className="font-medium text-gray-900">{item.status}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    )}
+                      ))}
+                    </div>
 
-                    {/* Booking Details Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                    {/* Booking Details Grid (Shared) */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 bg-gray-50 p-4 rounded-xl">
                       <div className="flex items-start gap-3">
-                        <div className="bg-primary-50 p-2 rounded-lg">
-                          <Calendar size={20} className="text-primary-600" weight="bold" />
+                        <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <Calendar size={20} className="text-brown-dark" weight="bold" />
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Check-in</p>
@@ -331,8 +344,8 @@ export default function MyBookingsPage() {
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <div className="bg-primary-50 p-2 rounded-lg">
-                          <Calendar size={20} className="text-primary-600" weight="bold" />
+                        <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <Calendar size={20} className="text-brown-dark" weight="bold" />
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Check-out</p>
@@ -346,25 +359,25 @@ export default function MyBookingsPage() {
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <div className="bg-primary-50 p-2 rounded-lg">
-                          <Bed size={20} className="text-primary-600" weight="bold" />
+                        <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <Bed size={20} className="text-brown-dark" weight="bold" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Nights</p>
+                          <p className="text-xs text-gray-500 mb-1">Duration</p>
                           <p className="font-semibold text-gray-900">
-                            {booking.total_nights} {booking.total_nights === 1 ? 'night' : 'nights'}
+                            {booking.total_nights} {booking.total_nights === 1 ? 'Night' : 'Nights'}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-start gap-3">
-                        <div className="bg-primary-50 p-2 rounded-lg">
-                          <Users size={20} className="text-primary-600" weight="bold" />
+                        <div className="bg-white p-2 rounded-lg shadow-sm">
+                          <Users size={20} className="text-brown-dark" weight="bold" />
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Guests</p>
+                          <p className="text-xs text-gray-500 mb-1">Total Guests</p>
                           <p className="font-semibold text-gray-900">
-                            {booking.num_guests} {booking.num_guests === 1 ? 'guest' : 'guests'}
+                            {booking.num_guests} {booking.num_guests === 1 ? 'Guest' : 'Guests'}
                           </p>
                         </div>
                       </div>
@@ -372,17 +385,17 @@ export default function MyBookingsPage() {
 
                     {/* Payment Breakdown */}
                     <div className="border-t border-gray-200 pt-4 mt-4">
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-2 text-sm bg-gray-50/50 p-4 rounded-xl">
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Room Charges</span>
+                          <span className="text-gray-600">Total Room Charges</span>
                           <span className="font-medium">₹{booking.room_charges.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-600">GST (12%)</span>
+                          <span className="text-gray-600">Total GST (12%)</span>
                           <span className="font-medium">₹{booking.gst_amount.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between font-semibold text-base pt-2 border-t">
-                          <span>Total Amount</span>
+                        <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-200 mt-2">
+                          <span>Grand Total</span>
                           <span>₹{booking.total_amount.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between text-green-700">
@@ -401,10 +414,10 @@ export default function MyBookingsPage() {
                       {booking.payment_status === 'pending' && (
                         <div className="mt-4">
                           <Button
-                            onClick={() => router.push(`/booking/payment/${booking.id}`)}
-                            className="w-full bg-brown-dark hover:bg-brown-medium text-white"
+                            onClick={() => router.push(`/booking/payment/${booking.booking_number}`)}
+                            className="w-full bg-brown-dark hover:bg-brown-medium text-white py-6 text-lg shadow-md hover:shadow-lg transition-all"
                           >
-                            Pay Now
+                            Complete Payment for Order
                           </Button>
                         </div>
                       )}
@@ -412,9 +425,9 @@ export default function MyBookingsPage() {
 
                     {/* Special Requests */}
                     {booking.special_requests && (
-                      <div className="border-t border-gray-200 pt-4 mt-4">
-                        <p className="text-xs text-gray-500 mb-1">Special Requests</p>
-                        <p className="text-sm text-gray-700">{booking.special_requests}</p>
+                      <div className="border-t border-gray-200 pt-4 mt-4 px-2">
+                        <p className="text-xs text-gray-500 mb-1 font-semibold uppercase tracking-wide">Special Requests</p>
+                        <p className="text-sm text-gray-700 italic">"{booking.special_requests}"</p>
                       </div>
                     )}
                   </div>
