@@ -58,6 +58,12 @@ export async function GET(request: NextRequest) {
           email,
           full_name,
           phone
+        ),
+        payment_logs (
+          transaction_id,
+          status,
+          created_at,
+          data
         )
       `,
       )
