@@ -153,9 +153,21 @@ export async function GET(request: NextRequest) {
           balance_amount: 0, // Sum later
           status: booking.status, // Aggregate status?
           payment_status: booking.payment_status, // Aggregate?
+          payment_screenshot_url: booking.payment_screenshot_url,
           special_requests: booking.special_requests,
           created_at: booking.created_at,
           users: booking.users,
+          // ID / Document fields
+          id_type: booking.id_type,
+          id_number: booking.id_number,
+          govt_id_image_url: booking.govt_id_image_url,
+          bank_id_number: booking.bank_id_number,
+          bank_id_image_url: booking.bank_id_image_url,
+          guest_id_image_url: booking.guest_id_image_url,
+          guest_id_number: booking.guest_id_number,
+          address: booking.address,
+          booking_for: booking.booking_for,
+          guest_details: booking.guest_details,
           // Lists
           rooms: [], // Changed from single object to array
           payment_logs: [],

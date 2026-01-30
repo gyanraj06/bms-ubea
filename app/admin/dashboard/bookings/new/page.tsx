@@ -45,6 +45,9 @@ export default function NewAdminBookingPage() {
     // -- State: Dates & Rooms --
     const [checkIn, setCheckIn] = useState<Date>();
     const [checkOut, setCheckOut] = useState<Date>();
+    const [checkInTime, setCheckInTime] = useState("12:00");
+    const [checkOutTime, setCheckOutTime] = useState("11:00");
+    const [isSpecialDiscount, setIsSpecialDiscount] = useState(false);
 
     const [availableRooms, setAvailableRooms] = useState<Room[]>([]);
     const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
@@ -88,7 +91,11 @@ export default function NewAdminBookingPage() {
         if (nights <= 0) return 0;
 
         const rooms = availableRooms.filter(r => selectedRoomIds.includes(r.id));
-        const baseTotal = rooms.reduce((sum, r) => sum + (r.base_price * nights), 0);
+
+        // If Discount Checked: Price is 1 RS per room per night
+        const effectivePrice = isSpecialDiscount ? 1 : null;
+
+        const baseTotal = rooms.reduce((sum, r) => sum + ((effectivePrice ?? r.base_price) * nights), 0);
         return baseTotal; // GST Removed as per request
     };
 
@@ -105,7 +112,8 @@ export default function NewAdminBookingPage() {
 
         if (!res.ok) throw new Error("Upload failed");
         const data = await res.json();
-        return data.data.fileUrl; // or filePath depending on api
+        // Return filePath for private storage (signed URLs will be generated when viewing)
+        return data.data.filePath;
     };
 
     // -- Handlers --
@@ -156,14 +164,39 @@ export default function NewAdminBookingPage() {
     };
 
     const handleCreateBooking = async () => {
-        if (selectedRoomIds.length === 0) {
-            toast.error("Please select at least one room");
-            return;
-        }
+        // Validate mandatory fields
+        const missingFields: string[] = [];
 
-        // Very basic check (user said "no need validations just check fields")
-        if (!formData.firstName || !formData.email) {
-            toast.error("Please fill Name and Email");
+        // Date & Time validation
+        if (!checkIn) missingFields.push("Check-in Date");
+        if (!checkInTime) missingFields.push("Check-in Time");
+        if (!checkOut) missingFields.push("Check-out Date");
+        if (!checkOutTime) missingFields.push("Check-out Time");
+
+        // Room selection
+        if (selectedRoomIds.length === 0) missingFields.push("At least one Room");
+
+        // Guest details
+        if (!formData.numGuests || formData.numGuests === "0") missingFields.push("Number of Guests");
+        if (!formData.firstName.trim()) missingFields.push("First Name");
+        if (!formData.lastName.trim()) missingFields.push("Last Name");
+        if (!formData.phone.trim()) missingFields.push("Phone Number");
+        if (!formData.email.trim()) missingFields.push("Email Address");
+
+        // Government ID Proof
+        if (!formData.idType) missingFields.push("ID Type");
+        if (!formData.idNumber.trim()) missingFields.push("ID Number");
+        if (!govtIdFile) missingFields.push("Government ID Document Upload");
+
+        // Bank / Employee ID - Optional
+        // (No validation - these fields are optional)
+
+        // Address
+        if (!formData.address.trim()) missingFields.push("Full Address");
+
+        // Show error if any mandatory fields are missing
+        if (missingFields.length > 0) {
+            toast.error(`Please fill the following mandatory fields: ${missingFields.slice(0, 3).join(", ")}${missingFields.length > 3 ? ` and ${missingFields.length - 3} more` : ""}`);
             return;
         }
 
@@ -188,7 +221,15 @@ export default function NewAdminBookingPage() {
             if (bankIdFile) bankIdUrl = await uploadDocument(bankIdFile, 'bank_id', token);
             if (guestIdFile) guestIdUrl = await uploadDocument(guestIdFile, 'guest_id', token);
 
-            // 2. Create Booking
+            // Combine Date + Time
+            const checkInDateTime = new Date(checkIn!);
+            const [inHours, inMinutes] = checkInTime.split(':');
+            checkInDateTime.setHours(parseInt(inHours), parseInt(inMinutes));
+
+            const checkOutDateTime = new Date(checkOut!);
+            const [outHours, outMinutes] = checkOutTime.split(':');
+            checkOutDateTime.setHours(parseInt(outHours), parseInt(outMinutes));
+
             const res = await fetch('/api/admin/bookings/create', {
                 method: 'POST',
                 headers: {
@@ -196,10 +237,11 @@ export default function NewAdminBookingPage() {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    check_in: checkIn,
-                    check_out: checkOut,
+                    check_in: checkInDateTime.toISOString(),
+                    check_out: checkOutDateTime.toISOString(),
                     room_ids: selectedRoomIds,
                     num_guests: parseInt(formData.numGuests) || 1,
+                    is_special_discount: isSpecialDiscount,
                     guest_details: {
                         first_name: formData.firstName,
                         last_name: formData.lastName,
@@ -270,7 +312,7 @@ export default function NewAdminBookingPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div className="flex flex-col gap-2">
-                                <Label>Check-in Date</Label>
+                                <Label>Check-in Date <span className="text-red-500">*</span></Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -296,7 +338,16 @@ export default function NewAdminBookingPage() {
                                 </Popover>
                             </div>
                             <div className="flex flex-col gap-2">
-                                <Label>Check-out Date</Label>
+                                <Label>Check-in Time <span className="text-red-500">*</span></Label>
+                                <Input
+                                    type="time"
+                                    value={checkInTime}
+                                    onChange={(e) => setCheckInTime(e.target.value)}
+                                    className="h-11 border-gray-300"
+                                />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>Check-out Date <span className="text-red-500">*</span></Label>
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -325,12 +376,21 @@ export default function NewAdminBookingPage() {
                                     </PopoverContent>
                                 </Popover>
                             </div>
+                            <div className="flex flex-col gap-2">
+                                <Label>Check-out Time <span className="text-red-500">*</span></Label>
+                                <Input
+                                    type="time"
+                                    value={checkOutTime}
+                                    onChange={(e) => setCheckOutTime(e.target.value)}
+                                    className="h-11 border-gray-300"
+                                />
+                            </div>
                         </div>
 
                         <Button
                             onClick={handleCheckAvailability}
                             disabled={checkingAvailability}
-                            className="w-full md:w-auto bg-brown-dark hover:bg-brown-dark/90 text-white"
+                            className="w-full md:w-auto bg-brown-dark hover:bg-brown-dark/90 text-white mt-4"
                         >
                             {checkingAvailability ? 'Checking...' : 'Check Availability'}
                         </Button>
@@ -371,7 +431,7 @@ export default function NewAdminBookingPage() {
                         <div className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Number of Guests</Label>
+                                    <Label>Number of Guests <span className="text-red-500">*</span></Label>
                                     <Input
                                         type="number"
                                         min="1"
@@ -381,22 +441,22 @@ export default function NewAdminBookingPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>First Name</Label>
+                                    <Label>First Name <span className="text-red-500">*</span></Label>
                                     <Input value={formData.firstName} onChange={e => setFormData({ ...formData, firstName: e.target.value })} className="h-11" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Last Name</Label>
+                                    <Label>Last Name <span className="text-red-500">*</span></Label>
                                     <Input value={formData.lastName} onChange={e => setFormData({ ...formData, lastName: e.target.value })} className="h-11" />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Phone Number</Label>
+                                    <Label>Phone Number <span className="text-red-500">*</span></Label>
                                     <Input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="h-11" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Email Address</Label>
+                                    <Label>Email Address <span className="text-red-500">*</span></Label>
                                     <Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="h-11" />
                                 </div>
                             </div>
@@ -406,7 +466,7 @@ export default function NewAdminBookingPage() {
                                 <h4 className="font-medium text-sm text-gray-900">Government ID Proof</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>ID Type</Label>
+                                        <Label>ID Type <span className="text-red-500">*</span></Label>
                                         <select
                                             className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                             value={formData.idType}
@@ -418,12 +478,12 @@ export default function NewAdminBookingPage() {
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>ID Number</Label>
+                                        <Label>ID Number <span className="text-red-500">*</span></Label>
                                         <Input value={formData.idNumber} onChange={e => setFormData({ ...formData, idNumber: e.target.value })} className="h-11" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Upload ID Document</Label>
+                                    <Label>Upload ID Document <span className="text-red-500">*</span></Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             type="file"
@@ -459,7 +519,7 @@ export default function NewAdminBookingPage() {
 
                             {/* Address */}
                             <div className="space-y-2">
-                                <Label>Full Address</Label>
+                                <Label>Full Address <span className="text-red-500">*</span></Label>
                                 <Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="h-11" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -538,8 +598,8 @@ export default function NewAdminBookingPage() {
                             </div>
 
                         </div>
-                    </div>
 
+                    </div>
                 </div>
 
                 {/* Right Column: Summary & Submit */}
@@ -567,27 +627,41 @@ export default function NewAdminBookingPage() {
                             </div>
                         </div>
 
-                        <div className="bg-yellow-50 p-4 rounded-lg text-sm text-yellow-800 mb-6 border border-yellow-100">
-                            <div className="flex gap-2">
-                                <Check className="w-5 h-5 shrink-0 text-yellow-600" weight="bold" />
+                        <div className="pt-2 border-t mt-4">
+                            <label className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors">
+                                <input
+                                    type="checkbox"
+                                    checked={isSpecialDiscount}
+                                    onChange={(e) => setIsSpecialDiscount(e.target.checked)}
+                                    className="h-4 w-4 rounded border-gray-300 text-brown-dark focus:ring-brown-dark"
+                                />
                                 <div>
-                                    <p className="font-bold mb-1">Payment: CASH</p>
-                                    <p className="opacity-90">Booking will be marked as <strong>Confirmed</strong> and <strong>Paid</strong> immediately.</p>
+                                    <p className="text-sm font-semibold text-gray-900">Special Discount (1 Rs/Room)</p>
+                                    <p className="text-xs text-gray-500">Override room rates to 1 Rs/night per room</p>
                                 </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div className="bg-yellow-50 p-4 rounded-lg text-sm text-yellow-800 mb-6 border border-yellow-100">
+                        <div className="flex gap-2">
+                            <Check className="w-5 h-5 shrink-0 text-yellow-600" weight="bold" />
+                            <div>
+                                <p className="font-bold mb-1">Payment: CASH</p>
+                                <p className="opacity-90">Booking will be marked as <strong>Confirmed</strong> and <strong>Paid</strong> immediately.</p>
                             </div>
                         </div>
-
-                        <Button
-                            className="w-full h-12 text-base bg-brown-dark hover:bg-brown-dark/90 text-white shadow-lg shadow-brown-dark/20"
-                            size="lg"
-                            onClick={handleCreateBooking}
-                            disabled={loading || selectedRoomIds.length === 0}
-                        >
-                            {loading ? 'Creating Booking...' : 'Create Booking'}
-                        </Button>
                     </div>
-                </div>
 
+                    <Button
+                        className="w-full h-12 text-base bg-brown-dark hover:bg-brown-dark/90 text-white shadow-lg shadow-brown-dark/20"
+                        size="lg"
+                        onClick={handleCreateBooking}
+                        disabled={loading || selectedRoomIds.length === 0}
+                    >
+                        {loading ? 'Creating Booking...' : 'Create Booking'}
+                    </Button>
+                </div>
             </div>
         </div>
     );

@@ -195,6 +195,17 @@ export async function POST(request: NextRequest) {
       .toString()
       .padStart(3, "0")}`;
 
+    // Calculate Global Guest Distribution
+    const totalRoomsCount = bookingsToCreate.reduce(
+      (sum: number, item: any) => sum + (item.quantity || 1),
+      0,
+    );
+    const baseGuestsPerRoom = Math.floor(
+      (parseInt(num_guests) || 1) / totalRoomsCount,
+    );
+    let remainingGuestsVector = (parseInt(num_guests) || 1) % totalRoomsCount;
+    let globalRoomDistributedCount = 0;
+
     for (const item of bookingsToCreate) {
       const { room_id: targetRoomId, quantity = 1 } = item;
 
@@ -320,6 +331,12 @@ export async function POST(request: NextRequest) {
         // Use SHARED booking number
         const bookingNumber = sharedBookingNumber;
 
+        // Distribute Guests: Base + 1 if within remainder
+        const guestsForThisRoom =
+          baseGuestsPerRoom +
+          (globalRoomDistributedCount < remainingGuestsVector ? 1 : 0);
+        globalRoomDistributedCount++;
+
         const { data: newBooking, error: createError } = await supabaseAdmin
           .from("bookings")
           .insert({
@@ -332,9 +349,8 @@ export async function POST(request: NextRequest) {
             check_in: checkInDate.toISOString(),
             check_out: checkOutDate.toISOString(),
             total_nights: totalNights,
-            num_guests: Math.ceil(
-              (parseInt(num_guests) || 1) / bookingsToCreate.length,
-            ), // Distribute guests roughly
+            num_guests: guestsForThisRoom, // Correctly distributed count
+            // Math.ceil((parseInt(num_guests) || 1) / bookingsToCreate.length), // OLD LOGIC REMOVED
             room_charges: roomCharges,
             gst_amount: 0,
             total_amount: totalAmount,

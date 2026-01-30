@@ -1,7 +1,6 @@
-"use client";
-
+"use client"; 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { isPrimaryPointer, motion } from "framer-motion";
 import {
     Plus,
     PencilSimple,

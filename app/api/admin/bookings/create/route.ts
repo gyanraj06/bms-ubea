@@ -205,7 +205,17 @@ export async function POST(request: NextRequest) {
       .toString()
       .padStart(3, "0")}`;
 
-    for (const roomId of room_ids) {
+    const numberOfRooms = room_ids.length;
+    const baseGuestsPerRoom = Math.floor((num_guests || 1) / numberOfRooms);
+    let remainingGuests = (num_guests || 1) % numberOfRooms;
+
+    for (let i = 0; i < numberOfRooms; i++) {
+      const roomId = room_ids[i];
+
+      // Distribute guests: Add 1 to the first 'remainingGuests' rooms
+      const guestsForThisRoom =
+        baseGuestsPerRoom + (i < remainingGuests ? 1 : 0);
+
       // Calculate per-room amounts
       // For simplicity, we might trust the frontend totals or re-calculate.
       // Let's recalculate based on room base price to be safe?
@@ -218,7 +228,8 @@ export async function POST(request: NextRequest) {
         .single();
       if (!room) continue;
 
-      const thisRoomCharges = room.base_price * totalNights;
+      const thisRoomCharges =
+        (body.is_special_discount ? 1 : room.base_price) * totalNights;
       const thisGst = 0; // GST REMOVED
       const thisTotal = thisRoomCharges + thisGst;
 
@@ -234,7 +245,7 @@ export async function POST(request: NextRequest) {
           check_in: checkInDate.toISOString(),
           check_out: checkOutDate.toISOString(),
           total_nights: totalNights,
-          num_guests: num_guests || 1, // Defaulting, or pass from frontend
+          num_guests: guestsForThisRoom, // Correct distributed count
           room_charges: thisRoomCharges,
           gst_amount: thisGst,
           total_amount: thisTotal,

@@ -50,7 +50,10 @@ export default function PaymentsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [screenshotSignedUrl, setScreenshotSignedUrl] = useState<string>("");
+  const [govtIdSignedUrl, setGovtIdSignedUrl] = useState<string>("");
+  const [bankIdSignedUrl, setBankIdSignedUrl] = useState<string>("");
   const [loadingScreenshot, setLoadingScreenshot] = useState(false);
+  const [loadingDocs, setLoadingDocs] = useState(false);
   const [checkingStatusId, setCheckingStatusId] = useState<string | null>(null);
 
   // Confirmation State
@@ -72,35 +75,55 @@ export default function PaymentsPage() {
     fetchBookings();
   }, []);
 
-  // Fetch signed URL when modal opens
+  // Fetch signed URLs when modal opens
   useEffect(() => {
-    const fetchScreenshotUrl = async () => {
-      if (!isModalOpen || !selectedBooking?.payment_screenshot_url) {
+    const fetchDocumentUrls = async () => {
+      if (!isModalOpen || !selectedBooking) {
         setScreenshotSignedUrl("");
+        setGovtIdSignedUrl("");
+        setBankIdSignedUrl("");
         return;
       }
 
-      setLoadingScreenshot(true);
-      try {
-        const screenshotPath = selectedBooking.payment_screenshot_url;
-        const response = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(screenshotPath)}`);
-        const data = await response.json();
-
-        if (data.success) {
-          setScreenshotSignedUrl(data.signedUrl);
-        } else {
-          // Fallback to original URL
+      // Fetch payment screenshot URL
+      if (selectedBooking.payment_screenshot_url) {
+        setLoadingScreenshot(true);
+        try {
+          const response = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(selectedBooking.payment_screenshot_url)}`);
+          const data = await response.json();
+          setScreenshotSignedUrl(data.success ? data.signedUrl : selectedBooking.payment_screenshot_url);
+        } catch (error) {
+          console.error("Error fetching screenshot URL:", error);
           setScreenshotSignedUrl(selectedBooking.payment_screenshot_url);
+        } finally {
+          setLoadingScreenshot(false);
+        }
+      }
+
+      // Fetch document URLs
+      setLoadingDocs(true);
+      try {
+        // Govt ID
+        if (selectedBooking.govt_id_image_url) {
+          const response = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(selectedBooking.govt_id_image_url)}`);
+          const data = await response.json();
+          setGovtIdSignedUrl(data.success ? data.signedUrl : selectedBooking.govt_id_image_url);
+        }
+
+        // Bank ID
+        if (selectedBooking.bank_id_image_url) {
+          const response = await fetch(`/api/bookings/upload-document?filePath=${encodeURIComponent(selectedBooking.bank_id_image_url)}`);
+          const data = await response.json();
+          setBankIdSignedUrl(data.success ? data.signedUrl : selectedBooking.bank_id_image_url);
         }
       } catch (error) {
-        console.error("Error fetching screenshot URL:", error);
-        setScreenshotSignedUrl(selectedBooking.payment_screenshot_url);
+        console.error("Error fetching document URLs:", error);
       } finally {
-        setLoadingScreenshot(false);
+        setLoadingDocs(false);
       }
     };
 
-    fetchScreenshotUrl();
+    fetchDocumentUrls();
   }, [isModalOpen, selectedBooking]);
 
   const fetchBookings = async () => {
@@ -999,6 +1022,126 @@ export default function PaymentsPage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Government ID Information */}
+              {(selectedBooking.govt_id_image_url || selectedBooking.id_type || selectedBooking.id_number) && (
+                <div>
+                  <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                    </svg>
+                    Government ID Proof
+                  </h3>
+                  <div className="bg-blue-50 rounded-xl p-3 md:p-4 border border-blue-200 space-y-3">
+                    {selectedBooking.id_type && (
+                      <div className="flex justify-between text-xs md:text-sm">
+                        <span className="text-gray-600">ID Type:</span>
+                        <span className="font-medium text-gray-900">{selectedBooking.id_type}</span>
+                      </div>
+                    )}
+                    {selectedBooking.id_number && (
+                      <div className="flex justify-between text-xs md:text-sm">
+                        <span className="text-gray-600">ID Number:</span>
+                        <span className="font-mono font-medium text-gray-900">{selectedBooking.id_number}</span>
+                      </div>
+                    )}
+                    {selectedBooking.govt_id_image_url && (
+                      <div className="pt-2 border-t border-blue-200">
+                        {loadingDocs ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative aspect-video bg-white rounded-lg overflow-hidden border border-gray-200 mb-3">
+                              <img
+                                src={govtIdSignedUrl || selectedBooking.govt_id_image_url}
+                                alt="Government ID"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <a
+                                href={govtIdSignedUrl || selectedBooking.govt_id_image_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white text-xs md:text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                              >
+                                <Eye size={14} />
+                                View Full
+                              </a>
+                              <a
+                                href={govtIdSignedUrl || selectedBooking.govt_id_image_url}
+                                download={`govt_id_${selectedBooking.booking_number}.jpg`}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-600 text-white text-xs md:text-sm rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                              >
+                                <Download size={14} />
+                                Download
+                              </a>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bank / Employee ID Information */}
+              {(selectedBooking.bank_id_image_url || selectedBooking.bank_id_number) && (
+                <div>
+                  <h3 className="text-sm md:text-base font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                    <Bank className="w-4 h-4 text-purple-600" weight="fill" />
+                    Bank / Employee ID
+                  </h3>
+                  <div className="bg-purple-50 rounded-xl p-3 md:p-4 border border-purple-200 space-y-3">
+                    {selectedBooking.bank_id_number && (
+                      <div className="flex justify-between text-xs md:text-sm">
+                        <span className="text-gray-600">Employee ID Number:</span>
+                        <span className="font-mono font-medium text-gray-900">{selectedBooking.bank_id_number}</span>
+                      </div>
+                    )}
+                    {selectedBooking.bank_id_image_url && (
+                      <div className="pt-2 border-t border-purple-200">
+                        {loadingDocs ? (
+                          <div className="flex items-center justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="relative aspect-video bg-white rounded-lg overflow-hidden border border-gray-200 mb-3">
+                              <img
+                                src={bankIdSignedUrl || selectedBooking.bank_id_image_url}
+                                alt="Employee ID"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <a
+                                href={bankIdSignedUrl || selectedBooking.bank_id_image_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white text-xs md:text-sm rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                              >
+                                <Eye size={14} />
+                                View Full
+                              </a>
+                              <a
+                                href={bankIdSignedUrl || selectedBooking.bank_id_image_url}
+                                download={`employee_id_${selectedBooking.booking_number}.jpg`}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-gray-600 text-white text-xs md:text-sm rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                              >
+                                <Download size={14} />
+                                Download
+                              </a>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
