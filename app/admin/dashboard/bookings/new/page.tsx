@@ -92,8 +92,8 @@ export default function NewAdminBookingPage() {
 
         const rooms = availableRooms.filter(r => selectedRoomIds.includes(r.id));
 
-        // If Discount Checked: Price is 1 RS per room per night
-        const effectivePrice = isSpecialDiscount ? 1 : null;
+        // If Discount Checked: Price is 0 RS per room per night (Free)
+        const effectivePrice = isSpecialDiscount ? 0 : null;
 
         const baseTotal = rooms.reduce((sum, r) => sum + ((effectivePrice ?? r.base_price) * nights), 0);
         return baseTotal; // GST Removed as per request
@@ -180,19 +180,19 @@ export default function NewAdminBookingPage() {
         if (!formData.numGuests || formData.numGuests === "0") missingFields.push("Number of Guests");
         if (!formData.firstName.trim()) missingFields.push("First Name");
         if (!formData.lastName.trim()) missingFields.push("Last Name");
-        if (!formData.phone.trim()) missingFields.push("Phone Number");
-        if (!formData.email.trim()) missingFields.push("Email Address");
+        // if (!formData.phone.trim()) missingFields.push("Phone Number");
+        // if (!formData.email.trim()) missingFields.push("Email Address");
 
         // Government ID Proof
-        if (!formData.idType) missingFields.push("ID Type");
-        if (!formData.idNumber.trim()) missingFields.push("ID Number");
-        if (!govtIdFile) missingFields.push("Government ID Document Upload");
+        // if (!formData.idType) missingFields.push("ID Type");
+        // if (!formData.idNumber.trim()) missingFields.push("ID Number");
+        // if (!govtIdFile) missingFields.push("Government ID Document Upload");
 
         // Bank / Employee ID - Optional
         // (No validation - these fields are optional)
 
         // Address
-        if (!formData.address.trim()) missingFields.push("Full Address");
+        // if (!formData.address.trim()) missingFields.push("Full Address");
 
         // Show error if any mandatory fields are missing
         if (missingFields.length > 0) {
@@ -452,11 +452,11 @@ export default function NewAdminBookingPage() {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Phone Number <span className="text-red-500">*</span></Label>
+                                    <Label>Phone Number</Label>
                                     <Input type="tel" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} className="h-11" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Email Address <span className="text-red-500">*</span></Label>
+                                    <Label>Email Address</Label>
                                     <Input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} className="h-11" />
                                 </div>
                             </div>
@@ -466,7 +466,7 @@ export default function NewAdminBookingPage() {
                                 <h4 className="font-medium text-sm text-gray-900">Government ID Proof</h4>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label>ID Type <span className="text-red-500">*</span></Label>
+                                        <Label>ID Type</Label>
                                         <select
                                             className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                                             value={formData.idType}
@@ -478,12 +478,12 @@ export default function NewAdminBookingPage() {
                                         </select>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>ID Number <span className="text-red-500">*</span></Label>
+                                        <Label>ID Number</Label>
                                         <Input value={formData.idNumber} onChange={e => setFormData({ ...formData, idNumber: e.target.value })} className="h-11" />
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Upload ID Document <span className="text-red-500">*</span></Label>
+                                    <Label>Upload ID Document</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             type="file"
@@ -519,7 +519,7 @@ export default function NewAdminBookingPage() {
 
                             {/* Address */}
                             <div className="space-y-2">
-                                <Label>Full Address <span className="text-red-500">*</span></Label>
+                                <Label>Full Address</Label>
                                 <Input value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} className="h-11" />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -636,8 +636,8 @@ export default function NewAdminBookingPage() {
                                     className="h-4 w-4 rounded border-gray-300 text-brown-dark focus:ring-brown-dark"
                                 />
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-900">Special Discount (1 Rs/Room)</p>
-                                    <p className="text-xs text-gray-500">Override room rates to 1 Rs/night per room</p>
+                                    <p className="text-sm font-semibold text-gray-900">Special Discount (Free)</p>
+                                    <p className="text-xs text-gray-500">Override room rates to Free / 0 Rs per room</p>
                                 </div>
                             </label>
                         </div>

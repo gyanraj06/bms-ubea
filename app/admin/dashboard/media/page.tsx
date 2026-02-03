@@ -158,7 +158,7 @@ export default function PropertyMediaPage() {
     fetchRooms();
     fetchMedia();
     fetchGalleryImages();
-    fetchRoomBlocks();
+    // fetchRoomBlocks();
   }, []);
 
   const getAuthHeaders = () => {
@@ -600,7 +600,7 @@ export default function PropertyMediaPage() {
             />
           )}
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab("blocks")}
           className={cn(
             "px-6 py-3 font-medium text-sm transition-colors relative",
@@ -616,7 +616,7 @@ export default function PropertyMediaPage() {
               className="absolute bottom-0 left-0 right-0 h-0.5 bg-brown-dark"
             />
           )}
-        </button>
+        </button> */}
       </div>
 
       {/* Rooms Tab */}
@@ -929,7 +929,7 @@ export default function PropertyMediaPage() {
       )}
 
       {/* Room Blocks Tab */}
-      {activeTab === "blocks" && (
+      {false && activeTab === "blocks" && (
         <div>
           <div className="flex justify-between items-center mb-6">
             <div>
@@ -1023,7 +1023,7 @@ export default function PropertyMediaPage() {
 
       {/* Room Block Modal */}
       <AnimatePresence>
-        {showBlockModal && (
+        {false && showBlockModal && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

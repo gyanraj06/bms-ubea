@@ -82,12 +82,17 @@ export async function POST(request: NextRequest) {
       guest_id_image_url,
     } = guest_details;
 
-    if (!first_name || !last_name || !email || !phone) {
+    // Relaxed Validation: Only First Name & Last Name are mandatory for Offline booking
+    if (!first_name || !last_name) {
       return NextResponse.json(
-        { success: false, error: "Missing guest details" },
+        { success: false, error: "Missing guest name" },
         { status: 400 },
       );
     }
+
+    // Fallback values for optional fields
+    const finalEmail = email || `offline_guest_${Date.now()}@temp.local`; // DB requires email
+    const finalPhone = phone || "";
     // 2. Find or Create User (Robust Handling)
     let userId = null;
 
@@ -95,7 +100,8 @@ export async function POST(request: NextRequest) {
     const { data: existingPublicUser } = await supabaseAdmin
       .from("users")
       .select("id")
-      .or(`email.eq.${email},phone.eq.${phone}`)
+      .select("id")
+      .or(`email.eq.${finalEmail},phone.eq.${finalPhone}`)
       .maybeSingle();
 
     if (existingPublicUser) {
@@ -112,10 +118,13 @@ export async function POST(request: NextRequest) {
       // We give a dummy password that they can reset later if they want to claim account
       const { data: authUser, error: authCreateError } =
         await supabaseAdmin.auth.admin.createUser({
-          email: email,
+          email: finalEmail,
           email_confirm: true,
           password: `Tmp${Math.random().toString(36).slice(-8)}!`,
-          user_metadata: { full_name: `${first_name} ${last_name}`, phone },
+          user_metadata: {
+            full_name: `${first_name} ${last_name}`,
+            phone: finalPhone,
+          },
         });
 
       if (authCreateError) {
@@ -156,9 +165,9 @@ export async function POST(request: NextRequest) {
         .from("users")
         .insert({
           id: authUserId || undefined, // Use Auth ID if we got one, else Auto-Gen
-          email,
+          email: finalEmail,
           full_name: `${first_name} ${last_name}`.trim(),
-          phone,
+          phone: finalPhone,
           address,
           city,
           state,
@@ -178,7 +187,8 @@ export async function POST(request: NextRequest) {
         const { data: retryUser } = await supabaseAdmin
           .from("users")
           .select("id")
-          .eq("email", email)
+          .select("id")
+          .eq("email", finalEmail)
           .maybeSingle();
 
         if (retryUser) userId = retryUser.id;
@@ -229,7 +239,7 @@ export async function POST(request: NextRequest) {
       if (!room) continue;
 
       const thisRoomCharges =
-        (body.is_special_discount ? 1 : room.base_price) * totalNights;
+        (body.is_special_discount ? 0 : room.base_price) * totalNights;
       const thisGst = 0; // GST REMOVED
       const thisTotal = thisRoomCharges + thisGst;
 
@@ -240,8 +250,8 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           room_id: roomId,
           guest_name: `${first_name} ${last_name}`,
-          guest_email: email,
-          guest_phone: phone,
+          guest_email: finalEmail,
+          guest_phone: finalPhone,
           check_in: checkInDate.toISOString(),
           check_out: checkOutDate.toISOString(),
           total_nights: totalNights,
