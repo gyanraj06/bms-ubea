@@ -59,10 +59,11 @@ export function ChaletHero() {
               href="https://maps.app.goo.gl/WuqijiHpwnQmsiBX7"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center p-4 bg-white/10 backdrop-blur-md border border-white/30 text-white rounded-xl hover:bg-white/20 transition-all duration-300 shadow-lg group"
+              className="inline-flex items-center gap-2 px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg"
               aria-label="View Location Map"
             >
-              <MapPin size={28} weight="fill" className="group-hover:scale-110 transition-transform" />
+              <MapPin size={24} weight="fill" />
+              <span>Directions</span>
             </a>
           </div>
         </motion.div>
