@@ -47,10 +47,10 @@ export function ChaletHero() {
 
           {/* Book Now Button */}
           {/* Book Now Button and Map Link */}
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4 w-full md:w-auto">
             <button
               onClick={() => router.push('/booking')}
-              className="inline-flex items-center px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg"
+              className="inline-flex items-center justify-center px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg w-full md:w-auto"
             >
               Book Your Stay
             </button>
@@ -59,7 +59,7 @@ export function ChaletHero() {
               href="https://maps.app.goo.gl/WuqijiHpwnQmsiBX7"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg"
+              className="inline-flex items-center justify-center gap-2 px-10 py-4 bg-white text-brown-dark rounded-xl font-semibold hover:bg-tan transition-all duration-300 shadow-lg text-base md:text-lg w-full md:w-auto"
               aria-label="View Location Map"
             >
               <MapPin size={24} weight="fill" />
