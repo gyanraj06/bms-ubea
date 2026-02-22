@@ -132,6 +132,13 @@ export default function NewAdminBookingPage() {
             }
 
             // Use server-side API that bypasses RLS
+            // Fix: Build datetime from local date components + time to avoid UTC offset shifting the date
+            const buildLocalISO = (date: Date, time: string) => {
+                const [h, m] = time.split(':').map(Number);
+                const d = new Date(date.getFullYear(), date.getMonth(), date.getDate(), h, m, 0, 0);
+                return d.toISOString();
+            };
+
             const response = await fetch("/api/admin/rooms/availability", {
                 method: "POST",
                 headers: {
@@ -139,8 +146,8 @@ export default function NewAdminBookingPage() {
                     Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    check_in: checkIn.toISOString(),
-                    check_out: checkOut.toISOString(),
+                    check_in: buildLocalISO(checkIn, checkInTime),
+                    check_out: buildLocalISO(checkOut, checkOutTime),
                 }),
             });
 
@@ -222,13 +229,12 @@ export default function NewAdminBookingPage() {
             if (guestIdFile) guestIdUrl = await uploadDocument(guestIdFile, 'guest_id', token);
 
             // Combine Date + Time
-            const checkInDateTime = new Date(checkIn!);
-            const [inHours, inMinutes] = checkInTime.split(':');
-            checkInDateTime.setHours(parseInt(inHours), parseInt(inMinutes));
+            // Fix: Use local date components (year/month/day) + time to prevent UTC offset from shifting the date
+            const [inHours, inMinutes] = checkInTime.split(':').map(Number);
+            const checkInDateTime = new Date(checkIn!.getFullYear(), checkIn!.getMonth(), checkIn!.getDate(), inHours, inMinutes, 0, 0);
 
-            const checkOutDateTime = new Date(checkOut!);
-            const [outHours, outMinutes] = checkOutTime.split(':');
-            checkOutDateTime.setHours(parseInt(outHours), parseInt(outMinutes));
+            const [outHours, outMinutes] = checkOutTime.split(':').map(Number);
+            const checkOutDateTime = new Date(checkOut!.getFullYear(), checkOut!.getMonth(), checkOut!.getDate(), outHours, outMinutes, 0, 0);
 
             const res = await fetch('/api/admin/bookings/create', {
                 method: 'POST',
