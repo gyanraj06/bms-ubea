@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
       // 4. Update Booking if Success
       if (newStatus === "completed") {
-        await supabaseAdmin
+        const { data: bookingUpdate, error: bookingErr } = await supabaseAdmin
           .from("bookings")
           .update({
             status: "confirmed", // Or just payment_status = paid?
@@ -91,7 +91,36 @@ export async function POST(request: Request) {
             room_charges: payment.amount,
             discount_amount: 0,
           })
-          .eq("id", payment.booking_id);
+          .eq("id", payment.booking_id)
+          .select("*, rooms(*)")
+          .single();
+
+        if (bookingUpdate) {
+          // Telegram Alert (Webhook)
+          try {
+            const { sendTelegramAlert } = await import("@/lib/telegram");
+            const checkIn = new Date(bookingUpdate.check_in).toLocaleDateString(
+              "en-In",
+            );
+            const checkOut = new Date(
+              bookingUpdate.check_out,
+            ).toLocaleDateString("en-In");
+
+            const telegramMessage =
+              `🚨 <b>New Successful Booking! (Webhook)</b>\n\n` +
+              `👤 <b>Guest:</b> ${bookingUpdate.guest_name}\n` +
+              `📧 <b>Email:</b> ${bookingUpdate.guest_email}\n` +
+              `📅 <b>Dates:</b> ${checkIn} to ${checkOut}\n` +
+              `💰 <b>Amount:</b> ₹${payment.amount}\n` +
+              `🏠 <b>Room:</b> ${bookingUpdate.rooms?.room_number || "N/A"} (${bookingUpdate.rooms?.room_type || "N/A"})\n` +
+              `🔖 <b>Ref:</b> <code>${bookingUpdate.booking_number}</code>\n\n` +
+              `<i>Triggered via Payment Webhook.</i>`;
+
+            sendTelegramAlert(telegramMessage);
+          } catch (tgErr) {
+            console.error("Webhook Telegram Error:", tgErr);
+          }
+        }
       }
 
       // Redirect

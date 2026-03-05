@@ -253,6 +253,27 @@ export async function POST(request: NextRequest) {
           }).then((res) =>
             console.log("[Callback] Admin notification sent:", res),
           );
+
+          // D. Telegram Alert
+          try {
+            const { sendTelegramAlert } = await import("@/lib/telegram");
+            const telegramMessage =
+              `🚨 <b>New Successful Booking!</b>\n\n` +
+              `👤 <b>Guest:</b> ${emailData.user_name}\n` +
+              `📧 <b>Email:</b> ${emailData.user_email}\n` +
+              `📅 <b>Dates:</b> ${emailData.check_in_date} to ${emailData.check_out_date}\n` +
+              `💰 <b>Amount:</b> ₹${emailData.total_amount}\n` +
+              `🔖 <b>Ref:</b> <code>${emailData.booking_reference}</code>\n\n` +
+              `<i>Please check the admin portal for details.</i>`;
+
+            sendTelegramAlert(telegramMessage).then((success) => {
+              if (success)
+                console.log("[Callback] Telegram alert sent successfully");
+              else console.error("[Callback] Telegram alert failed to send");
+            });
+          } catch (tgErr) {
+            console.error("[Callback] Error sending Telegram alert:", tgErr);
+          }
         } catch (emailErr) {
           console.error("[Callback] Error preparing/sending emails:", emailErr);
         }

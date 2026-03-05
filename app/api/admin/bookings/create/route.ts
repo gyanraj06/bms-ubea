@@ -307,6 +307,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 4. Send Telegram Alert for Offline Booking
+    if (bookings.length > 0) {
+      try {
+        const { sendTelegramAlert } = await import("@/lib/telegram");
+        const totalBookingAmount = bookings.reduce(
+          (sum, b) => sum + b.total_amount,
+          0,
+        );
+        const checkIn = new Date(check_in).toLocaleDateString("en-In");
+        const checkOut = new Date(check_out).toLocaleDateString("en-In");
+
+        const telegramMessage =
+          `👨‍💼 <b>New Offline Booking (Admin)</b>\n\n` +
+          `👤 <b>Guest:</b> ${first_name} ${last_name}\n` +
+          `📅 <b>Dates:</b> ${checkIn} to ${checkOut}\n` +
+          `🏠 <b>Rooms:</b> ${room_ids.length}\n` +
+          `💰 <b>Total Amount:</b> ₹${totalBookingAmount} (Cash/Offline)\n` +
+          `🔖 <b>Ref:</b> <code>${bookingNumber}</code>\n\n` +
+          `<i>Created manually by Admin.</i>`;
+
+        sendTelegramAlert(telegramMessage);
+      } catch (tgErr) {
+        console.error("Offline Booking Telegram Error:", tgErr);
+      }
+    }
+
     return NextResponse.json({ success: true, bookings });
   } catch (error: any) {
     console.error("Admin Booking Error:", error);
